@@ -1,0 +1,14 @@
+- **Location**: A named zone in the garage (e.g. "Back Wall Left")
+- **LocationCode**: Short uppercase identifier for a Location (e.g. `BACK-LEFT`). Max 20 chars, letters/digits/hyphens only
+- **Box**: A physical container being packed and tracked
+- **BoxId**: Sequential human-readable identifier (e.g. `BOX-042`). Format: `BOX-NNN`, zero-padded to 3+ digits
+- **Item**: A named thing with an optional photo. Items can exist standalone (Unassigned) or be placed in a box
+- **Container**: DU — `Unassigned | InBox of BoxId | AtLocation of LocationCode`. Replaces the old `Assignment` DU
+- **Placement**: A `Container` value on `Item` and `Box`, derived from the latest move in the move log
+- **Move**: An append-only event recording that an entity (item or box) was placed somewhere (or unassigned)
+- **Move.to_type**: `"box"`, `"location"`, or NULL (unassigned)
+- **Move.to_id**: The target BoxId or LocationCode, or NULL (unassigned)
+- **PhotoPath**: Relative filesystem path to a stored photo (`photos/{boxId}/{guid}.{ext}`)
+- **Label**: Printable page (100mm × 60mm) with QR code + identifier for a Box or Location. Box labels also show current location if assigned
+- **EmptyLocation**: Proof that a Location has no boxes assigned (required for archiving)
+- **Smart Constructor**: Private DU constructor + `create : string -> Result<'T, string>` function

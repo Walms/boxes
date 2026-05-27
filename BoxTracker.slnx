@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Client/">
+    <Project Path="src/Client/BoxTracker.Client.fsproj" />
+  </Folder>
+  <Folder Name="/src/Server/">
+    <Project Path="src/Server/BoxTracker.Server.fsproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/BoxTracker.Shared.fsproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Api.Tests/">
+    <Project Path="tests/Api.Tests/BoxTracker.Api.Tests.fsproj" />
+  </Folder>
+  <Folder Name="/tests/Domain.Tests/">
+    <Project Path="tests/Domain.Tests/BoxTracker.Domain.Tests.fsproj" />
+  </Folder>
+</Solution>

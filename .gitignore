@@ -1,0 +1,42 @@
+## Build outputs
+bin/
+obj/
+
+## NuGet
+*.nupkg
+packages/
+
+## dotnet tools
+.dotnet-tools/
+
+## Fable
+src/Client/.fable/
+src/Client/fable_modules/
+src/Client/*.fs.js
+output/
+
+## Node
+node_modules/
+
+## Build output
+dist/
+
+## Data (runtime)
+data/
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Direnv
+.direnv/
+
+## Lode temp
+lode/tmp/

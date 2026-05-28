@@ -136,3 +136,49 @@ jobs:
         username: ${{ secrets.DEPLOY_USER }}
         key: ${{ secrets.DEPLOY_SSH_KEY }}
         script: sudo systemctl restart boxtracker
+
+    - name: Copy backup scripts
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_SSH_KEY }}
+        source: "scripts/"
+        target: "/opt/boxtracker/scripts/"
+        strip_components: 1
+
+    - name: Configure rclone and backup scripts
+      uses: appleboy/ssh-action@v1.1.0
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_SSH_KEY }}
+        script: |
+          # Install rclone if not present
+          command -v rclone || (curl https://rclone.org/install.sh | sudo bash)
+          # Write rclone config from secrets
+          mkdir -p /home/$USER/.config/rclone
+          cat > /home/$USER/.config/rclone/rclone.conf << EOF
+          [boxes-db]
+          type = b2
+          account = ${{ secrets.B2_DB_KEY_ID }}
+          key = ${{ secrets.B2_DB_APP_KEY }}
+
+          [boxes-images]
+          type = b2
+          account = ${{ secrets.B2_IMAGES_KEY_ID }}
+          key = ${{ secrets.B2_IMAGES_APP_KEY }}
+          EOF
+          chmod 600 /home/$USER/.config/rclone/rclone.conf
+          # Make scripts executable and create log dir
+          chmod +x /opt/boxtracker/scripts/*.sh
+          sudo mkdir -p /var/log/boxtracker
+          sudo chown $USER:$USER /var/log/boxtracker
+          # Idempotently install cron jobs
+          (crontab -l 2>/dev/null | grep -v 'boxtracker/scripts/backup') > /tmp/crontab_clean || true
+          cat >> /tmp/crontab_clean << 'CRON'
+          0  * * * *   /opt/boxtracker/scripts/backup-db.sh >> /var/log/boxtracker/backup-db.log 2>&1
+          30 * * * *   /opt/boxtracker/scripts/backup-photos.sh >> /var/log/boxtracker/backup-photos.log 2>&1
+          CRON
+          crontab /tmp/crontab_clean
+          rm /tmp/crontab_clean

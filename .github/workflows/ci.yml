@@ -23,7 +23,9 @@ jobs:
       run: dotnet restore
 
     - name: Run tests
-      run: dotnet test --no-restore --verbosity normal
+      run: |
+        dotnet test tests/Domain.Tests/BoxTracker.Domain.Tests.fsproj --no-restore --verbosity normal
+        dotnet test tests/Api.Tests/BoxTracker.Api.Tests.fsproj --no-restore --verbosity normal
 
   build:
     runs-on: ubuntu-latest

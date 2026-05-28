@@ -13,6 +13,7 @@ type LocationDto = {
 type BoxDto = {
     Id: string
     Label: string option
+    PhotoPath: string option
     LocationCode: string option
     CreatedAt: string
 }
@@ -237,6 +238,11 @@ let updateItemPhoto (itemId: string) (photo: obj) : Async<Result<ItemDto, string
     let fd : obj = createFormData ()
     formDataAppend fd "photo" photo
     upload<ItemDto> $"/api/items/%s{itemId}/photo" fd
+
+let uploadBoxPhoto (boxId: string) (photo: obj) : Async<Result<BoxDto, string>> =
+    let fd : obj = createFormData ()
+    formDataAppend fd "photo" photo
+    upload<BoxDto> $"/api/boxes/%s{boxId}/photo" fd
 
 let searchItems (query: string) : Async<Result<SearchResultDto array, string>> =
     get<SearchResultDto array> $"/api/items?q=%s{query}"

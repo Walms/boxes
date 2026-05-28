@@ -25,6 +25,7 @@ type LocationResponse = {
 type BoxResponse = {
     Id: string
     Label: string option
+    PhotoPath: string option
     LocationCode: string option
     CreatedAt: DateTimeOffset
 }
@@ -114,6 +115,7 @@ let locationToDto (loc: Location) : LocationResponse = {
 let boxToDto (box: Box) : BoxResponse = {
     Id = BoxId.value box.Id
     Label = box.Label |> Option.map BoxLabel.value
+    PhotoPath = box.Photo |> Option.map PhotoPath.value
     LocationCode =
         match box.Placement with
         | AtLocation code -> Some(LocationCode.value code)

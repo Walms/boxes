@@ -20,6 +20,7 @@ let webApp : HttpHandler =
         GET >=> routef "/api/boxes/%s" getBox
         PUT >=> routef "/api/boxes/%s" updateBox
         DELETE >=> routef "/api/boxes/%s" deleteBox
+        POST >=> routef "/api/boxes/%s/photo" uploadBoxPhoto
 
         POST >=> route "/api/items" >=> createItem
         GET >=> routef "/api/items/%s" getItem

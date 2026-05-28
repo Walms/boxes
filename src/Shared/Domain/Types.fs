@@ -27,6 +27,7 @@ type Item = {
 type Box = {
     Id: BoxId
     Label: BoxLabel option
+    Photo: PhotoPath option
     Placement: Container
     CreatedAt: DateTimeOffset
 }

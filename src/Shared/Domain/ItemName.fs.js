@@ -33,7 +33,6 @@ export function create(raw) {
 }
 
 export function value(_arg) {
-    const s = _arg.fields[0];
-    return s;
+    return _arg.fields[0];
 }
 

@@ -12,6 +12,7 @@ let createTables : string =
     CREATE TABLE IF NOT EXISTS box (
         id          TEXT PRIMARY KEY,
         label       TEXT,
+        photo_path  TEXT,
         created_at  TEXT NOT NULL
     );
 

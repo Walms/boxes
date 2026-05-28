@@ -46,6 +46,8 @@ type Msg =
     | AssignBoxToLocation of string
     | DeleteBox
     | BoxDeleted of Result<unit, string>
+    | UploadBoxPhoto of string * obj
+    | BoxPhotoUploaded of Result<BoxDto, string>
     | NewItemNameChanged of string
     | PhotoSelected of obj
     | SubmitAddItem
@@ -510,6 +512,20 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         navigateCmd BoxesList
 
     | BoxDeleted (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | UploadBoxPhoto (boxId, photo) ->
+        { state with Loading = true },
+        Cmd.OfAsync.either (fun () -> uploadBoxPhoto boxId photo) () BoxPhotoUploaded (fun ex -> ErrorOccurred ex.Message)
+
+    | BoxPhotoUploaded (Ok _) ->
+        match state.BoxDetail with
+        | None -> { state with Loading = false }, Cmd.none
+        | Some detail ->
+            { state with Loading = false },
+            navigateCmd (BoxDetail detail.Box.Id)
+
+    | BoxPhotoUploaded (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | NewItemNameChanged name ->

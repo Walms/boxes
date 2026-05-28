@@ -25,8 +25,7 @@ export function create(boxId, guid, extension) {
 }
 
 export function value(_arg) {
-    const s = _arg.fields[0];
-    return s;
+    return _arg.fields[0];
 }
 
 export function tryParse(s) {

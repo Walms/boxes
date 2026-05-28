@@ -26,15 +26,13 @@ export function create(sequenceNumber) {
 }
 
 export function value(_arg) {
-    const s = _arg.fields[0];
-    return s;
+    return _arg.fields[0];
 }
 
 export function tryParse(s) {
     let outArg;
     if ((s !== defaultOf()) && s.startsWith("BOX-")) {
-        const numberPart = substring(s, 4);
-        if (((outArg = 0, [tryParse_1(numberPart, 511, false, 32, new FSharpRef(() => (outArg | 0), (v) => {
+        if (((outArg = 0, [tryParse_1(substring(s, 4), 511, false, 32, new FSharpRef(() => (outArg | 0), (v) => {
             outArg = (v | 0);
         })), outArg]))[0]) {
             return new FSharpResult$2(0, [new BoxId(s)]);
@@ -51,18 +49,14 @@ export function tryParse(s) {
 export function parse(s) {
     const matchValue = tryParse(s);
     if (matchValue.tag === 1) {
-        const msg = matchValue.fields[0];
-        throw new Exception(msg);
+        throw new Exception(matchValue.fields[0]);
     }
     else {
-        const id = matchValue.fields[0];
-        return id;
+        return matchValue.fields[0];
     }
 }
 
 export function extractSequence(_arg) {
-    const s = _arg.fields[0];
-    const numberPart = substring(s, 4);
-    return parse_1(numberPart, 511, false, 32) | 0;
+    return parse_1(substring(_arg.fields[0], 4), 511, false, 32) | 0;
 }
 

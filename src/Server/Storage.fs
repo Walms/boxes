@@ -59,9 +59,12 @@ type Storage (connectionString: string) =
                 match BoxLabel.create (reader.GetString(offset + 1)) with
                 | Ok l -> l
                 | Error e -> failwith e
-        let createdAt : DateTimeOffset = reader.GetString(offset + 2) |> DateTimeOffset.Parse
-        let placement : Container = readContainer reader (offset + 3) (offset + 4)
-        { Id = id; Label = label; Placement = placement; CreatedAt = createdAt }
+        let photo : PhotoPath option =
+            if reader.IsDBNull(offset + 2) then None
+            else reader.GetString(offset + 2) |> PhotoPath.tryParse |> unwrap |> Some
+        let createdAt : DateTimeOffset = reader.GetString(offset + 3) |> DateTimeOffset.Parse
+        let placement : Container = readContainer reader (offset + 4) (offset + 5)
+        { Id = id; Label = label; Photo = photo; Placement = placement; CreatedAt = createdAt }
 
     let readItem (reader: SqliteDataReader) (offset: int) : Item =
         let id : Guid = Guid.Parse(reader.GetString(offset))
@@ -118,6 +121,12 @@ type Storage (connectionString: string) =
             let c : SqliteCommand = conn.CreateCommand()
             c.CommandText <- createTables
             c.ExecuteNonQuery() |> ignore
+            // Run migration for box.photo_path (safe to run multiple times)
+            try
+                let m : SqliteCommand = conn.CreateCommand()
+                m.CommandText <- "ALTER TABLE box ADD COLUMN photo_path TEXT"
+                m.ExecuteNonQuery() |> ignore
+            with _ -> ()
             connection <- Some conn
 
     member this.Connection : SqliteConnection =
@@ -348,7 +357,7 @@ type Storage (connectionString: string) =
         match locationCode, unassigned with
         | Some loc, _ ->
             c.CommandText <- """
-                SELECT b.id, b.label, b.created_at, lp.to_type, lp.to_id
+                SELECT b.id, b.label, b.photo_path, b.created_at, lp.to_type, lp.to_id
                 FROM box b
                 INNER JOIN (
                     SELECT entity_id, to_type, to_id
@@ -365,7 +374,7 @@ type Storage (connectionString: string) =
             c.Parameters.AddWithValue("@locationCode", loc) |> ignore
         | None, true ->
             c.CommandText <- """
-                SELECT b.id, b.label, b.created_at, lp.to_type, lp.to_id
+                SELECT b.id, b.label, b.photo_path, b.created_at, lp.to_type, lp.to_id
                 FROM box b
                 LEFT JOIN (
                     SELECT entity_id, to_type, to_id
@@ -381,7 +390,7 @@ type Storage (connectionString: string) =
             """
         | None, false ->
             c.CommandText <- """
-                SELECT b.id, b.label, b.created_at, lp.to_type, lp.to_id
+                SELECT b.id, b.label, b.photo_path, b.created_at, lp.to_type, lp.to_id
                 FROM box b
                 LEFT JOIN (
                     SELECT entity_id, to_type, to_id
@@ -401,7 +410,7 @@ type Storage (connectionString: string) =
         let conn : SqliteConnection = this.Connection
         use c : SqliteCommand = conn.CreateCommand()
         c.CommandText <- """
-            SELECT b.id, b.label, b.created_at, lp.to_type, lp.to_id
+            SELECT b.id, b.label, b.photo_path, b.created_at, lp.to_type, lp.to_id
             FROM box b
             LEFT JOIN (
                 SELECT entity_id, to_type, to_id
@@ -441,7 +450,7 @@ type Storage (connectionString: string) =
         c.Parameters.AddWithValue("@label", labelValue) |> ignore
         c.Parameters.AddWithValue("@createdAt", now.ToString("o")) |> ignore
         c.ExecuteNonQuery() |> ignore
-        { Id = boxId; Label = label; Placement = Unassigned; CreatedAt = now }
+        { Id = boxId; Label = label; Photo = None; Placement = Unassigned; CreatedAt = now }
 
     member this.UpdateBox(id: string, label: BoxLabel option) : Box option =
         let conn : SqliteConnection = this.Connection
@@ -461,6 +470,14 @@ type Storage (connectionString: string) =
 
     member this.DeleteBox(id: string) : string list =
         let conn : SqliteConnection = this.Connection
+        let boxPhotoPath : string option =
+            use c : SqliteCommand = conn.CreateCommand()
+            c.CommandText <- "SELECT photo_path FROM box WHERE id = @id AND photo_path IS NOT NULL"
+            c.Parameters.AddWithValue("@id", id) |> ignore
+            let r : obj = c.ExecuteScalar()
+            match r with
+            | :? string as p -> Some p
+            | _ -> None
         let itemIds : string list =
             use c : SqliteCommand = conn.CreateCommand()
             c.CommandText <- """
@@ -479,7 +496,7 @@ type Storage (connectionString: string) =
             c.Parameters.AddWithValue("@boxId", id) |> ignore
             use reader : SqliteDataReader = c.ExecuteReader()
             readList (fun (r: SqliteDataReader) -> r.GetString(0)) reader
-        let photoPaths : string list =
+        let itemPhotoPaths : string list =
             itemIds
             |> List.choose (fun iid ->
                 use c : SqliteCommand = conn.CreateCommand()
@@ -489,6 +506,8 @@ type Storage (connectionString: string) =
                 match r with
                 | :? string as p -> Some p
                 | _ -> None)
+        let photoPaths : string list =
+            (boxPhotoPath |> Option.toList) @ itemPhotoPaths
         for iid in itemIds do
             this.RecordMove("item", iid, None, None) |> ignore
         use delMoves : SqliteCommand = conn.CreateCommand()
@@ -609,6 +628,19 @@ type Storage (connectionString: string) =
         c.Parameters.AddWithValue("@photoPath", photoValue) |> ignore
         let rows : int = c.ExecuteNonQuery()
         if rows = 0 then None else this.GetItem(id)
+
+    member this.UpdateBoxPhoto(id: string, photoPath: PhotoPath option) : Box option =
+        let conn : SqliteConnection = this.Connection
+        use c : SqliteCommand = conn.CreateCommand()
+        let photoValue : obj =
+            match photoPath with
+            | Some p -> box (PhotoPath.value p)
+            | None -> DBNull.Value
+        c.CommandText <- "UPDATE box SET photo_path = @photoPath WHERE id = @id"
+        c.Parameters.AddWithValue("@id", id) |> ignore
+        c.Parameters.AddWithValue("@photoPath", photoValue) |> ignore
+        let rows : int = c.ExecuteNonQuery()
+        if rows = 0 then None else this.GetBox(id)
 
     member this.DeleteItem(id: string) : string option =
         let conn : SqliteConnection = this.Connection

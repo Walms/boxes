@@ -776,6 +776,49 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         ]
                                     ]
                                 ]
+                                Html.div [
+                                    prop.className "form-control"
+                                    prop.children [
+                                        Html.label [
+                                            prop.className "label pb-2"
+                                            prop.children [
+                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Box photo" ]
+                                            ]
+                                        ]
+                                        if (match photoUrl detail.Box.PhotoPath with | Some _ -> true | None -> false) then
+                                            Html.div [
+                                                prop.className "mb-3"
+                                                prop.children [
+                                                    match photoUrl detail.Box.PhotoPath with
+                                                    | Some url ->
+                                                        Html.img [
+                                                            prop.className "w-48 h-48 object-cover rounded border border-base-300"
+                                                            prop.src url
+                                                        ]
+                                                    | None -> Html.none
+                                                ]
+                                            ]
+                                        Html.div [
+                                            prop.className "flex gap-2"
+                                            prop.children [
+                                                Html.input [
+                                                    prop.className "file-input file-input-bordered text-base flex-1"
+                                                    prop.type' "file"
+                                                    prop.accept "image/*"
+#if FABLE_COMPILER
+                                                    prop.onChange (fun (files: File list) ->
+                                                        files |> List.tryHead |> Option.iter (fun f -> dispatch (UploadBoxPhoto (detail.Box.Id, box f))))
+#endif
+                                                ]
+                                                Html.button [
+                                                    prop.className "btn btn-primary btn-sm"
+                                                    prop.text "Upload"
+                                                    prop.disabled state.Loading
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
                             ]
                         ]
                     ]

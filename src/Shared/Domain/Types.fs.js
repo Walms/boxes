@@ -39,17 +39,18 @@ export function Item_$reflection() {
 }
 
 export class Box extends Record {
-    constructor(Id, Label, Placement, CreatedAt) {
+    constructor(Id, Label, Photo, Placement, CreatedAt) {
         super();
         this.Id = Id;
         this.Label = Label;
+        this.Photo = Photo;
         this.Placement = Placement;
         this.CreatedAt = CreatedAt;
     }
 }
 
 export function Box_$reflection() {
-    return record_type("BoxTracker.Types.Box", [], Box, () => [["Id", BoxId_$reflection()], ["Label", option_type(BoxLabel_$reflection())], ["Placement", Container_$reflection()], ["CreatedAt", class_type("System.DateTimeOffset")]]);
+    return record_type("BoxTracker.Types.Box", [], Box, () => [["Id", BoxId_$reflection()], ["Label", option_type(BoxLabel_$reflection())], ["Photo", option_type(PhotoPath_$reflection())], ["Placement", Container_$reflection()], ["CreatedAt", class_type("System.DateTimeOffset")]]);
 }
 
 export class Move extends Record {

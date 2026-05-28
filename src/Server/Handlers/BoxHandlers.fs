@@ -116,6 +116,43 @@ let deleteBox (id: string) : HttpHandler =
             return! json {| success = true |} next ctx
         }
 
+let uploadBoxPhoto (id: string) : HttpHandler =
+    fun (next: HttpFunc) (ctx: HttpContext) ->
+        task {
+            if not ctx.Request.HasFormContentType then
+                return! (setStatusCode 400 >=> json {| error = "Expected multipart/form-data" |}) next ctx
+            else
+                let storage : Storage = ctx.GetService<Storage>()
+                let config : BoxTrackerConfig = ctx.GetService<BoxTrackerConfig>()
+                match storage.GetBox(id) with
+                | None ->
+                    return! (setStatusCode 404 >=> json {| error = $"Box '%s{id}' not found" |}) next ctx
+                | Some box ->
+                    box.Photo |> Option.iter (fun p ->
+                        let fullPath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value p)
+                        if File.Exists(fullPath) then File.Delete(fullPath))
+                    let! form : IFormCollection = ctx.Request.ReadFormAsync()
+                    let file : IFormFile = form.Files.GetFile("photo")
+                    let photoPath : PhotoPath option =
+                        if isNull file then None
+                        else
+                            let guid : Guid = Guid.NewGuid()
+                            let ext : string =
+                                let raw : string = Path.GetExtension(file.FileName)
+                                raw.TrimStart('.').ToLowerInvariant()
+                            let path : PhotoPath = BoxTracker.PhotoPath.create id guid ext
+                            let fullPath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value path)
+                            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)) |> ignore
+                            use stream : FileStream = new FileStream(fullPath, FileMode.Create)
+                            file.CopyTo(stream)
+                            Some path
+                    match storage.UpdateBoxPhoto(id, photoPath) with
+                    | None ->
+                        return! (setStatusCode 404 >=> json {| error = $"Box '%s{id}' not found" |}) next ctx
+                    | Some updated ->
+                        return! json (boxToDto updated) next ctx
+        }
+
 let addItem (boxId: string) : HttpHandler =
     fun (next: HttpFunc) (ctx: HttpContext) ->
         task {

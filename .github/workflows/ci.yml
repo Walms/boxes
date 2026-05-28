@@ -109,16 +109,30 @@ jobs:
       with:
         name: build-artifacts
 
-    - name: Deploy via SSH
+    - name: Copy server binaries
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_SSH_KEY }}
+        source: "publish/linux-x64/"
+        target: "/opt/boxtracker/server/"
+        strip_components: 2
+
+    - name: Copy frontend
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_SSH_KEY }}
+        source: "src/Client/dist/"
+        target: "/opt/boxtracker/frontend/"
+        strip_components: 2
+
+    - name: Restart service
       uses: appleboy/ssh-action@v1.1.0
       with:
         host: ${{ secrets.DEPLOY_HOST }}
         username: ${{ secrets.DEPLOY_USER }}
         key: ${{ secrets.DEPLOY_SSH_KEY }}
-        script: |
-          # Copy server binaries
-          rsync -az --delete publish/linux-x64/ /opt/boxtracker/server/ || exit 1
-          # Copy frontend dist
-          rsync -az --delete src/Client/dist/ /opt/boxtracker/frontend/ || exit 1
-          # Restart the service
-          sudo systemctl restart boxtracker
+        script: sudo systemctl restart boxtracker

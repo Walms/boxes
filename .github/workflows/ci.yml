@@ -24,8 +24,8 @@ jobs:
 
     - name: Run tests
       run: |
-        dotnet test tests/Domain.Tests/BoxTracker.Domain.Tests.fsproj --no-restore --verbosity normal
-        dotnet test tests/Api.Tests/BoxTracker.Api.Tests.fsproj --no-restore --verbosity normal
+        dotnet test tests/Domain.Tests/BoxTracker.Domain.Tests.fsproj --no-restore --verbosity detailed --logger "console;verbosity=detailed"
+        dotnet test tests/Api.Tests/BoxTracker.Api.Tests.fsproj --no-restore --verbosity detailed --logger "console;verbosity=detailed"
 
   build:
     runs-on: ubuntu-latest

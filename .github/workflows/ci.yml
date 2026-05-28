@@ -169,6 +169,7 @@ jobs:
           account = ${{ secrets.B2_IMAGES_KEY_ID }}
           key = ${{ secrets.B2_IMAGES_APP_KEY }}
           EOF
+          # Note: do NOT add bucket = field to rclone B2 config; use explicit paths instead
           chmod 600 /home/$USER/.config/rclone/rclone.conf
           # Make scripts executable and create log dir
           chmod +x /opt/boxtracker/scripts/*.sh

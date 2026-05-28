@@ -48,7 +48,10 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                 ]
             ]
             Html.div [
-                prop.className "flex-none md:hidden"
+                prop.className "flex-1 md:hidden"
+            ]
+            Html.div [
+                prop.className "flex-none"
                 prop.children [
                     Html.div [
                         prop.className "dropdown dropdown-end"

@@ -7,7 +7,7 @@
 | F# compiler | FSharp.Core | (SDK-bundled) |
 | Backend | Saturn | 0.17.0 |
 | Backend core | Giraffe | 6.4.0 (via Saturn) |
-| Frontend compiler | Fable | 5.0.0 (local dotnet tool) |
+| Frontend compiler | Fable | 4.14.0 (local dotnet tool) |
 | Frontend bundler | Vite | 6.x (npm) |
 | React bindings | Feliz | 3.3.3 |
 | Elmish-React bridge | Feliz.UseElmish | 2.5.0 |
@@ -23,6 +23,7 @@
 
 ## Key Decisions
 - Shared project targets `netstandard2.0` for Fable compatibility
+- Client project targets `net10.0` for Fable compilation (though only the generated JS runs in browser)
 - Server targets `net10.0`
-- Fable installed as local dotnet tool (`dotnet tool install Fable --version 5.0.0`)
+- Fable installed as local dotnet tool via `.config/dotnet-tools.json` (version 4.14.0)
 - `Fable.Template` NuGet package is stale at 3.9.0; project scaffolded manually

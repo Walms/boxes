@@ -13,6 +13,7 @@
 ## Infrastructure
 - [infra/stack.md](infra/stack.md) — technology choices and versions
 - [infra/frontend-pipeline.md](infra/frontend-pipeline.md) — Fable + Vite + Tailwind/DaisyUI build pipeline
+- [infra/deployment.md](infra/deployment.md) — Oracle Cloud VM setup, nginx config, systemd service, GitHub Actions CI/CD, iptables rules
 
 ## UI
 - [ui/pages.md](ui/pages.md) — client-side pages, routing, navigation structure

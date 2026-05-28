@@ -21,13 +21,13 @@ let private navItem (label: string) (page: Page) (dispatch: Msg -> unit) : React
 
 let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
-        prop.className "navbar bg-base-200"
+        prop.className "navbar bg-base-200 border-b border-base-300 sticky top-0 z-40"
         prop.children [
             Html.div [
                 prop.className "flex-none"
                 prop.children [
                     Html.a [
-                        prop.className "btn btn-ghost text-xl tracking-tight"
+                        prop.className "btn btn-ghost text-lg md:text-xl tracking-tight px-2 md:px-4"
                         prop.text "BoxTracker"
                         prop.onClick (fun _ -> dispatch (Navigate LocationsList))
                     ]
@@ -53,15 +53,14 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                     Html.div [
                         prop.className "dropdown dropdown-end"
                         prop.children [
-                            Html.div [
+                            Html.button [
                                 prop.tabIndex 0
-                                prop.role "button"
-                                prop.className "btn btn-ghost btn-square"
-                                prop.text "\u2630"
+                                prop.className "btn btn-ghost btn-circle btn-lg md:btn-md"
+                                prop.text "☰"
                             ]
                             Html.ul [
                                 prop.tabIndex 0
-                                prop.className "dropdown-content menu bg-base-300 rounded z-10 w-44 p-2 shadow-lg"
+                                prop.className "dropdown-content menu bg-base-300 rounded-lg z-10 w-52 p-2 shadow-xl"
                                 prop.children [
                                     Html.li [ navItem "Locations" LocationsList dispatch ]
                                     Html.li [ navItem "Boxes" BoxesList dispatch ]
@@ -81,12 +80,12 @@ let private errorAlert (state: State) (dispatch: Msg -> unit) : ReactElement =
     | None -> Html.none
     | Some err ->
         Html.div [
-            prop.className "alert alert-error"
+            prop.className "alert alert-error mb-4 rounded-lg gap-3 flex items-start sm:items-center"
             prop.children [
-                Html.span [ prop.text err ]
+                Html.div [ prop.className "flex-1 text-sm sm:text-base"; prop.text err ]
                 Html.button [
-                    prop.className "btn btn-sm btn-ghost"
-                    prop.text "x"
+                    prop.className "btn btn-ghost btn-sm btn-circle flex-shrink-0"
+                    prop.text "✕"
                     prop.onClick (fun _ -> dispatch DismissError)
                 ]
             ]
@@ -112,7 +111,7 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
             prop.className "modal modal-open"
             prop.children [
                 Html.div [
-                    prop.className "modal-box"
+                    prop.className "modal-box w-11/12 max-w-md sm:max-w-lg"
                     prop.children [
                         Html.h3 [
                             prop.className "font-bold text-lg mb-4"
@@ -171,7 +170,7 @@ let private addExistingItemDialog (state: State) (dispatch: Msg -> unit) : React
             prop.className "modal modal-open"
             prop.children [
                 Html.div [
-                    prop.className "modal-box"
+                    prop.className "modal-box w-11/12 max-w-md sm:max-w-lg"
                     prop.children [
                         Html.h3 [
                             prop.className "font-bold text-lg mb-4"
@@ -238,14 +237,14 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.children [
             Html.div [
-                prop.className "flex items-center justify-between mb-4"
+                prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6"
                 prop.children [
                     Html.h1 [
-                        prop.className "text-2xl font-bold"
+                        prop.className "text-2xl sm:text-3xl font-bold"
                         prop.text "Locations"
                     ]
                     Html.button [
-                        prop.className "btn btn-primary btn-sm"
+                        prop.className "btn btn-primary btn-sm sm:btn-md w-full sm:w-auto"
                         prop.text "+ New Location"
                         prop.onClick (fun _ -> dispatch ShowCreateLocationForm)
                     ]
@@ -253,22 +252,22 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
             if state.ShowCreateLocationForm then
                 Html.div [
-                    prop.className "card bg-base-200 mb-4"
+                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
                     prop.children [
                         Html.div [
-                            prop.className "card-body"
+                            prop.className "card-body p-4 sm:p-6"
                             prop.children [
                                 Html.div [
-                                    prop.className "form-control"
+                                    prop.className "form-control mb-4"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label"
+                                            prop.className "label pb-2"
                                             prop.children [
-                                                Html.span [ prop.className "label-text"; prop.text "Code" ]
+                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Code" ]
                                             ]
                                         ]
                                         Html.input [
-                                            prop.className "input input-bordered"
+                                            prop.className "input input-bordered focus:input-primary text-base"
                                             prop.placeholder "e.g. GARAGE"
                                             prop.value state.NewLocationCode
                                             prop.onChange (fun (s: string) -> dispatch (NewLocationCodeChanged s))
@@ -276,16 +275,16 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     ]
                                 ]
                                 Html.div [
-                                    prop.className "form-control"
+                                    prop.className "form-control mb-4"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label"
+                                            prop.className "label pb-2"
                                             prop.children [
-                                                Html.span [ prop.className "label-text"; prop.text "Name" ]
+                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Name" ]
                                             ]
                                         ]
                                         Html.input [
-                                            prop.className "input input-bordered"
+                                            prop.className "input input-bordered focus:input-primary text-base"
                                             prop.placeholder "e.g. Garage"
                                             prop.value state.NewLocationName
                                             prop.onChange (fun (s: string) -> dispatch (NewLocationNameChanged s))
@@ -293,8 +292,13 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     ]
                                 ]
                                 Html.div [
-                                    prop.className "card-actions justify-end"
+                                    prop.className "flex gap-2 justify-end"
                                     prop.children [
+                                        Html.button [
+                                            prop.className "btn btn-ghost btn-sm"
+                                            prop.text "Cancel"
+                                            prop.onClick (fun _ -> dispatch ShowCreateLocationForm)
+                                        ]
                                         Html.button [
                                             prop.className "btn btn-primary btn-sm"
                                             prop.text "Create"
@@ -307,33 +311,33 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
             Html.div [
-                prop.className "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
                 prop.children [
                     if Array.isEmpty state.Locations && not state.Loading then
                         Html.div [
-                            prop.className "col-span-full text-center py-8 opacity-60"
+                            prop.className "col-span-full text-center py-12 opacity-60"
                             prop.children [
                                 Html.p [ prop.className "text-lg"; prop.text "No locations yet" ]
-                                Html.p [ prop.className "text-sm"; prop.text "Click \"+ New Location\" to create one" ]
+                                Html.p [ prop.className "text-sm mt-2"; prop.text "Click \"+ New Location\" to create one" ]
                             ]
                         ]
                     for loc in state.Locations do
                         Html.div [
-                            prop.className "card bg-base-200 cursor-pointer"
+                            prop.className "card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer active:scale-95 transform duration-100"
                             prop.onClick (fun _ -> dispatch (Navigate (LocationDetail loc.Code)))
                             prop.children [
                                 Html.div [
-                                    prop.className "card-body"
+                                    prop.className "card-body p-4 sm:p-5"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "card-title"
+                                            prop.className "card-title text-lg"
                                             prop.children [
                                                 Html.text loc.Name
                                                 if loc.IsArchived then
-                                                    Html.span [ prop.className "badge badge-ghost"; prop.text "Archived" ]
+                                                    Html.span [ prop.className "badge badge-ghost badge-sm"; prop.text "Archived" ]
                                             ]
                                         ]
-                                        Html.p [ prop.text loc.Code ]
+                                        Html.p [ prop.className "text-sm opacity-70"; prop.text loc.Code ]
                                     ]
                                 ]
                             ]
@@ -350,7 +354,7 @@ let private addBoxToLocationDialog (state: State) (dispatch: Msg -> unit) : Reac
             prop.className "modal modal-open"
             prop.children [
                 Html.div [
-                    prop.className "modal-box"
+                    prop.className "modal-box w-11/12 max-w-md sm:max-w-lg"
                     prop.children [
                         Html.h3 [
                             prop.className "font-bold text-lg mb-4"
@@ -424,69 +428,78 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             prop.children [
                 addBoxToLocationDialog state dispatch
                 Html.div [
-                    prop.className "flex items-center gap-2 mb-4"
+                    prop.className "mb-4 sm:mb-6"
                     prop.children [
                         Html.button [
-                            prop.className "btn btn-ghost btn-sm"
-                            prop.text "< Back"
+                            prop.className "btn btn-ghost btn-sm gap-1"
+                            prop.text "← Back"
                             prop.onClick (fun _ -> dispatch (Navigate LocationsList))
                         ]
                     ]
                 ]
                 Html.div [
-                    prop.className "card bg-base-200 mb-4"
+                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
                     prop.children [
                         Html.div [
-                            prop.className "card-body"
+                            prop.className "card-body p-4 sm:p-6"
                             prop.children [
                                 Html.div [
-                                    prop.className "flex items-center justify-between"
+                                    prop.className "flex flex-col gap-4"
                                     prop.children [
                                         if state.EditingLocationName then
                                             Html.div [
-                                                prop.className "flex items-center gap-2"
+                                                prop.className "flex flex-col sm:flex-row items-end gap-2"
                                                 prop.children [
                                                     Html.input [
-                                                        prop.className "input input-bordered input-sm"
+                                                        prop.className "input input-bordered input-sm flex-1 w-full text-base"
                                                         prop.value state.EditLocationNameValue
                                                         prop.onChange (fun (s: string) -> dispatch (EditLocationNameChanged s))
                                                     ]
-                                                    Html.button [
-                                                        prop.className "btn btn-primary btn-sm"
-                                                        prop.text "Save"
-                                                        prop.onClick (fun _ -> dispatch SubmitEditLocationName)
-                                                    ]
-                                                    Html.button [
-                                                        prop.className "btn btn-ghost btn-sm"
-                                                        prop.text "Cancel"
-                                                        prop.onClick (fun _ -> dispatch CancelEditLocationName)
+                                                    Html.div [
+                                                        prop.className "flex gap-2 w-full sm:w-auto"
+                                                        prop.children [
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Cancel"
+                                                                prop.onClick (fun _ -> dispatch CancelEditLocationName)
+                                                            ]
+                                                            Html.button [
+                                                                prop.className "btn btn-primary btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Save"
+                                                                prop.onClick (fun _ -> dispatch SubmitEditLocationName)
+                                                            ]
+                                                        ]
                                                     ]
                                                 ]
                                             ]
                                         else
-                                            Html.h1 [
-                                                prop.className "text-2xl font-bold"
-                                                prop.children [
-                                                    Html.text detail.Location.Name
-                                                    Html.span [
-                                                        prop.className "badge badge-outline ml-2"
-                                                        prop.text detail.Location.Code
-                                                    ]
-                                                ]
-                                            ]
-                                        if not state.EditingLocationName then
                                             Html.div [
-                                                prop.className "flex gap-2"
+                                                prop.className "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
                                                 prop.children [
-                                                    Html.button [
-                                                        prop.className "btn btn-ghost btn-sm"
-                                                        prop.text "Edit"
-                                                        prop.onClick (fun _ -> dispatch StartEditLocationName)
+                                                    Html.h1 [
+                                                        prop.className "text-2xl sm:text-3xl font-bold flex items-start gap-3"
+                                                        prop.children [
+                                                            Html.text detail.Location.Name
+                                                            Html.span [
+                                                                prop.className "badge badge-outline badge-lg"
+                                                                prop.text detail.Location.Code
+                                                            ]
+                                                        ]
                                                     ]
-                                                    Html.button [
-                                                        prop.className "btn btn-error btn-sm"
-                                                        prop.text "Archive"
-                                                        prop.onClick (fun _ -> dispatch ArchiveLocation)
+                                                    Html.div [
+                                                        prop.className "flex gap-2 w-full sm:w-auto"
+                                                        prop.children [
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Edit"
+                                                                prop.onClick (fun _ -> dispatch StartEditLocationName)
+                                                            ]
+                                                            Html.button [
+                                                                prop.className "btn btn-error btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Archive"
+                                                                prop.onClick (fun _ -> dispatch ArchiveLocation)
+                                                            ]
+                                                        ]
                                                     ]
                                                 ]
                                             ]
@@ -497,21 +510,21 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
                 Html.div [
-                    prop.className "flex items-center justify-between mb-2"
+                    prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4"
                     prop.children [
                         Html.h2 [
                             prop.className "text-lg font-semibold"
                             prop.text $"Boxes (%i{detail.Boxes.Length})"
                         ]
                         Html.button [
-                            prop.className "btn btn-outline btn-sm"
+                            prop.className "btn btn-outline btn-sm w-full sm:w-auto"
                             prop.text "+ Add Box"
                             prop.onClick (fun _ -> dispatch ShowAddBoxToLocationDialog)
                         ]
                     ]
                 ]
                 Html.div [
-                    prop.className "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                    prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
                     prop.children [
                         if Array.isEmpty detail.Boxes then
                             Html.div [
@@ -550,14 +563,14 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.children [
             Html.div [
-                prop.className "flex items-center justify-between mb-4"
+                prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6"
                 prop.children [
                     Html.h1 [
-                        prop.className "text-2xl font-bold"
+                        prop.className "text-2xl sm:text-3xl font-bold"
                         prop.text "Boxes"
                     ]
                     Html.button [
-                        prop.className "btn btn-primary btn-sm"
+                        prop.className "btn btn-primary btn-sm sm:btn-md w-full sm:w-auto"
                         prop.text "+ New Box"
                         prop.onClick (fun _ -> dispatch ShowCreateBoxForm)
                     ]
@@ -620,32 +633,32 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                 ]
             ]
             Html.div [
-                prop.className "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
                 prop.children [
                     if Array.isEmpty state.Boxes && not state.Loading then
                         Html.div [
-                            prop.className "col-span-full text-center py-8 opacity-60"
+                            prop.className "col-span-full text-center py-12 opacity-60"
                             prop.children [
                                 Html.p [ prop.className "text-lg"; prop.text "No boxes yet" ]
-                                Html.p [ prop.className "text-sm"; prop.text "Click \"+ New Box\" to create one" ]
+                                Html.p [ prop.className "text-sm mt-2"; prop.text "Click \"+ New Box\" to create one" ]
                             ]
                         ]
                     for box in state.Boxes do
                         Html.div [
-                            prop.className "card bg-base-200 cursor-pointer"
+                            prop.className "card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer active:scale-95 transform duration-100"
                             prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))
                             prop.children [
                                 Html.div [
-                                    prop.className "card-body"
+                                    prop.className "card-body p-4 sm:p-5"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "card-title"
+                                            prop.className "card-title text-lg"
                                             prop.text (box.Label |> Option.defaultValue box.Id)
                                         ]
                                         match box.LocationCode with
                                         | Some code ->
                                             Html.span [
-                                                prop.className "badge badge-outline"
+                                                prop.className "badge badge-outline badge-sm"
                                                 prop.text code
                                             ]
                                         | None -> Html.none
@@ -669,81 +682,83 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                 moveItemDialog state dispatch
                 addExistingItemDialog state dispatch
                 Html.div [
-                    prop.className "flex items-center gap-2 mb-4"
+                    prop.className "mb-4 sm:mb-6"
                     prop.children [
                         Html.button [
-                            prop.className "btn btn-ghost btn-sm"
-                            prop.text "< Back"
+                            prop.className "btn btn-ghost btn-sm gap-1"
+                            prop.text "← Back"
                             prop.onClick (fun _ -> dispatch (Navigate BoxesList))
                         ]
                     ]
                 ]
                 Html.div [
-                    prop.className "card bg-base-200 mb-4"
+                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
                     prop.children [
                         Html.div [
-                            prop.className "card-body"
+                            prop.className "card-body p-4 sm:p-6"
                             prop.children [
                                 Html.div [
-                                    prop.className "flex items-center justify-between"
+                                    prop.className "flex flex-col gap-4"
                                     prop.children [
                                         if state.EditingBoxLabel then
                                             Html.div [
-                                                prop.className "flex items-center gap-2"
+                                                prop.className "flex flex-col sm:flex-row items-end gap-2"
                                                 prop.children [
                                                     Html.input [
-                                                        prop.className "input input-bordered input-sm"
+                                                        prop.className "input input-bordered input-sm flex-1 w-full text-base"
                                                         prop.value state.EditBoxLabelValue
                                                         prop.onChange (fun (s: string) -> dispatch (EditBoxLabelChanged s))
                                                     ]
                                                     Html.button [
-                                                        prop.className "btn btn-primary btn-sm"
-                                                        prop.text "Save"
-                                                        prop.onClick (fun _ -> dispatch SubmitEditBoxLabel)
-                                                    ]
-                                                    Html.button [
-                                                        prop.className "btn btn-ghost btn-sm"
+                                                        prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
                                                         prop.text "Cancel"
                                                         prop.onClick (fun _ -> dispatch CancelEditBoxLabel)
+                                                    ]
+                                                    Html.button [
+                                                        prop.className "btn btn-primary btn-sm flex-1 sm:flex-none"
+                                                        prop.text "Save"
+                                                        prop.onClick (fun _ -> dispatch SubmitEditBoxLabel)
                                                     ]
                                                 ]
                                             ]
                                         else
-                                            Html.h1 [
-                                                prop.className "text-2xl font-bold"
-                                                prop.children [
-                                                    Html.text (detail.Box.Label |> Option.defaultValue detail.Box.Id)
-                                                ]
-                                            ]
-                                        if not state.EditingBoxLabel then
                                             Html.div [
-                                                prop.className "flex gap-2"
+                                                prop.className "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
                                                 prop.children [
-                                                    Html.button [
-                                                        prop.className "btn btn-ghost btn-sm"
-                                                        prop.text "Edit"
-                                                        prop.onClick (fun _ -> dispatch StartEditBoxLabel)
+                                                    Html.h1 [
+                                                        prop.className "text-2xl sm:text-3xl font-bold"
+                                                        prop.text (detail.Box.Label |> Option.defaultValue detail.Box.Id)
                                                     ]
-                                                    Html.button [
-                                                        prop.className "btn btn-error btn-sm"
-                                                        prop.text "Delete Box"
-                                                        prop.onClick (fun _ -> dispatch DeleteBox)
+                                                    Html.div [
+                                                        prop.className "flex gap-2 w-full sm:w-auto"
+                                                        prop.children [
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Edit"
+                                                                prop.onClick (fun _ -> dispatch StartEditBoxLabel)
+                                                            ]
+                                                            Html.button [
+                                                                prop.className "btn btn-error btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Delete"
+                                                                prop.onClick (fun _ -> dispatch DeleteBox)
+                                                            ]
+                                                        ]
                                                     ]
                                                 ]
                                             ]
                                     ]
                                 ]
                                 Html.div [
-                                    prop.className "form-control mt-2"
+                                    prop.className "form-control"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label"
+                                            prop.className "label pb-2"
                                             prop.children [
-                                                Html.span [ prop.className "label-text"; prop.text "Assign to location" ]
+                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Assign to location" ]
                                             ]
                                         ]
                                         Html.select [
-                                            prop.className "select select-bordered select-sm"
+                                            prop.className "select select-bordered focus:select-primary text-base"
                                             prop.value state.AssignLocationCode
                                             prop.onChange (fun (s: string) -> dispatch (AssignBoxToLocation s))
                                             prop.children [
@@ -763,30 +778,30 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
                 Html.div [
-                    prop.className "card bg-base-200 mb-4"
+                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
                     prop.children [
                         Html.div [
-                            prop.className "card-body"
+                            prop.className "card-body p-4 sm:p-6"
                             prop.children [
                                 Html.div [
-                                    prop.className "flex items-center justify-between"
+                                    prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "card-title"
+                                            prop.className "text-lg font-semibold"
                                             prop.text $"Items (%i{detail.Items.Length})"
                                         ]
                                         Html.button [
-                                            prop.className "btn btn-outline btn-sm"
+                                            prop.className "btn btn-outline btn-sm w-full sm:w-auto"
                                             prop.text "+ Existing Item"
                                             prop.onClick (fun _ -> dispatch ShowAddExistingItemDialog)
                                         ]
                                     ]
                                 ]
                                 Html.div [
-                                    prop.className "flex items-end gap-2 mt-2"
+                                    prop.className "flex flex-col gap-2"
                                     prop.children [
                                         Html.input [
-                                            prop.className "input input-bordered input-sm flex-1"
+                                            prop.className "input input-bordered focus:input-primary text-base"
                                             prop.placeholder "Item name"
                                             prop.value state.NewItemName
                                             prop.onChange (fun (s: string) -> dispatch (NewItemNameChanged s))
@@ -795,7 +810,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             prop.className "form-control"
                                             prop.children [
                                                 Html.input [
-                                                    prop.className "file-input file-input-bordered file-input-sm"
+                                                    prop.className "file-input file-input-bordered text-base"
                                                     prop.type' "file"
                                                     prop.accept "image/*"
 #if FABLE_COMPILER
@@ -806,14 +821,14 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             ]
                                         ]
                                         Html.button [
-                                            prop.className "btn btn-primary btn-sm"
+                                            prop.className "btn btn-primary w-full"
                                             prop.text "Add Item"
                                             prop.onClick (fun _ -> dispatch SubmitAddItem)
                                         ]
                                     ]
                                 ]
                                 Html.ul [
-                                    prop.className "mt-4 space-y-2"
+                                    prop.className "mt-4 space-y-3"
                                     prop.children [
                                         if Array.isEmpty detail.Items then
                                             Html.li [
@@ -824,36 +839,36 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             ]
                                         for item in detail.Items do
                                             Html.li [
-                                                prop.className "flex items-center justify-between bg-base-300 rounded-lg p-3"
+                                                prop.className "flex flex-col sm:flex-row sm:items-center gap-3 bg-base-300 hover:bg-base-200 transition-colors rounded-lg p-3 sm:p-4"
                                                 prop.children [
                                                     Html.div [
-                                                        prop.className "flex items-center gap-3"
+                                                        prop.className "flex items-center gap-3 flex-1 min-w-0"
                                                         prop.children [
                                                             match photoUrl item.PhotoPath with
                                                             | Some url ->
                                                                 Html.img [
-                                                                    prop.className "w-12 h-12 object-cover rounded"
+                                                                    prop.className "w-12 h-12 object-cover rounded flex-shrink-0"
                                                                     prop.src url
                                                                 ]
                                                             | None -> Html.none
-                                                            Html.span [ prop.text item.Name ]
+                                                            Html.span [ prop.className "text-sm truncate"; prop.text item.Name ]
                                                         ]
                                                     ]
                                                     Html.div [
-                                                        prop.className "flex gap-1"
+                                                        prop.className "flex gap-1 w-full sm:w-auto"
                                                         prop.children [
                                                             Html.button [
-                                                                prop.className "btn btn-ghost btn-xs"
+                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
                                                                 prop.text "Move"
                                                                 prop.onClick (fun _ -> dispatch (ShowMoveItemDialog item.Id))
                                                             ]
                                                             Html.button [
-                                                                prop.className "btn btn-ghost btn-xs"
+                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
                                                                 prop.text "Unassign"
                                                                 prop.onClick (fun _ -> dispatch (UnassignItem item.Id))
                                                             ]
                                                             Html.button [
-                                                                prop.className "btn btn-ghost btn-xs"
+                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
                                                                 prop.text "Delete"
                                                                 prop.onClick (fun _ -> dispatch (DeleteItem item.Id))
                                                             ]
@@ -874,14 +889,14 @@ let searchPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.children [
             Html.h1 [
-                prop.className "text-2xl font-bold mb-4"
+                prop.className "text-2xl sm:text-3xl font-bold mb-6"
                 prop.text "Search Items"
             ]
             Html.div [
-                prop.className "form-control mb-4"
+                prop.className "form-control mb-6"
                 prop.children [
                     Html.input [
-                        prop.className "input input-bordered w-full"
+                        prop.className "input input-bordered w-full focus:input-primary text-base"
                         prop.placeholder "Search for items..."
                         prop.value state.SearchQuery
                         prop.onChange (fun (s: string) -> dispatch (SearchQueryChanged s))
@@ -889,7 +904,7 @@ let searchPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                 ]
             ]
             Html.div [
-                prop.className "space-y-2"
+                prop.className "space-y-3"
                 prop.children [
                     if not (System.String.IsNullOrEmpty state.SearchQuery) && Array.isEmpty state.SearchResults && not state.Loading then
                         Html.div [
@@ -900,27 +915,27 @@ let searchPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     for r in state.SearchResults do
                         Html.div [
-                            prop.className "card bg-base-200"
+                            prop.className "card bg-base-200 hover:bg-base-300 transition-colors"
                             prop.children [
                                 Html.div [
-                                    prop.className "card-body flex-row items-center gap-4 p-4"
+                                    prop.className "card-body flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4"
                                     prop.children [
                                         match photoUrl r.PhotoPath with
                                         | Some url ->
                                             Html.img [
-                                                prop.className "w-16 h-16 object-cover rounded"
+                                                prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0"
                                                 prop.src url
                                             ]
                                         | None -> Html.none
                                         Html.div [
-                                            prop.className "flex-1"
+                                            prop.className "flex-1 min-w-0"
                                             prop.children [
                                                 Html.p [
-                                                    prop.className "font-semibold"
+                                                    prop.className "font-semibold text-sm sm:text-base truncate"
                                                     prop.text r.ItemName
                                                 ]
                                                 Html.p [
-                                                    prop.className "text-sm opacity-70"
+                                                    prop.className "text-xs sm:text-sm opacity-70 truncate"
                                                     prop.children [
                                                         Html.text (r.BoxLabel |> Option.defaultValue r.BoxId)
                                                         match r.LocationName with
@@ -947,7 +962,7 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
             prop.className "modal modal-open"
             prop.children [
                 Html.div [
-                    prop.className "modal-box"
+                    prop.className "modal-box w-11/12 max-w-md sm:max-w-lg"
                     prop.children [
                         Html.h3 [
                             prop.className "font-bold text-lg mb-4"
@@ -1001,25 +1016,25 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
 let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultDto) : ReactElement =
     let isEditing = state.EditingItemId = Some item.ItemId
     Html.div [
-        prop.className "card bg-base-200"
+        prop.className "card bg-base-200 hover:bg-base-300 transition-colors"
         prop.children [
             Html.div [
-                prop.className "card-body p-4"
+                prop.className "card-body p-3 sm:p-4"
                 prop.children [
                     Html.div [
-                        prop.className "flex items-start gap-3"
+                        prop.className "flex flex-col sm:flex-row sm:items-start gap-3"
                         prop.children [
                             match photoUrl item.PhotoPath with
                             | Some url ->
                                 Html.img [
-                                    prop.className "w-16 h-16 object-cover rounded flex-shrink-0"
+                                    prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0"
                                     prop.src url
                                 ]
                             | None ->
                                 Html.div [
-                                    prop.className "w-16 h-16 bg-base-300 rounded flex items-center justify-center flex-shrink-0"
+                                    prop.className "w-14 h-14 sm:w-16 sm:h-16 bg-base-300 rounded flex items-center justify-center flex-shrink-0"
                                     prop.children [
-                                        Html.span [ prop.className "text-2xl opacity-30"; prop.text "?" ]
+                                        Html.span [ prop.className "text-xl sm:text-2xl opacity-30"; prop.text "?" ]
                                     ]
                                 ]
                             Html.div [
@@ -1027,50 +1042,55 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                 prop.children [
                                     if isEditing then
                                         Html.div [
-                                            prop.className "flex items-center gap-2 flex-wrap"
+                                            prop.className "flex flex-col gap-2 w-full"
                                             prop.children [
                                                 Html.input [
-                                                    prop.className "input input-bordered input-sm flex-1"
+                                                    prop.className "input input-bordered input-sm w-full text-base"
                                                     prop.value state.EditItemNameValue
                                                     prop.onChange (fun (s: string) -> dispatch (EditItemNameChanged s))
                                                 ]
-                                                Html.button [
-                                                    prop.className "btn btn-primary btn-xs"
-                                                    prop.text "Save"
-                                                    prop.onClick (fun _ -> dispatch SubmitEditItem)
-                                                ]
-                                                Html.button [
-                                                    prop.className "btn btn-ghost btn-xs"
-                                                    prop.text "Cancel"
-                                                    prop.onClick (fun _ -> dispatch CancelEditItem)
-                                                ]
-                                            ]
-                                        ]
-                                        Html.div [
-                                            prop.className "form-control mt-1"
-                                            prop.children [
-                                                Html.input [
-                                                    prop.className "file-input file-input-bordered file-input-xs"
-                                                    prop.type' "file"
-                                                    prop.accept "image/*"
+                                                Html.div [
+                                                    prop.className "form-control"
+                                                    prop.children [
+                                                        Html.input [
+                                                            prop.className "file-input file-input-bordered file-input-sm text-base"
+                                                            prop.type' "file"
+                                                            prop.accept "image/*"
 #if FABLE_COMPILER
-                                                    prop.onChange (fun (files: Browser.Types.File list) ->
-                                                        files |> List.tryHead |> Option.iter (fun f ->
-                                                            dispatch (UploadItemPhoto (item.ItemId, box f))))
+                                                            prop.onChange (fun (files: Browser.Types.File list) ->
+                                                                files |> List.tryHead |> Option.iter (fun f ->
+                                                                    dispatch (UploadItemPhoto (item.ItemId, box f))))
 #endif
+                                                        ]
+                                                    ]
+                                                ]
+                                                Html.div [
+                                                    prop.className "flex gap-2"
+                                                    prop.children [
+                                                        Html.button [
+                                                            prop.className "btn btn-ghost btn-sm flex-1"
+                                                            prop.text "Cancel"
+                                                            prop.onClick (fun _ -> dispatch CancelEditItem)
+                                                        ]
+                                                        Html.button [
+                                                            prop.className "btn btn-primary btn-sm flex-1"
+                                                            prop.text "Save"
+                                                            prop.onClick (fun _ -> dispatch SubmitEditItem)
+                                                        ]
+                                                    ]
                                                 ]
                                             ]
                                         ]
                                     else
                                         Html.p [
-                                            prop.className "font-semibold truncate"
+                                            prop.className "font-semibold text-sm sm:text-base truncate"
                                             prop.text item.ItemName
                                         ]
                                     Html.p [
-                                        prop.className "text-sm opacity-70"
+                                        prop.className "text-xs sm:text-sm opacity-70 truncate"
                                         prop.children [
                                             if System.String.IsNullOrEmpty item.BoxId then
-                                                Html.span [ prop.className "badge badge-ghost badge-sm"; prop.text "Unassigned" ]
+                                                Html.span [ prop.className "badge badge-ghost badge-xs sm:badge-sm"; prop.text "Unassigned" ]
                                             else
                                                 Html.text (item.BoxLabel |> Option.defaultValue item.BoxId)
                                                 match item.LocationName with
@@ -1080,21 +1100,21 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                     ]
                                     if not isEditing then
                                         Html.div [
-                                            prop.className "flex gap-1 mt-2"
+                                            prop.className "flex gap-1 mt-2 flex-wrap"
                                             prop.children [
                                                 Html.button [
-                                                    prop.className "btn btn-ghost btn-xs"
+                                                    prop.className "btn btn-ghost btn-sm"
                                                     prop.text "Edit"
                                                     prop.onClick (fun _ -> dispatch (StartEditItem (item.ItemId, item.ItemName)))
                                                 ]
                                                 Html.button [
-                                                    prop.className "btn btn-ghost btn-xs"
+                                                    prop.className "btn btn-ghost btn-sm"
                                                     prop.text "Move"
                                                     prop.onClick (fun _ -> dispatch (ShowMoveItemStandaloneDialog item.ItemId))
                                                 ]
                                                 if not (System.String.IsNullOrEmpty item.BoxId) then
                                                     Html.button [
-                                                        prop.className "btn btn-ghost btn-xs"
+                                                        prop.className "btn btn-ghost btn-sm"
                                                         prop.text "Unassign"
                                                         prop.onClick (fun _ -> dispatch (UnassignStandaloneItem item.ItemId))
                                                     ]
@@ -1119,14 +1139,14 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
         prop.children [
             moveItemStandaloneDialog state dispatch
             Html.div [
-                prop.className "flex items-center justify-between mb-4"
+                prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6"
                 prop.children [
                     Html.h1 [
-                        prop.className "text-2xl font-bold"
+                        prop.className "text-2xl sm:text-3xl font-bold"
                         prop.text $"Items (%i{state.AllItems.Length})"
                     ]
                     Html.button [
-                        prop.className "btn btn-primary btn-sm"
+                        prop.className "btn btn-primary btn-sm sm:btn-md w-full sm:w-auto"
                         prop.text "+ New Item"
                         prop.onClick (fun _ -> dispatch ShowCreateItemForm)
                     ]
@@ -1224,7 +1244,7 @@ let renderPage (state: State) (dispatch: Msg -> unit) : ReactElement =
         prop.children [
             navbar state dispatch
             Html.div [
-                prop.className "container mx-auto p-4"
+                prop.className "w-full mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 max-w-6xl"
                 prop.children [
                     errorAlert state dispatch
                     match state.CurrentPage with

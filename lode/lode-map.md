@@ -16,6 +16,7 @@
 
 ## UI
 - [ui/pages.md](ui/pages.md) — client-side pages, routing, navigation structure
+- [ui/mobile-responsive-design.md](ui/mobile-responsive-design.md) — responsive design improvements, mobile-first layout, touch-friendly UX
 
 ## Plans
 - (none yet)

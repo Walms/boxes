@@ -6,14 +6,16 @@
 | Dev env | Nix flake | nixos-25.05 |
 | F# compiler | FSharp.Core | (SDK-bundled) |
 | Backend | Saturn | 0.17.0 |
-| Backend core | Giraffe | 8.2.0 (via Saturn) |
+| Backend core | Giraffe | 6.4.0 (via Saturn) |
 | Frontend compiler | Fable | 5.0.0 (local dotnet tool) |
 | Frontend bundler | Vite | 6.x (npm) |
 | React bindings | Feliz | 3.3.3 |
+| Elmish-React bridge | Feliz.UseElmish | 2.5.0 |
 | State management | Elmish | 4.2.0 |
 | CSS framework | Tailwind CSS | 4.x (npm) |
 | UI components | DaisyUI | 5.x (npm, @plugin) |
 | Database | SQLite | via Microsoft.Data.Sqlite 9.0.5 |
+| JSON (server) | FSharp.SystemTextJson | 1.4.36 |
 | Full-text search | SQLite FTS5 | built-in |
 | Testing | xUnit | 2.9.3 |
 | Property testing | FsCheck | 3.1.0 |

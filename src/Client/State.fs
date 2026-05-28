@@ -82,6 +82,16 @@ type Msg =
     | BoxesForItemMoveLoaded of BoxDto array
     | UploadItemPhoto of string * obj
     | ItemPhotoUploaded of Result<ItemDto, string>
+    | ShowAddExistingItemDialog
+    | UnassignedItemsLoaded of Result<SearchResultDto array, string>
+    | SelectedExistingItemChanged of string
+    | ConfirmAddExistingItem
+    | CancelAddExistingItem
+    | ExistingItemAdded of Result<MoveDto, string>
+    | UnassignItem of string
+    | ItemUnassigned of Result<MoveDto, string>
+    | UnassignStandaloneItem of string
+    | StandaloneItemUnassigned of Result<MoveDto, string>
 
 type State = {
     CurrentPage: Page
@@ -120,6 +130,9 @@ type State = {
     MovingItemStandaloneId: string option
     MoveItemTargetBox: string
     BoxesForItemMove: BoxDto array
+    AddingExistingItem: bool
+    UnassignedItems: SearchResultDto array
+    SelectedExistingItemId: string
 }
 
 [<Fable.Core.Emit("window.location.hash")>]
@@ -227,6 +240,9 @@ let private resetPageState (state: State) : State =
         MovingItemStandaloneId = None
         MoveItemTargetBox = ""
         BoxesForItemMove = [||]
+        AddingExistingItem = false
+        UnassignedItems = [||]
+        SelectedExistingItemId = ""
     }
 
 let private navigateCmd (page: Page) : Cmd<Msg> =
@@ -272,6 +288,9 @@ let init () : State * Cmd<Msg> =
         MovingItemStandaloneId = None
         MoveItemTargetBox = ""
         BoxesForItemMove = [||]
+        AddingExistingItem = false
+        UnassignedItems = [||]
+        SelectedExistingItemId = ""
     }
     let cmds : Cmd<Msg> = Cmd.batch [
         Cmd.ofEffect hashChangeSub
@@ -683,4 +702,66 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         navigateCmd ItemsList
 
     | ItemPhotoUploaded (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | ShowAddExistingItemDialog ->
+        { state with AddingExistingItem = true; SelectedExistingItemId = "" },
+        Cmd.OfAsync.either listItems () UnassignedItemsLoaded (fun ex -> ErrorOccurred ex.Message)
+
+    | UnassignedItemsLoaded (Ok items) ->
+        let unassigned : SearchResultDto array =
+            items |> Array.filter (fun (i: SearchResultDto) -> System.String.IsNullOrEmpty i.BoxId)
+        { state with UnassignedItems = unassigned }, Cmd.none
+
+    | UnassignedItemsLoaded (Error err) ->
+        { state with Error = Some err; AddingExistingItem = false }, Cmd.none
+
+    | SelectedExistingItemChanged itemId ->
+        { state with SelectedExistingItemId = itemId }, Cmd.none
+
+    | ConfirmAddExistingItem ->
+        match state.BoxDetail with
+        | None -> state, Cmd.none
+        | Some detail ->
+            if System.String.IsNullOrEmpty state.SelectedExistingItemId then state, Cmd.none
+            else
+                { state with Loading = true },
+                Cmd.OfAsync.either (fun () -> moveEntity "item" state.SelectedExistingItemId "box" detail.Box.Id) () ExistingItemAdded (fun ex -> ErrorOccurred ex.Message)
+
+    | ExistingItemAdded (Ok _) ->
+        match state.BoxDetail with
+        | None -> { state with Loading = false; AddingExistingItem = false }, Cmd.none
+        | Some detail ->
+            { state with Loading = false; AddingExistingItem = false; SelectedExistingItemId = ""; UnassignedItems = [||] },
+            navigateCmd (BoxDetail detail.Box.Id)
+
+    | ExistingItemAdded (Error err) ->
+        { state with Error = Some err; Loading = false; AddingExistingItem = false }, Cmd.none
+
+    | CancelAddExistingItem ->
+        { state with AddingExistingItem = false; SelectedExistingItemId = ""; UnassignedItems = [||] }, Cmd.none
+
+    | UnassignItem itemId ->
+        { state with Loading = true },
+        Cmd.OfAsync.either (fun () -> unassignEntity "item" itemId) () ItemUnassigned (fun ex -> ErrorOccurred ex.Message)
+
+    | ItemUnassigned (Ok _) ->
+        match state.BoxDetail with
+        | None -> { state with Loading = false }, Cmd.none
+        | Some detail ->
+            { state with Loading = false },
+            navigateCmd (BoxDetail detail.Box.Id)
+
+    | ItemUnassigned (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | UnassignStandaloneItem itemId ->
+        { state with Loading = true },
+        Cmd.OfAsync.either (fun () -> unassignEntity "item" itemId) () StandaloneItemUnassigned (fun ex -> ErrorOccurred ex.Message)
+
+    | StandaloneItemUnassigned (Ok _) ->
+        { state with Loading = false },
+        navigateCmd ItemsList
+
+    | StandaloneItemUnassigned (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none

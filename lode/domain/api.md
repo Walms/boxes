@@ -52,7 +52,7 @@ Smart constructors validate all input at the API boundary. Use fully qualified p
 | POST | `/api/items` | `createItem` | standalone item (optional `boxId` in JSON body) |
 | GET | `/api/items/{id}` | `getItem` | item detail with current placement |
 | PUT | `/api/items/{id}` | `updateItemStandalone` | validates name |
-| PUT | `/api/items/{id}/photo` | `updateItemPhoto` | multipart: file `photo`; replaces existing photo |
+| POST | `/api/items/{id}/photo` | `updateItemPhoto` | multipart: file `photo`; replaces existing photo |
 | DELETE | `/api/items/{id}` | `deleteItemStandalone` | deletes item + its moves |
 | GET | `/api/items` | `searchItems` | `?q=` for FTS5 search; no `q` returns all items (limit 100) |
 | POST | `/api/moves` | `recordMove` | `MoveRequest { EntityType, EntityId, ToType, ToId }` |

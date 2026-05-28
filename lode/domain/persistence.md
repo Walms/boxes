@@ -24,10 +24,10 @@ This window function is used in `GetBox`, `GetItem`, `GetItemsForBox`, `ListBoxe
 
 ## FTS5 Search
 
-Contentless-delete virtual table `item_search` (`content=''`, `contentless_delete=1`) with columns:
-- `item_id` (UNINDEXED), `item_name`, `box_label`, `location_name`
+Regular FTS5 virtual table `item_search` with columns:
+- `item_id`, `item_name`, `box_label`, `location_name`
 - Tokenizer: `porter unicode61`
-- Supports INSERT and DELETE (not UPDATE); maintained by application layer
+- Maintained by application layer (INSERT/DELETE, no UPDATE)
 
 `SyncItemToSearch` derives the current box and location from the move log (calls `GetItemPlacement` → potentially `GetBoxPlacement`) to denormalize into the FTS row.
 
@@ -38,7 +38,7 @@ Contentless-delete virtual table `item_search` (`content=''`, `contentless_delet
 3. **RecordMove** (box) → `ReindexBoxItems` (all items in that box get re-synced)
 4. **UpdateItemName** → `RemoveFromSearch` + `SyncItemToSearch`
 5. **DeleteItem** → `RemoveFromSearch`
-6. **DeleteBox** → unassign items via `RecordMove("item", ..., None, None)` → removes from FTS
+6. **DeleteBox** → unassigns items via `RecordMove("item", ..., None, None)` → each triggers `RemoveFromSearch` + `SyncItemToSearch` → then deletes orphaned FTS rows for items that were in the box
 7. **UpdateLocationName** → `ReindexLocationItems` (all items in boxes at that location)
 8. **UpdateBox** (label) → `ReindexBoxItems`
 
@@ -67,6 +67,7 @@ Contentless-delete virtual table `item_search` (`content=''`, `contentless_delet
 - `AddItem(boxId: string, name: ItemName, photoPath: PhotoPath option)` → `Item` (creates item + move `InBox boxId`)
 - `GetItem(id: string)` → `Item option` (LEFT JOIN with latest move)
 - `UpdateItemName(id: string, name: ItemName)` → `Item option` (re-syncs FTS5)
+- `UpdateItemPhoto(id: string, photoPath: PhotoPath option)` → `Item option` (updates photo_path column only)
 - `DeleteItem(id: string)` → `string option` (deletes moves + item, returns photo path)
 
 ### Move methods

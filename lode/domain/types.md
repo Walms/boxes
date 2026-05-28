@@ -2,8 +2,12 @@
 
 Core types live in `src/Shared/Domain/`. Each value object has:
 - A private single-case DU constructor
-- A `create : string -> Result<'T, string>` smart constructor in a companion module
+- A smart constructor in a companion module
 - A `value : 'T -> string` extractor
+
+Most follow the pattern `create : string -> Result<'T, string>`. Exceptions:
+- `BoxLabel.create : string -> Result<BoxLabel option, string>` — returns `None` for empty input (empty = no label)
+- `PhotoPath.create : string -> Guid -> string -> PhotoPath` — takes (folder, guid, extension), not a validation constructor; `tryParse : string -> Result<PhotoPath, string>` for validation
 
 ## Identifiers
 - `LocationCode` — uppercase, letters/digits/hyphens, max 20 chars
@@ -36,7 +40,7 @@ type Move = { Id: Guid; EntityType: string; EntityId: string; To: Container; Mov
 
 ## Business Rules
 - `EmptyLocation` type proves a Location has no boxes before archiving
-- Box IDs are never reused (sequential, no gaps)
+- Box IDs are sequential (`SELECT MAX(id) + 1`) — can be reused if the highest-numbered box is deleted, and can have gaps from non-highest deletions
 - Items are independent entities — deleting a box unassigns its items (creates unassignment moves), does NOT delete them
 - Placement is always derived from the move log, never stored as a FK column
 

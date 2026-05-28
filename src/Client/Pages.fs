@@ -152,6 +152,76 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
             ]
         ]
 
+let private addExistingItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement =
+    if not state.AddingExistingItem then Html.none
+    else
+        Html.div [
+            prop.className "modal modal-open"
+            prop.children [
+                Html.div [
+                    prop.className "modal-box"
+                    prop.children [
+                        Html.h3 [
+                            prop.className "font-bold text-lg mb-4"
+                            prop.text "Add existing item to this box"
+                        ]
+                        if Array.isEmpty state.UnassignedItems then
+                            Html.p [
+                                prop.className "text-center py-4 opacity-60"
+                                prop.text "No unassigned items available"
+                            ]
+                        else
+                            Html.ul [
+                                prop.className "space-y-2 max-h-80 overflow-y-auto"
+                                prop.children [
+                                    for item in state.UnassignedItems do
+                                        Html.li [
+                                            prop.className [
+                                                "flex items-center gap-3 p-3 rounded-lg cursor-pointer"
+                                                if state.SelectedExistingItemId = item.ItemId then "bg-primary text-primary-content"
+                                                else "bg-base-300 hover:bg-base-200"
+                                            ]
+                                            prop.onClick (fun _ -> dispatch (SelectedExistingItemChanged item.ItemId))
+                                            prop.children [
+                                                match photoUrl item.PhotoPath with
+                                                | Some url ->
+                                                    Html.img [
+                                                        prop.className "w-10 h-10 object-cover rounded flex-shrink-0"
+                                                        prop.src url
+                                                    ]
+                                                | None ->
+                                                    Html.div [
+                                                        prop.className "w-10 h-10 bg-base-100 rounded flex items-center justify-center flex-shrink-0"
+                                                        prop.children [
+                                                            Html.span [ prop.className "text-sm opacity-30"; prop.text "?" ]
+                                                        ]
+                                                    ]
+                                                Html.span [ prop.className "truncate"; prop.text item.ItemName ]
+                                            ]
+                                        ]
+                                ]
+                            ]
+                        Html.div [
+                            prop.className "modal-action"
+                            prop.children [
+                                Html.button [
+                                    prop.className "btn btn-ghost"
+                                    prop.text "Cancel"
+                                    prop.onClick (fun _ -> dispatch CancelAddExistingItem)
+                                ]
+                                Html.button [
+                                    prop.className "btn btn-primary"
+                                    prop.text "Add to Box"
+                                    prop.disabled (System.String.IsNullOrEmpty state.SelectedExistingItemId)
+                                    prop.onClick (fun _ -> dispatch ConfirmAddExistingItem)
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
 let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.children [
@@ -498,6 +568,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
         Html.div [
             prop.children [
                 moveItemDialog state dispatch
+                addExistingItemDialog state dispatch
                 Html.div [
                     prop.className "flex items-center gap-2 mb-4"
                     prop.children [
@@ -598,9 +669,19 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         Html.div [
                             prop.className "card-body"
                             prop.children [
-                                Html.h2 [
-                                    prop.className "card-title"
-                                    prop.text $"Items (%i{detail.Items.Length})"
+                                Html.div [
+                                    prop.className "flex items-center justify-between"
+                                    prop.children [
+                                        Html.h2 [
+                                            prop.className "card-title"
+                                            prop.text $"Items (%i{detail.Items.Length})"
+                                        ]
+                                        Html.button [
+                                            prop.className "btn btn-outline btn-sm"
+                                            prop.text "+ Existing Item"
+                                            prop.onClick (fun _ -> dispatch ShowAddExistingItemDialog)
+                                        ]
+                                    ]
                                 ]
                                 Html.div [
                                     prop.className "flex items-end gap-2 mt-2"
@@ -666,6 +747,11 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                                 prop.className "btn btn-ghost btn-xs"
                                                                 prop.text "Move"
                                                                 prop.onClick (fun _ -> dispatch (ShowMoveItemDialog item.Id))
+                                                            ]
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-xs"
+                                                                prop.text "Unassign"
+                                                                prop.onClick (fun _ -> dispatch (UnassignItem item.Id))
                                                             ]
                                                             Html.button [
                                                                 prop.className "btn btn-ghost btn-xs"
@@ -907,6 +993,12 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                                     prop.text "Move"
                                                     prop.onClick (fun _ -> dispatch (ShowMoveItemStandaloneDialog item.ItemId))
                                                 ]
+                                                if not (System.String.IsNullOrEmpty item.BoxId) then
+                                                    Html.button [
+                                                        prop.className "btn btn-ghost btn-xs"
+                                                        prop.text "Unassign"
+                                                        prop.onClick (fun _ -> dispatch (UnassignStandaloneItem item.ItemId))
+                                                    ]
                                                 Html.button [
                                                     prop.className "btn btn-ghost btn-xs text-error"
                                                     prop.text "Delete"

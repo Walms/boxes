@@ -1,0 +1,16 @@
+[Unit]
+Description=BoxTracker Server
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/boxtracker/server
+ExecStart=/opt/dotnet/dotnet BoxTracker.Server.dll --urls http://localhost:5000
+Restart=always
+RestartSec=5
+Environment=BOXTRACKER_DATA=/opt/boxtracker/data
+Environment=ASPNETCORE_ENVIRONMENT=Production
+
+[Install]
+WantedBy=multi-user.target

@@ -36,6 +36,7 @@ export function archive(_arg) {
 }
 
 export function get$(_arg) {
-    return _arg.fields[0];
+    const loc = _arg.fields[0];
+    return loc;
 }
 

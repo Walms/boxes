@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Run tests
+      run: dotnet test --no-restore --verbosity normal
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    needs: test
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install npm dependencies
+      run: npm ci
+
+    - name: Build frontend
+      run: npm run build
+
+    - name: Publish server (Linux x64)
+      run: dotnet publish src/Server/BoxTracker.Server.fsproj -c Release -r linux-x64 --self-contained=false -o ./publish/linux-x64
+
+    - name: Publish server (Linux ARM64)
+      run: dotnet publish src/Server/BoxTracker.Server.fsproj -c Release -r linux-arm64 --self-contained=false -o ./publish/linux-arm64
+
+    - name: Create artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          publish/
+          src/Client/dist/
+        retention-days: 30
+
+  create-release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          publish/linux-x64/**
+          src/Client/dist/**
+
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Oracle VM
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_SSH_KEY }}
+        script: |
+          # Copy server binaries
+          rsync -az --delete publish/linux-x64/ /opt/boxtracker/server/ || exit 1
+          # Copy frontend dist
+          rsync -az --delete src/Client/dist/ /opt/boxtracker/frontend/ || exit 1
+          # Restart the service
+          sudo systemctl restart boxtracker

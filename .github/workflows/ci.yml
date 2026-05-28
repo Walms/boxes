@@ -48,6 +48,9 @@ jobs:
     - name: Install npm dependencies
       run: npm ci
 
+    - name: Restore dotnet tools
+      run: dotnet tool restore
+
     - name: Build frontend
       run: npm run build
 

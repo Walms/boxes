@@ -20,28 +20,37 @@ let private labelPageCss : string =
     @page {
         size: 100mm 60mm;
         margin: 0;
+        padding: 0;
     }
     body {
         margin: 0;
         padding: 0;
+        font-family: 'Courier New', 'Courier', monospace;
+        background: white;
     }
     .label {
         width: 100mm;
         height: 60mm;
         box-sizing: border-box;
-        padding: 3mm;
+        padding: 2.5mm;
         display: flex;
         align-items: center;
-        gap: 3mm;
+        gap: 2.5mm;
         page-break-after: always;
-        font-family: Arial, Helvetica, sans-serif;
+        font-family: 'Courier New', 'Courier', monospace;
+        background: white !important;
+        border: 2px solid #000 !important;
+        box-shadow: inset 0 0 0 1px #000;
     }
     .label-qr {
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .label-qr svg {
-        width: 48mm;
-        height: 48mm;
+        width: 50mm;
+        height: 50mm;
         display: block;
     }
     .label-text {
@@ -51,27 +60,28 @@ let private labelPageCss : string =
         flex-direction: column;
         justify-content: center;
         overflow: hidden;
+        font-family: 'Courier New', 'Courier', monospace;
     }
     .label-id {
-        font-size: 14pt;
+        font-size: 16pt;
         font-weight: bold;
+        letter-spacing: 0.5px;
+        line-height: 1.2;
         word-break: break-all;
+        margin-bottom: 1mm;
     }
     .label-sub {
-        font-size: 10pt;
-        margin-top: 1mm;
-        word-break: break-all;
-    }
-    .label-location {
         font-size: 9pt;
-        margin-top: 1mm;
-        color: #555;
-        word-break: break-all;
+        margin-top: 0.5mm;
+        word-break: break-word;
+        line-height: 1.3;
+        max-height: 8mm;
+        overflow: hidden;
     }
     .no-print {
         display: block;
         padding: 10px;
-        font-family: Arial, Helvetica, sans-serif;
+        font-family: 'Courier New', 'Courier', monospace;
     }
     @media print {
         .no-print { display: none !important; }
@@ -84,11 +94,6 @@ let boxLabelHtml (boxId: string) (label: string option) (locationCode: string op
         match label with
         | Some l -> $"<div class=\"label-sub\">%s{escapeHtml l}</div>"
         | None -> ""
-    let locationLine : string =
-        match locationCode, locationName with
-        | Some code, Some name -> $"<div class=\"label-location\">%s{escapeHtml name} (%s{escapeHtml code})</div>"
-        | Some code, None -> $"<div class=\"label-location\">%s{escapeHtml code}</div>"
-        | _ -> ""
     $"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,7 +110,6 @@ let boxLabelHtml (boxId: string) (label: string option) (locationCode: string op
   <div class="label-text">
     <div class="label-id">%s{escapeHtml boxId}</div>
     %s{labelLine}
-    %s{locationLine}
   </div>
 </div>
 </body>
@@ -143,17 +147,11 @@ let batchBoxLabelHtml (boxes: (string * string option * string option * string o
                 match label with
                 | Some l -> $"<div class=\"label-sub\">%s{escapeHtml l}</div>"
                 | None -> ""
-            let locationLine : string =
-                match locationCode, locationName with
-                | Some code, Some name -> $"<div class=\"label-location\">%s{escapeHtml name} (%s{escapeHtml code})</div>"
-                | Some code, None -> $"<div class=\"label-location\">%s{escapeHtml code}</div>"
-                | _ -> ""
             $"""<div class="label">
   <div class="label-qr">%s{qrSvg}</div>
   <div class="label-text">
     <div class="label-id">%s{escapeHtml boxId}</div>
     %s{labelLine}
-    %s{locationLine}
   </div>
 </div>""")
         |> String.concat "\n"

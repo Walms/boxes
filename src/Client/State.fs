@@ -102,6 +102,9 @@ type Msg =
     | CancelAddBoxToLocation
     | UnassignBoxFromLocation of string
     | BoxUnassignedFromLocation of Result<MoveDto, string>
+    | PrintBoxLabel
+    | PrintLocationLabel
+    | PrintMultipleBoxLabels
 
 type State = {
     CurrentPage: Page
@@ -162,6 +165,9 @@ let private clearTimeout (id: int) : unit = failwith "JS only"
 
 [<Fable.Core.Emit("setTimeout($0, $1)")>]
 let private setTimeout (callback: unit -> unit) (ms: int) : int = failwith "JS only"
+
+[<Fable.Core.Emit("window.open($0, $1)")>]
+let private openWindow (url: string) (target: string) : unit = failwith "JS only"
 
 let private pageFromHash (hash: string) : Page =
     match hash.TrimStart('#') with
@@ -848,3 +854,20 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | BoxUnassignedFromLocation (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
+
+    | PrintBoxLabel ->
+        match state.BoxDetail with
+        | None -> state, Cmd.none
+        | Some detail ->
+            openWindow $"/api/boxes/%s{detail.Box.Id}/label" "_blank"
+            state, Cmd.none
+
+    | PrintLocationLabel ->
+        match state.LocationDetail with
+        | None -> state, Cmd.none
+        | Some detail ->
+            openWindow $"/api/locations/%s{detail.Location.Code}/label" "_blank"
+            state, Cmd.none
+
+    | PrintMultipleBoxLabels ->
+        state, Cmd.none

@@ -58,9 +58,9 @@ let ``Storage.ListLocations excludes archived`` () : unit =
     withStorage (fun storage ->
         storage.CreateLocation(makeCode "LOC1", makeName "Active") |> ignore
         storage.CreateLocation(makeCode "LOC2", makeName "ToArchive") |> ignore
-        storage.SetLocationArchived("LOC2")
+        storage.SetLocationArchived("LOC2") |> ignore
         let active : Location list = storage.ListLocations(false)
-        Assert.Single(active)
+        Assert.Single(active) |> ignore
         Assert.Equal("LOC1", BoxTracker.LocationCode.value active.[0].Code)
     )
 
@@ -125,7 +125,7 @@ let ``Storage.ListBoxes filters by location via moves`` () : unit =
         storage.CreateBox(None) |> ignore
         storage.RecordMove("box", boxId box1, Some "location", Some "GARAGE") |> ignore
         let garageBoxes : Box list = storage.ListBoxes(Some "GARAGE", false)
-        Assert.Single(garageBoxes)
+        Assert.Single(garageBoxes) |> ignore
         Assert.Equal("BOX-001", boxId garageBoxes.[0])
     )
 
@@ -137,7 +137,7 @@ let ``Storage.ListBoxes returns unassigned boxes`` () : unit =
         storage.CreateBox(None) |> ignore
         storage.RecordMove("box", boxId box1, Some "location", Some "GARAGE") |> ignore
         let unassigned : Box list = storage.ListBoxes(None, true)
-        Assert.Single(unassigned)
+        Assert.Single(unassigned) |> ignore
         Assert.Equal("BOX-002", boxId unassigned.[0])
     )
 
@@ -198,7 +198,7 @@ let ``Storage.AddItem places item in box via move`` () : unit =
         | _ -> Assert.Fail("Expected InBox")
 
         let items : Item list = storage.GetItemsForBox(boxId box)
-        Assert.Single(items)
+        Assert.Single(items) |> ignore
         Assert.Equal("Wrench", BoxTracker.ItemName.value items.[0].Name)
     )
 
@@ -236,7 +236,7 @@ let ``Storage.RecordMove moves item between boxes`` () : unit =
         Assert.Empty(inBox1)
 
         let inBox2 : Item list = storage.GetItemsForBox(boxId box2)
-        Assert.Single(inBox2)
+        Assert.Single(inBox2) |> ignore
         Assert.Equal("Drill", BoxTracker.ItemName.value inBox2.[0].Name)
     )
 
@@ -335,7 +335,7 @@ let ``Storage.SearchItems finds items by name`` () : unit =
         storage.RecordMove("box", boxId box, Some "location", Some "GARAGE") |> ignore
         storage.AddItem(boxId box, makeItemName "Christmas decorations", None) |> ignore
         let results : SearchResult list = storage.SearchItems(Some "christmas")
-        Assert.Single(results)
+        Assert.Single(results) |> ignore
         Assert.Equal("Christmas decorations", results.[0].ItemName)
         Assert.Equal(boxId box, results.[0].BoxId)
     )

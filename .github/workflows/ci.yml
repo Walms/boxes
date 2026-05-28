@@ -51,14 +51,12 @@ jobs:
     - name: Restore dotnet tools
       run: dotnet tool restore
 
-    - name: Compile F# with Fable
-      run: dotnet fable --cwd src/Client
-      timeout-minutes: 5
+    - name: Clean fable_modules cache
+      run: rm -rf src/Client/fable_modules src/Client/dist src/Client/output.js
 
-    - name: Bundle with Vite
-      run: npx vite build
-      working-directory: src/Client
-      timeout-minutes: 5
+    - name: Build frontend
+      run: npm run build
+      timeout-minutes: 10
 
     - name: Publish server (Linux x64)
       run: dotnet publish src/Server/BoxTracker.Server.fsproj -c Release -r linux-x64 --self-contained=false -o ./publish/linux-x64

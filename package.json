@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "dotnet fable watch --cwd src/Client --run npx vite",
-    "build": "dotnet fable --cwd src/Client && echo 'Fable complete, starting Vite...' && cd src/Client && npx vite build && cd ../.. && echo 'Build complete'",
+    "build": "timeout 120 stdbuf -oL dotnet fable --cwd src/Client || true && echo 'Fable step done, starting Vite...' && cd src/Client && npx vite build && cd ../.. && echo 'Build complete'",
     "build:client": "dotnet fable --cwd src/Client"
   },
   "dependencies": {

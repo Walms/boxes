@@ -267,6 +267,21 @@ sudo htpasswd -b /etc/nginx/.htpasswd daniel <new-password>
 sudo systemctl reload nginx
 ```
 
+### Backups
+
+Database and photos are automatically backed up hourly to Backblaze B2. See `../lode/infra/backup-system.md` for full details.
+
+**Initial setup** (one-time):
+1. Add B2 credentials to GitHub Secrets: `B2_DB_KEY_ID`, `B2_DB_APP_KEY`, `B2_IMAGES_KEY_ID`, `B2_IMAGES_APP_KEY`
+2. Allow deploy user to run sudo commands without password (sudoers: `mkdir`, `chown`)
+3. Set B2 lifecycle rule on `boxes-db` bucket: delete files older than 30 days
+
+**Verification**:
+```bash
+tail -f /var/log/boxtracker/backup-db.log
+tail -f /var/log/boxtracker/backup-photos.log
+```
+
 ---
 
 ## Architecture Summary

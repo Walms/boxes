@@ -6,12 +6,15 @@ Hash-based SPA routing (`#/path`). Pages defined in `State.fs` as `Page` DU, vie
 
 Navbar links: **Locations** | **Boxes** | **Items** | **Search**
 
+- Desktop (`md+`): horizontal menu in navbar
+- Mobile (`< md`): hamburger dropdown (`☰`) using DaisyUI `dropdown` component
+
 ## Pages
 
 | Page | Hash | Description |
 |------|------|-------------|
 | `LocationsList` | `#/locations` | Grid of location cards with create form. Default landing page. |
-| `LocationDetail` | `#/locations/{code}` | Location info, edit name, archive, assigned boxes grid. |
+| `LocationDetail` | `#/locations/{code}` | Location info, edit name, archive, boxes grid with add/remove box. |
 | `BoxesList` | `#/boxes` | Grid of box cards with create form. Filter by location dropdown. |
 | `BoxDetail` | `#/boxes/{id}` | Box info, edit label, assign to location, item list with add/move/delete, add existing item. Photo upload for items. |
 | `ItemsList` | `#/items` | All items with create standalone form (name + optional box). Inline edit name, move to box, delete. |
@@ -37,6 +40,15 @@ The Box Detail page (`#/boxes/{id}`) manages a single box and its items:
 - **Add new item**: Inline form with name + optional photo, creates item directly in box via `POST /api/boxes/{id}/items`.
 - **Add existing item**: Modal listing all unassigned items (from `GET /api/items`, filtered to `BoxId` empty). User selects an item, confirms to move it into the box via `POST /api/moves`. Uses `AddingExistingItem`, `UnassignedItems`, `SelectedExistingItemId` state fields.
 - **Item list**: Shows all items in the box with Move, Unassign (remove from box), and Delete actions.
+
+## Location Detail Page
+
+The Location Detail page (`#/locations/{code}`) manages a single location and its boxes:
+
+- **Header**: Location name (editable) with code badge, edit/archive buttons.
+- **Add box**: Modal listing all boxes not already at this location (fetched via `GET /api/boxes`, filtered to exclude boxes with `LocationCode = currentCode`). User selects a box, confirms to move it via `POST /api/moves` (`moveEntity "box" boxId "location" code`). Uses `AddingBoxToLocation`, `BoxesForLocationMove`, `SelectedBoxForLocationMove` state fields.
+- **Remove box**: Each box card has a Remove button that unassigns it from the location via `unassignEntity "box" boxId` (`POST /api/moves` with empty `ToType`/`ToId`).
+- **Box cards**: Clickable box name navigates to `BoxDetail`.
 
 ## Key Patterns
 

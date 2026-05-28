@@ -12,7 +12,7 @@ src/Client/index.html              ← SPA entry
 src/Client/vite.config.ts          ← Vite config + Tailwind plugin + API proxy
 src/Client/App.fs                   ← F# React component + mount point
 src/Client/App.fs.js                ← Fable output (generated, git-ignored)
-src/Client/app.css                  ← @import "tailwindcss"; @plugin "daisyui"
+src/Client/app.css                  ← Tailwind + DaisyUI + custom "industrial" theme + IBM Plex Mono base font
 src/Client/fable_modules/           ← Fable dependency compilation (git-ignored)
 ```
 
@@ -25,6 +25,8 @@ Fable runs with `--cwd src/Client`, so Vite's working directory is `src/Client/`
 - Browser/DOM code guarded with `#if FABLE_COMPILER` so `dotnet build` succeeds without Fable
 - Tailwind CSS v4 with `@tailwindcss/vite` plugin (no PostCSS config needed)
 - DaisyUI v5 via `@plugin "daisyui"` in `app.css`
+- Custom "industrial" DaisyUI theme (dark, amber accents, sharp corners) defined as `@plugin "daisyui/theme"` in `app.css`
+- IBM Plex Mono loaded from Google Fonts; set as base font in `app.css` `@layer base`
 - Vite dev server proxies `/api` to `http://localhost:5000` (Saturn backend)
 - Client DTOs use `array` (not `list`) for collection fields — `JSON.parse` returns plain JS arrays, not Fable linked lists (`FSharpList` checks `tail == null` which is always true for JS arrays)
 - Server must output PascalCase JSON (no `CamelCase` naming policy) — Fable record field names are preserved as-is in JS

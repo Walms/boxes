@@ -13,6 +13,12 @@ let private targetValue (ev: obj) : string = failwith "JS only"
 let private photoUrl (path: string option) : string option =
     path |> Option.map (fun p -> "/api/" + p)
 
+let private navItem (label: string) (page: Page) (dispatch: Msg -> unit) : ReactElement =
+    Html.a [
+        prop.text label
+        prop.onClick (fun _ -> dispatch (Navigate page))
+    ]
+
 let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "navbar bg-base-200"
@@ -21,40 +27,46 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                 prop.className "flex-none"
                 prop.children [
                     Html.a [
-                        prop.className "btn btn-ghost text-xl"
+                        prop.className "btn btn-ghost text-xl tracking-tight"
                         prop.text "BoxTracker"
                         prop.onClick (fun _ -> dispatch (Navigate LocationsList))
                     ]
                 ]
             ]
             Html.div [
-                prop.className "flex-1"
+                prop.className "flex-1 hidden md:flex"
                 prop.children [
                     Html.ul [
                         prop.className "menu menu-horizontal px-1"
                         prop.children [
-                            Html.li [
-                                Html.a [
-                                    prop.text "Locations"
-                                    prop.onClick (fun _ -> dispatch (Navigate LocationsList))
-                                ]
+                            Html.li [ navItem "Locations" LocationsList dispatch ]
+                            Html.li [ navItem "Boxes" BoxesList dispatch ]
+                            Html.li [ navItem "Items" ItemsList dispatch ]
+                            Html.li [ navItem "Search" ItemsSearch dispatch ]
+                        ]
+                    ]
+                ]
+            ]
+            Html.div [
+                prop.className "flex-none md:hidden"
+                prop.children [
+                    Html.div [
+                        prop.className "dropdown dropdown-end"
+                        prop.children [
+                            Html.div [
+                                prop.tabIndex 0
+                                prop.role "button"
+                                prop.className "btn btn-ghost btn-square"
+                                prop.text "\u2630"
                             ]
-                            Html.li [
-                                Html.a [
-                                    prop.text "Boxes"
-                                    prop.onClick (fun _ -> dispatch (Navigate BoxesList))
-                                ]
-                            ]
-                            Html.li [
-                                Html.a [
-                                    prop.text "Items"
-                                    prop.onClick (fun _ -> dispatch (Navigate ItemsList))
-                                ]
-                            ]
-                            Html.li [
-                                Html.a [
-                                    prop.text "Search"
-                                    prop.onClick (fun _ -> dispatch (Navigate ItemsSearch))
+                            Html.ul [
+                                prop.tabIndex 0
+                                prop.className "dropdown-content menu bg-base-300 rounded z-10 w-44 p-2 shadow-lg"
+                                prop.children [
+                                    Html.li [ navItem "Locations" LocationsList dispatch ]
+                                    Html.li [ navItem "Boxes" BoxesList dispatch ]
+                                    Html.li [ navItem "Items" ItemsList dispatch ]
+                                    Html.li [ navItem "Search" ItemsSearch dispatch ]
                                 ]
                             ]
                         ]
@@ -331,6 +343,77 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
         ]
     ]
 
+let private addBoxToLocationDialog (state: State) (dispatch: Msg -> unit) : ReactElement =
+    if not state.AddingBoxToLocation then Html.none
+    else
+        Html.div [
+            prop.className "modal modal-open"
+            prop.children [
+                Html.div [
+                    prop.className "modal-box"
+                    prop.children [
+                        Html.h3 [
+                            prop.className "font-bold text-lg mb-4"
+                            prop.text "Add box to this location"
+                        ]
+                        if Array.isEmpty state.BoxesForLocationMove then
+                            Html.p [
+                                prop.className "text-center py-4 opacity-60"
+                                prop.text "No boxes available to add"
+                            ]
+                        else
+                            Html.ul [
+                                prop.className "space-y-2 max-h-80 overflow-y-auto"
+                                prop.children [
+                                    for box in state.BoxesForLocationMove do
+                                        Html.li [
+                                            prop.className [
+                                                "flex items-center gap-3 p-3 rounded-lg cursor-pointer"
+                                                if state.SelectedBoxForLocationMove = box.Id then "bg-primary text-primary-content"
+                                                else "bg-base-300 hover:bg-base-200"
+                                            ]
+                                            prop.onClick (fun _ -> dispatch (SelectedBoxForLocationMoveChanged box.Id))
+                                            prop.children [
+                                                Html.span [
+                                                    prop.className "truncate flex-1"
+                                                    prop.text (box.Label |> Option.defaultValue box.Id)
+                                                ]
+                                                match box.LocationCode with
+                                                | Some code ->
+                                                    Html.span [
+                                                        prop.className "badge badge-outline badge-sm"
+                                                        prop.text code
+                                                    ]
+                                                | None ->
+                                                    Html.span [
+                                                        prop.className "badge badge-ghost badge-sm"
+                                                        prop.text "Unassigned"
+                                                    ]
+                                            ]
+                                        ]
+                                ]
+                            ]
+                        Html.div [
+                            prop.className "modal-action"
+                            prop.children [
+                                Html.button [
+                                    prop.className "btn btn-ghost"
+                                    prop.text "Cancel"
+                                    prop.onClick (fun _ -> dispatch CancelAddBoxToLocation)
+                                ]
+                                Html.button [
+                                    prop.className "btn btn-primary"
+                                    prop.text "Add to Location"
+                                    prop.disabled (System.String.IsNullOrEmpty state.SelectedBoxForLocationMove)
+                                    prop.onClick (fun _ -> dispatch ConfirmAddBoxToLocation)
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
 let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     match state.LocationDetail with
     | None ->
@@ -339,6 +422,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     | Some detail ->
         Html.div [
             prop.children [
+                addBoxToLocationDialog state dispatch
                 Html.div [
                     prop.className "flex items-center gap-2 mb-4"
                     prop.children [
@@ -412,9 +496,19 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     ]
                 ]
-                Html.h2 [
-                    prop.className "text-lg font-semibold mb-2"
-                    prop.text $"Boxes in this location (%i{detail.Boxes.Length})"
+                Html.div [
+                    prop.className "flex items-center justify-between mb-2"
+                    prop.children [
+                        Html.h2 [
+                            prop.className "text-lg font-semibold"
+                            prop.text $"Boxes (%i{detail.Boxes.Length})"
+                        ]
+                        Html.button [
+                            prop.className "btn btn-outline btn-sm"
+                            prop.text "+ Add Box"
+                            prop.onClick (fun _ -> dispatch ShowAddBoxToLocationDialog)
+                        ]
+                    ]
                 ]
                 Html.div [
                     prop.className "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
@@ -428,15 +522,20 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                             ]
                         for box in detail.Boxes do
                             Html.div [
-                                prop.className "card bg-base-200 cursor-pointer"
-                                prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))
+                                prop.className "card bg-base-200"
                                 prop.children [
                                     Html.div [
-                                        prop.className "card-body"
+                                        prop.className "card-body flex-row items-center justify-between p-4"
                                         prop.children [
-                                            Html.h2 [
-                                                prop.className "card-title"
+                                            Html.span [
+                                                prop.className "card-title cursor-pointer flex-1"
                                                 prop.text (box.Label |> Option.defaultValue box.Id)
+                                                prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))
+                                            ]
+                                            Html.button [
+                                                prop.className "btn btn-ghost btn-xs"
+                                                prop.text "Remove"
+                                                prop.onClick (fun _ -> dispatch (UnassignBoxFromLocation box.Id))
                                             ]
                                         ]
                                     ]

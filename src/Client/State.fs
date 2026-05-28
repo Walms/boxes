@@ -92,6 +92,14 @@ type Msg =
     | ItemUnassigned of Result<MoveDto, string>
     | UnassignStandaloneItem of string
     | StandaloneItemUnassigned of Result<MoveDto, string>
+    | ShowAddBoxToLocationDialog
+    | BoxesForLocationMoveLoaded of BoxDto array
+    | SelectedBoxForLocationMoveChanged of string
+    | ConfirmAddBoxToLocation
+    | BoxMovedToLocation of Result<MoveDto, string>
+    | CancelAddBoxToLocation
+    | UnassignBoxFromLocation of string
+    | BoxUnassignedFromLocation of Result<MoveDto, string>
 
 type State = {
     CurrentPage: Page
@@ -133,6 +141,9 @@ type State = {
     AddingExistingItem: bool
     UnassignedItems: SearchResultDto array
     SelectedExistingItemId: string
+    AddingBoxToLocation: bool
+    BoxesForLocationMove: BoxDto array
+    SelectedBoxForLocationMove: string
 }
 
 [<Fable.Core.Emit("window.location.hash")>]
@@ -243,6 +254,9 @@ let private resetPageState (state: State) : State =
         AddingExistingItem = false
         UnassignedItems = [||]
         SelectedExistingItemId = ""
+        AddingBoxToLocation = false
+        BoxesForLocationMove = [||]
+        SelectedBoxForLocationMove = ""
     }
 
 let private navigateCmd (page: Page) : Cmd<Msg> =
@@ -291,6 +305,9 @@ let init () : State * Cmd<Msg> =
         AddingExistingItem = false
         UnassignedItems = [||]
         SelectedExistingItemId = ""
+        AddingBoxToLocation = false
+        BoxesForLocationMove = [||]
+        SelectedBoxForLocationMove = ""
     }
     let cmds : Cmd<Msg> = Cmd.batch [
         Cmd.ofEffect hashChangeSub
@@ -764,4 +781,54 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         navigateCmd ItemsList
 
     | StandaloneItemUnassigned (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | ShowAddBoxToLocationDialog ->
+        { state with AddingBoxToLocation = true; SelectedBoxForLocationMove = "" },
+        Cmd.OfAsync.either (fun () -> getBoxes None) () (fun res -> match res with Ok boxes -> BoxesForLocationMoveLoaded boxes | Error err -> ErrorOccurred err) (fun ex -> ErrorOccurred ex.Message)
+
+    | BoxesForLocationMoveLoaded boxes ->
+        let currentLocCode : string =
+            state.LocationDetail |> Option.map (fun d -> d.Location.Code) |> Option.defaultValue ""
+        let filtered : BoxDto array =
+            boxes |> Array.filter (fun b -> b.LocationCode <> Some currentLocCode)
+        { state with BoxesForLocationMove = filtered }, Cmd.none
+
+    | SelectedBoxForLocationMoveChanged boxId ->
+        { state with SelectedBoxForLocationMove = boxId }, Cmd.none
+
+    | ConfirmAddBoxToLocation ->
+        match state.LocationDetail with
+        | None -> state, Cmd.none
+        | Some detail ->
+            if System.String.IsNullOrEmpty state.SelectedBoxForLocationMove then state, Cmd.none
+            else
+                { state with Loading = true },
+                Cmd.OfAsync.either (fun () -> moveEntity "box" state.SelectedBoxForLocationMove "location" detail.Location.Code) () BoxMovedToLocation (fun ex -> ErrorOccurred ex.Message)
+
+    | BoxMovedToLocation (Ok _) ->
+        match state.LocationDetail with
+        | None -> { state with Loading = false; AddingBoxToLocation = false }, Cmd.none
+        | Some detail ->
+            { state with Loading = false; AddingBoxToLocation = false; SelectedBoxForLocationMove = ""; BoxesForLocationMove = [||] },
+            navigateCmd (LocationDetail detail.Location.Code)
+
+    | BoxMovedToLocation (Error err) ->
+        { state with Error = Some err; Loading = false; AddingBoxToLocation = false }, Cmd.none
+
+    | CancelAddBoxToLocation ->
+        { state with AddingBoxToLocation = false; SelectedBoxForLocationMove = ""; BoxesForLocationMove = [||] }, Cmd.none
+
+    | UnassignBoxFromLocation boxId ->
+        { state with Loading = true },
+        Cmd.OfAsync.either (fun () -> unassignEntity "box" boxId) () BoxUnassignedFromLocation (fun ex -> ErrorOccurred ex.Message)
+
+    | BoxUnassignedFromLocation (Ok _) ->
+        match state.LocationDetail with
+        | None -> { state with Loading = false }, Cmd.none
+        | Some detail ->
+            { state with Loading = false },
+            navigateCmd (LocationDetail detail.Location.Code)
+
+    | BoxUnassignedFromLocation (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none

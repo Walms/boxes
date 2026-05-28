@@ -1,2 +1,40 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+@plugin "daisyui/theme" {
+  name: "industrial";
+  default: true;
+  color-scheme: dark;
+
+  --color-base-100: oklch(0.13 0.005 260);
+  --color-base-200: oklch(0.18 0.005 260);
+  --color-base-300: oklch(0.24 0.005 260);
+  --color-base-content: oklch(0.93 0.005 260);
+  --color-primary: oklch(0.76 0.155 75);
+  --color-primary-content: oklch(0.16 0.05 75);
+  --color-secondary: oklch(0.55 0.07 250);
+  --color-secondary-content: oklch(0.95 0.01 250);
+  --color-accent: oklch(0.74 0.12 85);
+  --color-accent-content: oklch(0.16 0.04 85);
+  --color-neutral: oklch(0.26 0.005 260);
+  --color-neutral-content: oklch(0.9 0.005 260);
+  --color-error: oklch(0.58 0.2 25);
+  --color-error-content: oklch(0.95 0.02 25);
+  --color-success: oklch(0.6 0.15 145);
+  --color-success-content: oklch(0.95 0.02 145);
+  --color-warning: oklch(0.76 0.155 85);
+  --color-warning-content: oklch(0.16 0.04 85);
+  --color-info: oklch(0.6 0.1 250);
+  --color-info-content: oklch(0.95 0.02 250);
+
+  --radius-selector: 0.125rem;
+  --radius-field: 0.125rem;
+  --radius-box: 0.25rem;
+}
+
+@layer base {
+  html {
+    font-family: "IBM Plex Mono", ui-monospace, "Cascadia Code", "Source Code Pro",
+      Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  }
+}

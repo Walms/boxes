@@ -119,13 +119,15 @@ jobs:
         target: "/opt/boxtracker/server/"
         strip_components: 2
 
-    - name: Clean frontend directory
+    - name: Clean and prepare frontend directory
       uses: appleboy/ssh-action@v1.1.0
       with:
         host: ${{ secrets.DEPLOY_HOST }}
         username: ${{ secrets.DEPLOY_USER }}
         key: ${{ secrets.DEPLOY_SSH_KEY }}
-        script: sudo rm -rf /opt/boxtracker/frontend/dist && sudo mkdir -p /opt/boxtracker/frontend/dist
+        script: |
+          sudo rm -rf /opt/boxtracker/frontend/dist
+          mkdir -p /opt/boxtracker/frontend/dist
 
     - name: Copy frontend
       uses: appleboy/scp-action@v0.1.7
@@ -136,14 +138,6 @@ jobs:
         source: "src/Client/dist/"
         target: "/opt/boxtracker/frontend/"
         strip_components: 2
-
-    - name: Fix frontend ownership
-      uses: appleboy/ssh-action@v1.1.0
-      with:
-        host: ${{ secrets.DEPLOY_HOST }}
-        username: ${{ secrets.DEPLOY_USER }}
-        key: ${{ secrets.DEPLOY_SSH_KEY }}
-        script: sudo chown -R ${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_USER }} /opt/boxtracker/frontend/
 
     - name: Restart service
       uses: appleboy/ssh-action@v1.1.0

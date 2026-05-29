@@ -342,6 +342,23 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
             Html.div [
+                prop.className "form-control mb-4"
+                prop.children [
+                    Html.input [
+                        prop.className "input input-bordered w-full focus:input-primary text-base"
+                        prop.placeholder "Filter locations..."
+                        prop.value state.LocationSearch
+                        prop.onChange (fun (s: string) -> dispatch (LocationSearchChanged s))
+                    ]
+                ]
+            ]
+            let filteredLocations =
+                if System.String.IsNullOrEmpty state.LocationSearch then state.Locations
+                else
+                    let q = state.LocationSearch.ToLowerInvariant()
+                    state.Locations |> Array.filter (fun l ->
+                        l.Name.ToLowerInvariant().Contains(q) || l.Code.ToLowerInvariant().Contains(q))
+            Html.div [
                 prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
                 prop.children [
                     if Array.isEmpty state.Locations && not state.Loading then
@@ -352,7 +369,14 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                 Html.p [ prop.className "text-sm mt-2"; prop.text "Click \"+ New Location\" to create one" ]
                             ]
                         ]
-                    for loc in state.Locations do
+                    elif Array.isEmpty filteredLocations then
+                        Html.div [
+                            prop.className "col-span-full text-center py-12 opacity-60"
+                            prop.children [
+                                Html.p [ prop.text "No locations match your search" ]
+                            ]
+                        ]
+                    for loc in filteredLocations do
                         Html.div [
                             prop.className "card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer active:scale-95 transform duration-100"
                             prop.onClick (fun _ -> dispatch (Navigate (LocationDetail loc.Code)))
@@ -651,23 +675,45 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
             Html.div [
-                prop.className "form-control mb-4"
+                prop.className "flex flex-col sm:flex-row gap-2 mb-4"
                 prop.children [
-                    Html.select [
-                        prop.className "select select-bordered"
-                        prop.value state.BoxFilter
-                        prop.onChange (fun (s: string) -> dispatch (BoxFilterChanged s))
+                    Html.div [
+                        prop.className "form-control flex-1"
                         prop.children [
-                            Html.option [ prop.value ""; prop.text "All locations" ]
-                            for loc in state.Locations do
-                                Html.option [
-                                    prop.value loc.Code
-                                    prop.text loc.Name
+                            Html.input [
+                                prop.className "input input-bordered w-full focus:input-primary text-base"
+                                prop.placeholder "Filter boxes..."
+                                prop.value state.BoxSearch
+                                prop.onChange (fun (s: string) -> dispatch (BoxSearchChanged s))
+                            ]
+                        ]
+                    ]
+                    Html.div [
+                        prop.className "form-control"
+                        prop.children [
+                            Html.select [
+                                prop.className "select select-bordered"
+                                prop.value state.BoxFilter
+                                prop.onChange (fun (s: string) -> dispatch (BoxFilterChanged s))
+                                prop.children [
+                                    Html.option [ prop.value ""; prop.text "All locations" ]
+                                    for loc in state.Locations do
+                                        Html.option [
+                                            prop.value loc.Code
+                                            prop.text loc.Name
+                                        ]
                                 ]
+                            ]
                         ]
                     ]
                 ]
             ]
+            let filteredBoxes =
+                if System.String.IsNullOrEmpty state.BoxSearch then state.Boxes
+                else
+                    let q = state.BoxSearch.ToLowerInvariant()
+                    state.Boxes |> Array.filter (fun b ->
+                        (b.Label |> Option.defaultValue b.Id).ToLowerInvariant().Contains(q))
             Html.div [
                 prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
                 prop.children [
@@ -679,7 +725,14 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                 Html.p [ prop.className "text-sm mt-2"; prop.text "Click \"+ New Box\" to create one" ]
                             ]
                         ]
-                    for box in state.Boxes do
+                    elif Array.isEmpty filteredBoxes then
+                        Html.div [
+                            prop.className "col-span-full text-center py-12 opacity-60"
+                            prop.children [
+                                Html.p [ prop.text "No boxes match your search" ]
+                            ]
+                        ]
+                    for box in filteredBoxes do
                         Html.div [
                             prop.className "card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer active:scale-95 transform duration-100"
                             prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))

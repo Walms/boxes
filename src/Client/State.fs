@@ -33,6 +33,8 @@ type Msg =
     | LocationArchived of Result<LocationDto, string>
     | BoxesLoaded of Result<BoxDto array, string>
     | BoxFilterChanged of string
+    | LocationSearchChanged of string
+    | BoxSearchChanged of string
     | ShowCreateBoxForm
     | NewBoxLabelChanged of string
     | SubmitCreateBox
@@ -113,6 +115,7 @@ type State = {
     Error: string option
     ViewingImageUrl: string option
     Locations: LocationDto array
+    LocationSearch: string
     LocationDetail: LocationDetailDto option
     ShowCreateLocationForm: bool
     NewLocationCode: string
@@ -120,6 +123,7 @@ type State = {
     EditingLocationName: bool
     EditLocationNameValue: string
     Boxes: BoxDto array
+    BoxSearch: string
     BoxFilter: string
     ShowCreateBoxForm: bool
     NewBoxLabel: string
@@ -230,6 +234,7 @@ let private hashChangeSub (dispatch: Msg -> unit) : unit =
 let private resetPageState (state: State) : State =
     { state with
         ViewingImageUrl = None
+        LocationSearch = ""
         LocationDetail = None
         ShowCreateLocationForm = false
         NewLocationCode = ""
@@ -247,6 +252,7 @@ let private resetPageState (state: State) : State =
         MovingItemId = None
         TargetBoxId = ""
         AvailableBoxes = [||]
+        BoxSearch = ""
         SearchDebounceTimer = None
         AllItems = [||]
         ShowCreateItemForm = false
@@ -277,6 +283,7 @@ let init () : State * Cmd<Msg> =
         Error = None
         ViewingImageUrl = None
         Locations = [||]
+        LocationSearch = ""
         LocationDetail = None
         ShowCreateLocationForm = false
         NewLocationCode = ""
@@ -284,6 +291,7 @@ let init () : State * Cmd<Msg> =
         EditingLocationName = false
         EditLocationNameValue = ""
         Boxes = [||]
+        BoxSearch = ""
         BoxFilter = ""
         ShowCreateBoxForm = false
         NewBoxLabel = ""
@@ -441,6 +449,12 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
             else
                 Cmd.OfAsync.either (fun () -> getBoxes (Some filter)) () BoxesLoaded (fun ex -> ErrorOccurred ex.Message)
         { state with BoxFilter = filter }, cmd
+
+    | LocationSearchChanged query ->
+        { state with LocationSearch = query }, Cmd.none
+
+    | BoxSearchChanged query ->
+        { state with BoxSearch = query }, Cmd.none
 
     | ShowCreateBoxForm ->
         { state with ShowCreateBoxForm = true; NewBoxLabel = "" }, Cmd.none

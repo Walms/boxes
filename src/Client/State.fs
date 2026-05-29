@@ -9,7 +9,6 @@ type Page =
     | BoxesList
     | BoxDetail of string
     | ItemsList
-    | ItemsSearch
 
 type Msg =
     | Navigate of Page
@@ -179,7 +178,6 @@ let private pageFromHash (hash: string) : Page =
     | "/boxes" -> BoxesList
     | s when s.StartsWith("/boxes/") -> BoxDetail(s.[7..])
     | "/items" -> ItemsList
-    | "/items/search" -> ItemsSearch
     | _ -> LocationsList
 
 let private hashFromPage (page: Page) : string =
@@ -189,7 +187,6 @@ let private hashFromPage (page: Page) : string =
     | BoxesList -> "#/boxes"
     | BoxDetail id -> $"#/boxes/%s{id}"
     | ItemsList -> "#/items"
-    | ItemsSearch -> "#/items/search"
 
 let private pageEqual (a: Page) (b: Page) : bool =
     match a, b with
@@ -198,7 +195,6 @@ let private pageEqual (a: Page) (b: Page) : bool =
     | BoxesList, BoxesList -> true
     | BoxDetail id1, BoxDetail id2 -> id1 = id2
     | ItemsList, ItemsList -> true
-    | ItemsSearch, ItemsSearch -> true
     | _ -> false
 
 let private loadPage (page: Page) : Cmd<Msg> =
@@ -223,8 +219,6 @@ let private loadPage (page: Page) : Cmd<Msg> =
             Cmd.OfAsync.either getLocations () LocationsLoaded (fun ex -> ErrorOccurred ex.Message)
             Cmd.OfAsync.either (fun () -> getBoxes None) () BoxesLoaded (fun ex -> ErrorOccurred ex.Message)
         ]
-    | ItemsSearch ->
-        Cmd.OfAsync.either searchItems "" SearchResultsLoaded (fun ex -> ErrorOccurred ex.Message)
 
 let private hashChangeSub (dispatch: Msg -> unit) : unit =
     addHashChangeListener (fun () ->

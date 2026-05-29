@@ -135,9 +135,29 @@
                 0 0 10px oklch(0.78 0.17 82 / 0.3);
   }
 
-  /* Cassette-style progress/loading */
+  /* Cassette-style progress/loading — fast spin */
   .loading {
     color: oklch(0.78 0.17 82);
     filter: drop-shadow(0 0 4px oklch(0.78 0.17 82 / 0.7));
+    animation-duration: 0.4s !important;
+  }
+
+  /* Full-screen image viewer sits above scanlines and vignette for max fidelity */
+  .image-viewer {
+    z-index: 10000 !important;
+  }
+
+  /* Snappy transitions — keep the look, lose the lag */
+  .transition-colors {
+    transition-duration: 60ms !important;
+  }
+
+  .transition-opacity {
+    transition-duration: 60ms !important;
+  }
+
+  /* Card press snap */
+  .active\:scale-95:active {
+    transition-duration: 40ms !important;
   }
 }

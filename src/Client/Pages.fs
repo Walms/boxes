@@ -347,6 +347,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     ]
                 ]
+            Html.hr [ prop.className "my-5" ]
             Html.div [
                 prop.className "form-control mb-4"
                 prop.children [
@@ -806,6 +807,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     ]
                 ]
+            Html.hr [ prop.className "my-5" ]
             Html.div [
                 prop.className "flex flex-col sm:flex-row gap-2 mb-4"
                 prop.children [
@@ -1195,8 +1197,9 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         ]
                                     ]
                                 ]
+                                Html.hr [ prop.className "my-4" ]
                                 Html.ul [
-                                    prop.className "mt-4 space-y-3"
+                                    prop.className "space-y-3"
                                     prop.children [
                                         if Array.isEmpty detail.Items then
                                             Html.li [
@@ -1553,6 +1556,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     ]
                 ]
+            Html.hr [ prop.className "my-5" ]
             Html.div [
                 prop.className "form-control mb-4"
                 prop.children [

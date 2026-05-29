@@ -1,0 +1,15 @@
+movingstuff.duckdns.org, localhost, 127.0.0.1 {
+	basic_auth * {
+		daniel $2a$14$vEnr6H9gyb5O3hk59WPYNOA347EqE6JfUAKDlMvLLqOigBHeq.ZhC
+	}
+
+	handle /api/* {
+		reverse_proxy localhost:5000
+	}
+
+	handle {
+		root * /opt/boxtracker/frontend/dist
+		file_server
+		try_files {path} {path}/ /index.html
+	}
+}

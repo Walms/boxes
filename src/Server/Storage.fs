@@ -40,8 +40,11 @@ type Storage (connectionString: string) =
         let code : LocationCode = reader.GetString(0) |> LocationCode.tryParse |> unwrap
         let name : LocationName = reader.GetString(1) |> LocationName.create |> unwrap
         let isArchived : bool = reader.GetInt32(2) = 1
-        let createdAt : DateTimeOffset = reader.GetString(3) |> DateTimeOffset.Parse
-        { Code = code; Name = name; IsArchived = isArchived; CreatedAt = createdAt }
+        let photo : PhotoPath option =
+            if reader.IsDBNull(3) then None
+            else reader.GetString(3) |> PhotoPath.tryParse |> unwrap |> Some
+        let createdAt : DateTimeOffset = reader.GetString(4) |> DateTimeOffset.Parse
+        { Code = code; Name = name; IsArchived = isArchived; Photo = photo; CreatedAt = createdAt }
 
     let readContainer (reader: SqliteDataReader) (toTypeIdx: int) (toIdIdx: int) : Container =
         if reader.IsDBNull(toTypeIdx) then Unassigned
@@ -125,6 +128,12 @@ type Storage (connectionString: string) =
             try
                 let m : SqliteCommand = conn.CreateCommand()
                 m.CommandText <- "ALTER TABLE box ADD COLUMN photo_path TEXT"
+                m.ExecuteNonQuery() |> ignore
+            with _ -> ()
+            // Run migration for location.photo_path (safe to run multiple times)
+            try
+                let m : SqliteCommand = conn.CreateCommand()
+                m.CommandText <- "ALTER TABLE location ADD COLUMN photo_path TEXT"
                 m.ExecuteNonQuery() |> ignore
             with _ -> ()
             connection <- Some conn
@@ -284,16 +293,16 @@ type Storage (connectionString: string) =
         let conn : SqliteConnection = this.Connection
         use c : SqliteCommand = conn.CreateCommand()
         if includeArchived then
-            c.CommandText <- "SELECT code, name, is_archived, created_at FROM location ORDER BY name"
+            c.CommandText <- "SELECT code, name, is_archived, photo_path, created_at FROM location ORDER BY name"
         else
-            c.CommandText <- "SELECT code, name, is_archived, created_at FROM location WHERE is_archived = 0 ORDER BY name"
+            c.CommandText <- "SELECT code, name, is_archived, photo_path, created_at FROM location WHERE is_archived = 0 ORDER BY name"
         use reader : SqliteDataReader = c.ExecuteReader()
         readList readLocation reader
 
     member this.GetLocation(code: string) : Location option =
         let conn : SqliteConnection = this.Connection
         use c : SqliteCommand = conn.CreateCommand()
-        c.CommandText <- "SELECT code, name, is_archived, created_at FROM location WHERE code = @code"
+        c.CommandText <- "SELECT code, name, is_archived, photo_path, created_at FROM location WHERE code = @code"
         c.Parameters.AddWithValue("@code", code) |> ignore
         use reader : SqliteDataReader = c.ExecuteReader()
         if reader.Read() then Some(readLocation reader)
@@ -308,7 +317,7 @@ type Storage (connectionString: string) =
         c.Parameters.AddWithValue("@name", LocationName.value name) |> ignore
         c.Parameters.AddWithValue("@createdAt", now.ToString("o")) |> ignore
         c.ExecuteNonQuery() |> ignore
-        { Code = code; Name = name; IsArchived = false; CreatedAt = now }
+        { Code = code; Name = name; IsArchived = false; Photo = None; CreatedAt = now }
 
     member this.UpdateLocationName(code: string, name: LocationName) : Location option =
         let conn : SqliteConnection = this.Connection
@@ -350,6 +359,19 @@ type Storage (connectionString: string) =
         c.CommandText <- "UPDATE location SET is_archived = 1 WHERE code = @code"
         c.Parameters.AddWithValue("@code", code) |> ignore
         c.ExecuteNonQuery() |> ignore
+
+    member this.UpdateLocationPhoto(code: string, photoPath: PhotoPath option) : Location option =
+        let conn : SqliteConnection = this.Connection
+        use c : SqliteCommand = conn.CreateCommand()
+        let photoValue : obj =
+            match photoPath with
+            | Some p -> box (PhotoPath.value p)
+            | None -> DBNull.Value
+        c.CommandText <- "UPDATE location SET photo_path = @photoPath WHERE code = @code"
+        c.Parameters.AddWithValue("@code", code) |> ignore
+        c.Parameters.AddWithValue("@photoPath", photoValue) |> ignore
+        let rows : int = c.ExecuteNonQuery()
+        if rows = 0 then None else this.GetLocation(code)
 
     member this.ListBoxes(locationCode: string option, unassigned: bool) : Box list =
         let conn : SqliteConnection = this.Connection

@@ -13,6 +13,7 @@ type Location = {
     Code: LocationCode
     Name: LocationName
     IsArchived: bool
+    Photo: PhotoPath option
     CreatedAt: DateTimeOffset
 }
 

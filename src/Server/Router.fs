@@ -14,6 +14,7 @@ let webApp : HttpHandler =
         GET >=> routef "/api/locations/%s" getLocation
         PUT >=> routef "/api/locations/%s" updateLocation
         DELETE >=> routef "/api/locations/%s" archiveLocation
+        POST >=> routef "/api/locations/%s/photo" uploadLocationPhoto
 
         GET >=> route "/api/boxes" >=> listBoxes
         POST >=> route "/api/boxes" >=> createBox

@@ -19,6 +19,7 @@ type LocationResponse = {
     Code: string
     Name: string
     IsArchived: bool
+    PhotoPath: string option
     CreatedAt: DateTimeOffset
 }
 
@@ -109,6 +110,7 @@ let locationToDto (loc: Location) : LocationResponse = {
     Code = LocationCode.value loc.Code
     Name = LocationName.value loc.Name
     IsArchived = loc.IsArchived
+    PhotoPath = loc.Photo |> Option.map PhotoPath.value
     CreatedAt = loc.CreatedAt
 }
 

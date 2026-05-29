@@ -6,6 +6,7 @@ let createTables : string =
         code        TEXT PRIMARY KEY,
         name        TEXT NOT NULL,
         is_archived INTEGER NOT NULL DEFAULT 0,
+        photo_path  TEXT,
         created_at  TEXT NOT NULL
     );
 

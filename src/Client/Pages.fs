@@ -385,7 +385,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     for loc in filteredLocations do
                         let isEditingThisLoc = state.EditingLocationCodeInList = Some loc.Code
                         Html.div [
-                            prop.className "card bg-base-200"
+                            prop.className "card entity-location"
                             prop.children [
                                 Html.div [
                                     prop.className "card-body p-4 sm:p-5"
@@ -553,7 +553,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
                 Html.div [
-                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
+                    prop.className "card entity-location mb-6 shadow-sm"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4 sm:p-6"
@@ -722,7 +722,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                             ]
                         for box in detail.Boxes do
                             Html.div [
-                                prop.className "card bg-base-200"
+                                prop.className "card entity-box"
                                 prop.children [
                                     Html.div [
                                         prop.className "card-body flex-row items-center justify-between p-4"
@@ -867,7 +867,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     for box in filteredBoxes do
                         let isEditingThisBox = state.EditingBoxIdInList = Some box.Id
                         Html.div [
-                            prop.className "card bg-base-200"
+                            prop.className "card entity-box"
                             prop.children [
                                 Html.div [
                                     prop.className "card-body p-4 sm:p-5"
@@ -966,7 +966,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
                 Html.div [
-                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
+                    prop.className "card entity-box mb-6 shadow-sm"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4 sm:p-6"
@@ -1124,7 +1124,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
                 Html.div [
-                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
+                    prop.className "card entity-item mb-6 shadow-sm"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4 sm:p-6"
@@ -1207,7 +1207,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             ]
                                         for item in detail.Items do
                                             Html.li [
-                                                prop.className "flex flex-col sm:flex-row sm:items-center gap-3 bg-base-300 hover:bg-base-200 transition-colors rounded-lg p-3 sm:p-4"
+                                                prop.className "flex flex-col sm:flex-row sm:items-center gap-3 entity-item transition-colors rounded-lg p-3 sm:p-4"
                                                 prop.children [
                                                     Html.div [
                                                         prop.className "flex items-center gap-3 flex-1 min-w-0"
@@ -1317,7 +1317,7 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
 let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultDto) : ReactElement =
     let isEditing = state.EditingItemId = Some item.ItemId
     Html.div [
-        prop.className "card bg-base-200 hover:bg-base-300 transition-colors"
+        prop.className "card entity-item transition-colors"
         prop.children [
             Html.div [
                 prop.className "card-body p-3 sm:p-4"
@@ -1593,7 +1593,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                             ]
                         for r in state.SearchResults do
                             Html.div [
-                                prop.className "card bg-base-200 hover:bg-base-300 transition-colors"
+                                prop.className "card entity-item transition-colors"
                                 prop.children [
                                     Html.div [
                                         prop.className "card-body flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4"

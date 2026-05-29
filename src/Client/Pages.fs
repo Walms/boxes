@@ -647,7 +647,14 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                 ]
                                             ]
                                         | None -> Html.none
-                                        Html.div [
+                                        if state.UploadingPhoto then
+                                            Html.div [
+                                                prop.className "flex justify-center p-4"
+                                                prop.children [
+                                                    Html.span [ prop.className "loading loading-spinner loading-md" ]
+                                                ]
+                                            ]
+                                        else Html.div [
                                             prop.className "flex gap-2"
                                             prop.children [
                                                 Html.label [
@@ -1067,7 +1074,14 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                 ]
                                             ]
                                         | None -> Html.none
-                                        Html.div [
+                                        if state.UploadingPhoto then
+                                            Html.div [
+                                                prop.className "flex justify-center p-4"
+                                                prop.children [
+                                                    Html.span [ prop.className "loading loading-spinner loading-md" ]
+                                                ]
+                                            ]
+                                        else Html.div [
                                             prop.className "flex gap-2"
                                             prop.children [
                                                 Html.label [
@@ -1338,7 +1352,14 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                                     prop.value state.EditItemNameValue
                                                     prop.onChange (fun (s: string) -> dispatch (EditItemNameChanged s))
                                                 ]
-                                                Html.div [
+                                                if state.UploadingPhoto then
+                                                    Html.div [
+                                                        prop.className "flex justify-center p-4"
+                                                        prop.children [
+                                                            Html.span [ prop.className "loading loading-spinner loading-md" ]
+                                                        ]
+                                                    ]
+                                                else Html.div [
                                                     prop.className "flex gap-2"
                                                     prop.children [
                                                         Html.label [

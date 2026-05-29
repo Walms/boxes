@@ -128,6 +128,7 @@ type Msg =
 type State = {
     CurrentPage: Page
     Loading: bool
+    UploadingPhoto: bool
     Error: string option
     ViewingImageUrl: string option
     Locations: LocationDto array
@@ -304,6 +305,7 @@ let init () : State * Cmd<Msg> =
     let state : State = {
         CurrentPage = page
         Loading = true
+        UploadingPhoto = false
         Error = None
         ViewingImageUrl = None
         Locations = [||]
@@ -568,18 +570,18 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | UploadBoxPhoto (boxId, photo) ->
-        { state with Loading = true },
+        { state with Loading = true; UploadingPhoto = true },
         Cmd.OfAsync.either (fun () -> uploadBoxPhoto boxId photo) () BoxPhotoUploaded (fun ex -> ErrorOccurred ex.Message)
 
     | BoxPhotoUploaded (Ok _) ->
         match state.BoxDetail with
-        | None -> { state with Loading = false }, Cmd.none
+        | None -> { state with Loading = false; UploadingPhoto = false }, Cmd.none
         | Some detail ->
-            { state with Loading = false },
+            { state with Loading = false; UploadingPhoto = false },
             navigateCmd (BoxDetail detail.Box.Id)
 
     | BoxPhotoUploaded (Error err) ->
-        { state with Error = Some err; Loading = false }, Cmd.none
+        { state with Error = Some err; Loading = false; UploadingPhoto = false }, Cmd.none
 
     | NewItemNameChanged name ->
         { state with NewItemName = name }, Cmd.none
@@ -780,15 +782,15 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with MovingItemStandaloneId = None; MoveItemTargetBox = "" }, Cmd.none
 
     | UploadItemPhoto (itemId, photo) ->
-        { state with Loading = true },
+        { state with Loading = true; UploadingPhoto = true },
         Cmd.OfAsync.either (fun () -> updateItemPhoto itemId photo) () ItemPhotoUploaded (fun ex -> ErrorOccurred ex.Message)
 
     | ItemPhotoUploaded (Ok _) ->
-        { state with Loading = false },
+        { state with Loading = false; UploadingPhoto = false },
         navigateCmd ItemsList
 
     | ItemPhotoUploaded (Error err) ->
-        { state with Error = Some err; Loading = false }, Cmd.none
+        { state with Error = Some err; Loading = false; UploadingPhoto = false }, Cmd.none
 
     | ShowAddExistingItemDialog ->
         { state with AddingExistingItem = true; SelectedExistingItemId = "" },
@@ -998,15 +1000,15 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | UploadLocationPhoto (locationCode, photo) ->
-        { state with Loading = true },
+        { state with Loading = true; UploadingPhoto = true },
         Cmd.OfAsync.either (fun () -> uploadLocationPhoto locationCode photo) () LocationPhotoUploaded (fun ex -> ErrorOccurred ex.Message)
 
     | LocationPhotoUploaded (Ok _) ->
         match state.LocationDetail with
-        | None -> { state with Loading = false }, Cmd.none
+        | None -> { state with Loading = false; UploadingPhoto = false }, Cmd.none
         | Some detail ->
-            { state with Loading = false },
+            { state with Loading = false; UploadingPhoto = false },
             navigateCmd (LocationDetail detail.Location.Code)
 
     | LocationPhotoUploaded (Error err) ->
-        { state with Error = Some err; Loading = false }, Cmd.none
+        { state with Error = Some err; Loading = false; UploadingPhoto = false }, Cmd.none

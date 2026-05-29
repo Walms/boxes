@@ -18,7 +18,7 @@ let private imageViewer (state: State) (dispatch: Msg -> unit) : ReactElement =
     | None -> Html.none
     | Some url ->
         Html.div [
-            prop.className "fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            prop.className "image-viewer fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
             prop.onClick (fun e ->
                 if e.currentTarget = e.target then dispatch CloseImageViewer
             )

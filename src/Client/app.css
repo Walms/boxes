@@ -142,6 +142,11 @@
     animation-duration: 0.4s !important;
   }
 
+  /* Full-screen image viewer sits above scanlines and vignette for max fidelity */
+  .image-viewer {
+    z-index: 10000 !important;
+  }
+
   /* Snappy transitions — keep the look, lose the lag */
   .transition-colors {
     transition-duration: 60ms !important;

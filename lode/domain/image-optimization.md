@@ -61,6 +61,24 @@ data/photos/
 - Typical full photo: ~200-300 KB → ~50-70 KB WebP
 - Typical thumbnail: ~50-70 KB → ~5-10 KB WebP
 
+## Migration from Previous Format
+
+**Existing photos uploaded before optimization are inaccessible.** The new system expects WebP files with `-full` and `-thumb` suffixes, but old photos have original extensions (JPG, PNG).
+
+**Impact:** Old photos return 404; users can re-upload them when viewing a box/item.
+
+**Why this approach:**
+- Minimal implementation complexity
+- Personal app with manageable photo volume
+- Users naturally see missing photos and can easily retake/re-upload
+- Alternative would be a complex migration script or graceful fallback handler
+
+**If migration is needed later:**
+- Query database for all PhotoPath entries
+- Batch convert old photos to WebP format
+- Update database paths and filenames
+- Delete old files
+
 ## Notes
 
 - SixLabors.ImageSharp 3.1.5 has known vulnerabilities (NU1902, NU1903) but mitigated by local-only app

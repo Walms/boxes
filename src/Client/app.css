@@ -4,42 +4,42 @@
 @plugin "daisyui/theme" {
   name: "cassette";
   default: true;
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Warm dark backgrounds — like aged plastic casing */
-  --color-base-100: oklch(0.10 0.018 55);
-  --color-base-200: oklch(0.15 0.018 55);
-  --color-base-300: oklch(0.21 0.018 55);
-  --color-base-content: oklch(0.88 0.09 82);
+  /* Soft cream backgrounds — like pastel cassette shells */
+  --color-base-100: oklch(0.97 0.008 60);
+  --color-base-200: oklch(0.93 0.012 60);
+  --color-base-300: oklch(0.88 0.016 60);
+  --color-base-content: oklch(0.28 0.05 330);
 
-  /* Amber phosphor primary */
-  --color-primary: oklch(0.78 0.17 82);
-  --color-primary-content: oklch(0.12 0.04 82);
+  /* Dusty rose primary */
+  --color-primary: oklch(0.62 0.14 340);
+  --color-primary-content: oklch(0.97 0.01 340);
 
-  /* VHS teal secondary */
-  --color-secondary: oklch(0.62 0.13 195);
-  --color-secondary-content: oklch(0.95 0.01 195);
+  /* Soft sage secondary */
+  --color-secondary: oklch(0.58 0.09 165);
+  --color-secondary-content: oklch(0.97 0.01 165);
 
-  /* VHS magenta accent */
-  --color-accent: oklch(0.64 0.20 320);
-  --color-accent-content: oklch(0.95 0.01 320);
+  /* Soft lavender accent */
+  --color-accent: oklch(0.66 0.13 285);
+  --color-accent-content: oklch(0.97 0.01 285);
 
-  --color-neutral: oklch(0.24 0.015 55);
-  --color-neutral-content: oklch(0.88 0.06 82);
+  --color-neutral: oklch(0.82 0.02 60);
+  --color-neutral-content: oklch(0.30 0.04 330);
 
-  --color-error: oklch(0.58 0.20 25);
-  --color-error-content: oklch(0.95 0.02 25);
-  --color-success: oklch(0.60 0.15 150);
-  --color-success-content: oklch(0.95 0.02 150);
-  --color-warning: oklch(0.78 0.17 82);
-  --color-warning-content: oklch(0.12 0.04 82);
-  --color-info: oklch(0.62 0.13 195);
-  --color-info-content: oklch(0.95 0.02 195);
+  --color-error: oklch(0.58 0.18 25);
+  --color-error-content: oklch(0.97 0.01 25);
+  --color-success: oklch(0.55 0.13 150);
+  --color-success-content: oklch(0.97 0.01 150);
+  --color-warning: oklch(0.68 0.14 60);
+  --color-warning-content: oklch(0.20 0.04 60);
+  --color-info: oklch(0.58 0.09 220);
+  --color-info-content: oklch(0.97 0.01 220);
 
-  /* Sharp boxy corners — very cassette */
-  --radius-selector: 0rem;
-  --radius-field: 0rem;
-  --radius-box: 0rem;
+  /* Gently rounded — softened cassette */
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.375rem;
 }
 
 @layer base {
@@ -50,13 +50,13 @@
     letter-spacing: 0.03em;
   }
 
-  /* CRT phosphor glow on text */
+  /* Soft rose warmth on text */
   body {
-    text-shadow: 0 0 6px oklch(0.78 0.17 82 / 0.35);
+    text-shadow: 0 0 5px oklch(0.62 0.14 340 / 0.12);
     position: relative;
   }
 
-  /* Scanline overlay */
+  /* Very subtle scanline overlay — barely there */
   body::before {
     content: "";
     position: fixed;
@@ -67,12 +67,12 @@
       to bottom,
       transparent 0px,
       transparent 3px,
-      oklch(0 0 0 / 0.10) 3px,
-      oklch(0 0 0 / 0.10) 4px
+      oklch(0.62 0.14 340 / 0.03) 3px,
+      oklch(0.62 0.14 340 / 0.03) 4px
     );
   }
 
-  /* CRT vignette */
+  /* Soft vignette — dusty rose edges */
   body::after {
     content: "";
     position: fixed;
@@ -81,64 +81,64 @@
     pointer-events: none;
     background: radial-gradient(
       ellipse at center,
-      transparent 60%,
-      oklch(0 0 0 / 0.45) 100%
+      transparent 65%,
+      oklch(0.62 0.14 340 / 0.08) 100%
     );
   }
 
-  /* Phosphor glow on headings */
+  /* Soft rose glow on headings */
   h1, h2, h3 {
-    text-shadow: 0 0 8px oklch(0.78 0.17 82 / 0.55),
-                 0 0 20px oklch(0.78 0.17 82 / 0.20);
+    text-shadow: 0 0 8px oklch(0.62 0.14 340 / 0.25),
+                 0 0 20px oklch(0.66 0.13 285 / 0.10);
   }
 
-  /* Amber-tinted borders */
+  /* Rose-tinted borders */
   .border, [class*="border-"] {
-    border-color: oklch(0.35 0.06 82 / 0.6);
+    border-color: oklch(0.62 0.14 340 / 0.3);
   }
 
   /* Horizontal rule as tape-head separator */
   hr {
-    border-color: oklch(0.78 0.17 82 / 0.3);
-    box-shadow: 0 0 4px oklch(0.78 0.17 82 / 0.4);
+    border-color: oklch(0.62 0.14 340 / 0.25);
+    box-shadow: 0 0 4px oklch(0.62 0.14 340 / 0.15);
   }
 }
 
 /* Button phosphor glow on hover */
 @layer components {
   .btn-primary:hover, .btn-primary:focus {
-    box-shadow: 0 0 12px oklch(0.78 0.17 82 / 0.6),
-                0 0 30px oklch(0.78 0.17 82 / 0.25);
+    box-shadow: 0 0 12px oklch(0.62 0.14 340 / 0.45),
+                0 0 28px oklch(0.62 0.14 340 / 0.15);
   }
 
   .btn-secondary:hover, .btn-secondary:focus {
-    box-shadow: 0 0 12px oklch(0.62 0.13 195 / 0.6),
-                0 0 30px oklch(0.62 0.13 195 / 0.25);
+    box-shadow: 0 0 12px oklch(0.58 0.09 165 / 0.45),
+                0 0 28px oklch(0.58 0.09 165 / 0.15);
   }
 
-  /* Cards get a warm border highlight */
+  /* Cards get a soft rose border highlight */
   .card, .modal-box {
-    border: 1px solid oklch(0.35 0.06 82 / 0.4);
-    box-shadow: 0 0 1px oklch(0.78 0.17 82 / 0.2) inset;
+    border: 1px solid oklch(0.62 0.14 340 / 0.2);
+    box-shadow: 0 2px 8px oklch(0.62 0.14 340 / 0.08);
   }
 
-  /* Navbar tape-deck top strip */
+  /* Navbar soft rose strip */
   .navbar {
-    border-bottom: 2px solid oklch(0.78 0.17 82 / 0.4) !important;
-    box-shadow: 0 2px 10px oklch(0.78 0.17 82 / 0.15);
+    border-bottom: 2px solid oklch(0.62 0.14 340 / 0.2) !important;
+    box-shadow: 0 2px 10px oklch(0.62 0.14 340 / 0.08);
   }
 
-  /* Input fields with phosphor focus */
+  /* Input fields with soft rose focus */
   .input:focus, .select:focus, .textarea:focus {
     outline: none;
-    box-shadow: 0 0 0 2px oklch(0.78 0.17 82 / 0.6),
-                0 0 10px oklch(0.78 0.17 82 / 0.3);
+    box-shadow: 0 0 0 2px oklch(0.62 0.14 340 / 0.4),
+                0 0 10px oklch(0.62 0.14 340 / 0.15);
   }
 
-  /* Cassette-style progress/loading — fast spin */
+  /* Loading — soft rose */
   .loading {
-    color: oklch(0.78 0.17 82);
-    filter: drop-shadow(0 0 4px oklch(0.78 0.17 82 / 0.7));
+    color: oklch(0.62 0.14 340);
+    filter: drop-shadow(0 0 3px oklch(0.62 0.14 340 / 0.5));
     animation-duration: 0.4s !important;
   }
 

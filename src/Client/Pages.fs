@@ -71,7 +71,6 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                             Html.li [ navItem "Locations" LocationsList dispatch ]
                             Html.li [ navItem "Boxes" BoxesList dispatch ]
                             Html.li [ navItem "Items" ItemsList dispatch ]
-                            Html.li [ navItem "Search" ItemsSearch dispatch ]
                         ]
                     ]
                 ]
@@ -97,7 +96,6 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     Html.li [ navItem "Locations" LocationsList dispatch ]
                                     Html.li [ navItem "Boxes" BoxesList dispatch ]
                                     Html.li [ navItem "Items" ItemsList dispatch ]
-                                    Html.li [ navItem "Search" ItemsSearch dispatch ]
                                 ]
                             ]
                         ]
@@ -973,76 +971,6 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
         ]
 
-let searchPage (state: State) (dispatch: Msg -> unit) : ReactElement =
-    Html.div [
-        prop.children [
-            Html.h1 [
-                prop.className "text-2xl sm:text-3xl font-bold mb-6"
-                prop.text "Search Items"
-            ]
-            Html.div [
-                prop.className "form-control mb-6"
-                prop.children [
-                    Html.input [
-                        prop.className "input input-bordered w-full focus:input-primary text-base"
-                        prop.placeholder "Search for items..."
-                        prop.value state.SearchQuery
-                        prop.onChange (fun (s: string) -> dispatch (SearchQueryChanged s))
-                    ]
-                ]
-            ]
-            Html.div [
-                prop.className "space-y-3"
-                prop.children [
-                    if not (System.String.IsNullOrEmpty state.SearchQuery) && Array.isEmpty state.SearchResults && not state.Loading then
-                        Html.div [
-                            prop.className "text-center py-8 opacity-60"
-                            prop.children [
-                                Html.p [ prop.text "No items found matching your search" ]
-                            ]
-                        ]
-                    for r in state.SearchResults do
-                        Html.div [
-                            prop.className "card bg-base-200 hover:bg-base-300 transition-colors"
-                            prop.children [
-                                Html.div [
-                                    prop.className "card-body flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4"
-                                    prop.children [
-                                        match photoUrl r.PhotoPath with
-                                        | Some url ->
-                                            Html.img [
-                                                prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                                                prop.src url
-                                                prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer url))
-                                            ]
-                                        | None -> Html.none
-                                        Html.div [
-                                            prop.className "flex-1 min-w-0"
-                                            prop.children [
-                                                Html.p [
-                                                    prop.className "font-semibold text-sm sm:text-base truncate"
-                                                    prop.text r.ItemName
-                                                ]
-                                                Html.p [
-                                                    prop.className "text-xs sm:text-sm opacity-70 truncate"
-                                                    prop.children [
-                                                        Html.text (r.BoxLabel |> Option.defaultValue r.BoxId)
-                                                        match r.LocationName with
-                                                        | Some name -> Html.text $" — %s{name}"
-                                                        | None -> Html.text ""
-                                                    ]
-                                                ]
-                                            ]
-                                        ]
-                                    ]
-                                ]
-                            ]
-                        ]
-                ]
-            ]
-        ]
-    ]
-
 let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : ReactElement =
     match state.MovingItemStandaloneId with
     | None -> Html.none
@@ -1311,20 +1239,82 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
             Html.div [
-                prop.className "space-y-2"
+                prop.className "form-control mb-4"
                 prop.children [
-                    if Array.isEmpty state.AllItems && not state.Loading then
-                        Html.div [
-                            prop.className "text-center py-8 opacity-60"
-                            prop.children [
-                                Html.p [ prop.className "text-lg"; prop.text "No items yet" ]
-                                Html.p [ prop.className "text-sm"; prop.text "Click \"+ New Item\" to create one, or add items to boxes from the box detail page" ]
-                            ]
-                        ]
-                    for item in state.AllItems do
-                        itemCard state dispatch item
+                    Html.input [
+                        prop.className "input input-bordered w-full focus:input-primary text-base"
+                        prop.placeholder "Search items..."
+                        prop.value state.SearchQuery
+                        prop.onChange (fun (s: string) -> dispatch (SearchQueryChanged s))
+                    ]
                 ]
             ]
+            if System.String.IsNullOrEmpty state.SearchQuery then
+                Html.div [
+                    prop.className "space-y-2"
+                    prop.children [
+                        if Array.isEmpty state.AllItems && not state.Loading then
+                            Html.div [
+                                prop.className "text-center py-8 opacity-60"
+                                prop.children [
+                                    Html.p [ prop.className "text-lg"; prop.text "No items yet" ]
+                                    Html.p [ prop.className "text-sm"; prop.text "Click \"+ New Item\" to create one, or add items to boxes from the box detail page" ]
+                                ]
+                            ]
+                        for item in state.AllItems do
+                            itemCard state dispatch item
+                    ]
+                ]
+            else
+                Html.div [
+                    prop.className "space-y-3"
+                    prop.children [
+                        if Array.isEmpty state.SearchResults && not state.Loading then
+                            Html.div [
+                                prop.className "text-center py-8 opacity-60"
+                                prop.children [
+                                    Html.p [ prop.text "No items found matching your search" ]
+                                ]
+                            ]
+                        for r in state.SearchResults do
+                            Html.div [
+                                prop.className "card bg-base-200 hover:bg-base-300 transition-colors"
+                                prop.children [
+                                    Html.div [
+                                        prop.className "card-body flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4"
+                                        prop.children [
+                                            match photoUrl r.PhotoPath with
+                                            | Some url ->
+                                                Html.img [
+                                                    prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                                    prop.src url
+                                                    prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer url))
+                                                ]
+                                            | None -> Html.none
+                                            Html.div [
+                                                prop.className "flex-1 min-w-0"
+                                                prop.children [
+                                                    Html.p [
+                                                        prop.className "font-semibold text-sm sm:text-base truncate"
+                                                        prop.text r.ItemName
+                                                    ]
+                                                    Html.p [
+                                                        prop.className "text-xs sm:text-sm opacity-70 truncate"
+                                                        prop.children [
+                                                            Html.text (r.BoxLabel |> Option.defaultValue r.BoxId)
+                                                            match r.LocationName with
+                                                            | Some name -> Html.text $" — %s{name}"
+                                                            | None -> Html.text ""
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                    ]
+                ]
         ]
     ]
 
@@ -1344,7 +1334,6 @@ let renderPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     | BoxesList -> boxesPage state dispatch
                     | BoxDetail _ -> boxDetailPage state dispatch
                     | ItemsList -> itemsPage state dispatch
-                    | ItemsSearch -> searchPage state dispatch
                 ]
             ]
         ]

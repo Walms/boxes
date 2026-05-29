@@ -2,39 +2,142 @@
 @plugin "daisyui";
 
 @plugin "daisyui/theme" {
-  name: "industrial";
+  name: "cassette";
   default: true;
   color-scheme: dark;
 
-  --color-base-100: oklch(0.13 0.005 260);
-  --color-base-200: oklch(0.18 0.005 260);
-  --color-base-300: oklch(0.24 0.005 260);
-  --color-base-content: oklch(0.93 0.005 260);
-  --color-primary: oklch(0.76 0.155 75);
-  --color-primary-content: oklch(0.16 0.05 75);
-  --color-secondary: oklch(0.55 0.07 250);
-  --color-secondary-content: oklch(0.95 0.01 250);
-  --color-accent: oklch(0.74 0.12 85);
-  --color-accent-content: oklch(0.16 0.04 85);
-  --color-neutral: oklch(0.26 0.005 260);
-  --color-neutral-content: oklch(0.9 0.005 260);
-  --color-error: oklch(0.58 0.2 25);
-  --color-error-content: oklch(0.95 0.02 25);
-  --color-success: oklch(0.6 0.15 145);
-  --color-success-content: oklch(0.95 0.02 145);
-  --color-warning: oklch(0.76 0.155 85);
-  --color-warning-content: oklch(0.16 0.04 85);
-  --color-info: oklch(0.6 0.1 250);
-  --color-info-content: oklch(0.95 0.02 250);
+  /* Warm dark backgrounds — like aged plastic casing */
+  --color-base-100: oklch(0.10 0.018 55);
+  --color-base-200: oklch(0.15 0.018 55);
+  --color-base-300: oklch(0.21 0.018 55);
+  --color-base-content: oklch(0.88 0.09 82);
 
-  --radius-selector: 0.125rem;
-  --radius-field: 0.125rem;
-  --radius-box: 0.25rem;
+  /* Amber phosphor primary */
+  --color-primary: oklch(0.78 0.17 82);
+  --color-primary-content: oklch(0.12 0.04 82);
+
+  /* VHS teal secondary */
+  --color-secondary: oklch(0.62 0.13 195);
+  --color-secondary-content: oklch(0.95 0.01 195);
+
+  /* VHS magenta accent */
+  --color-accent: oklch(0.64 0.20 320);
+  --color-accent-content: oklch(0.95 0.01 320);
+
+  --color-neutral: oklch(0.24 0.015 55);
+  --color-neutral-content: oklch(0.88 0.06 82);
+
+  --color-error: oklch(0.58 0.20 25);
+  --color-error-content: oklch(0.95 0.02 25);
+  --color-success: oklch(0.60 0.15 150);
+  --color-success-content: oklch(0.95 0.02 150);
+  --color-warning: oklch(0.78 0.17 82);
+  --color-warning-content: oklch(0.12 0.04 82);
+  --color-info: oklch(0.62 0.13 195);
+  --color-info-content: oklch(0.95 0.02 195);
+
+  /* Sharp boxy corners — very cassette */
+  --radius-selector: 0rem;
+  --radius-field: 0rem;
+  --radius-box: 0rem;
 }
 
 @layer base {
   html {
-    font-family: "IBM Plex Mono", ui-monospace, "Cascadia Code", "Source Code Pro",
-      Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    font-family: "VT323", "IBM Plex Mono", ui-monospace, "Cascadia Code",
+      "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    font-size: 17px;
+    letter-spacing: 0.03em;
+  }
+
+  /* CRT phosphor glow on text */
+  body {
+    text-shadow: 0 0 6px oklch(0.78 0.17 82 / 0.35);
+    position: relative;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 3px,
+      oklch(0 0 0 / 0.10) 3px,
+      oklch(0 0 0 / 0.10) 4px
+    );
+  }
+
+  /* CRT vignette */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 60%,
+      oklch(0 0 0 / 0.45) 100%
+    );
+  }
+
+  /* Phosphor glow on headings */
+  h1, h2, h3 {
+    text-shadow: 0 0 8px oklch(0.78 0.17 82 / 0.55),
+                 0 0 20px oklch(0.78 0.17 82 / 0.20);
+  }
+
+  /* Amber-tinted borders */
+  .border, [class*="border-"] {
+    border-color: oklch(0.35 0.06 82 / 0.6);
+  }
+
+  /* Horizontal rule as tape-head separator */
+  hr {
+    border-color: oklch(0.78 0.17 82 / 0.3);
+    box-shadow: 0 0 4px oklch(0.78 0.17 82 / 0.4);
+  }
+}
+
+/* Button phosphor glow on hover */
+@layer components {
+  .btn-primary:hover, .btn-primary:focus {
+    box-shadow: 0 0 12px oklch(0.78 0.17 82 / 0.6),
+                0 0 30px oklch(0.78 0.17 82 / 0.25);
+  }
+
+  .btn-secondary:hover, .btn-secondary:focus {
+    box-shadow: 0 0 12px oklch(0.62 0.13 195 / 0.6),
+                0 0 30px oklch(0.62 0.13 195 / 0.25);
+  }
+
+  /* Cards get a warm border highlight */
+  .card, .modal-box {
+    border: 1px solid oklch(0.35 0.06 82 / 0.4);
+    box-shadow: 0 0 1px oklch(0.78 0.17 82 / 0.2) inset;
+  }
+
+  /* Navbar tape-deck top strip */
+  .navbar {
+    border-bottom: 2px solid oklch(0.78 0.17 82 / 0.4) !important;
+    box-shadow: 0 2px 10px oklch(0.78 0.17 82 / 0.15);
+  }
+
+  /* Input fields with phosphor focus */
+  .input:focus, .select:focus, .textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px oklch(0.78 0.17 82 / 0.6),
+                0 0 10px oklch(0.78 0.17 82 / 0.3);
+  }
+
+  /* Cassette-style progress/loading */
+  .loading {
+    color: oklch(0.78 0.17 82);
+    filter: drop-shadow(0 0 4px oklch(0.78 0.17 82 / 0.7));
   }
 }

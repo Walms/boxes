@@ -606,7 +606,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                 prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))
                                             ]
                                             Html.button [
-                                                prop.className "btn btn-ghost btn-xs"
+                                                prop.className "btn btn-ghost btn-sm"
                                                 prop.text "Remove"
                                                 prop.onClick (fun _ -> dispatch (UnassignBoxFromLocation box.Id))
                                             ]
@@ -1235,7 +1235,7 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                                         prop.onClick (fun _ -> dispatch (UnassignStandaloneItem item.ItemId))
                                                     ]
                                                 Html.button [
-                                                    prop.className "btn btn-ghost btn-xs text-error"
+                                                    prop.className "btn btn-ghost btn-sm text-error"
                                                     prop.text "Delete"
                                                     prop.onClick (fun _ -> dispatch (DeleteStandaloneItem item.ItemId))
                                                 ]

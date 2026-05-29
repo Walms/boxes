@@ -122,6 +122,8 @@ type Msg =
     | LocationUpdatedInList of Result<LocationDto, string>
     | ArchiveLocationFromList of string
     | LocationArchivedFromList of Result<LocationDto, string>
+    | UploadLocationPhoto of string * obj
+    | LocationPhotoUploaded of Result<LocationDto, string>
 
 type State = {
     CurrentPage: Page
@@ -993,4 +995,18 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Locations = locations; Loading = false }, Cmd.none
 
     | LocationArchivedFromList (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | UploadLocationPhoto (locationCode, photo) ->
+        { state with Loading = true },
+        Cmd.OfAsync.either (fun () -> uploadLocationPhoto locationCode photo) () LocationPhotoUploaded (fun ex -> ErrorOccurred ex.Message)
+
+    | LocationPhotoUploaded (Ok _) ->
+        match state.LocationDetail with
+        | None -> { state with Loading = false }, Cmd.none
+        | Some detail ->
+            { state with Loading = false },
+            navigateCmd (LocationDetail detail.Location.Code)
+
+    | LocationPhotoUploaded (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none

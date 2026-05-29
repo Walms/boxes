@@ -619,6 +619,66 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             ]
                                     ]
                                 ]
+                                Html.div [
+                                    prop.className "form-control"
+                                    prop.children [
+                                        Html.label [
+                                            prop.className "label pb-2"
+                                            prop.children [
+                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Location photo" ]
+                                            ]
+                                        ]
+                                        match photoUrl detail.Location.PhotoPath with
+                                        | Some url ->
+                                            Html.div [
+                                                prop.className "mb-3"
+                                                prop.children [
+                                                    Html.img [
+                                                        prop.className "w-48 h-48 object-cover rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity"
+                                                        prop.src url
+                                                        prop.onClick (fun _ -> dispatch (ShowImageViewer url))
+                                                    ]
+                                                ]
+                                            ]
+                                        | None -> Html.none
+                                        Html.div [
+                                            prop.className "flex gap-2"
+                                            prop.children [
+                                                Html.label [
+                                                    prop.className "btn btn-secondary btn-sm flex-1 cursor-pointer"
+                                                    prop.children [
+                                                        Html.text "📷 Take Photo"
+                                                        Html.input [
+                                                            prop.type' "file"
+                                                            prop.accept "image/*"
+                                                            prop.custom("capture", "environment")
+                                                            prop.className "hidden"
+#if FABLE_COMPILER
+                                                            prop.onChange (fun (files: File list) ->
+                                                                files |> List.tryHead |> Option.iter (fun f -> dispatch (UploadLocationPhoto (detail.Location.Code, box f))))
+#endif
+                                                        ]
+                                                    ]
+                                                ]
+                                                Html.label [
+                                                    prop.className "btn btn-outline btn-sm flex-1 cursor-pointer"
+                                                    prop.children [
+                                                        Html.text "📁 Choose"
+                                                        Html.input [
+                                                            prop.type' "file"
+                                                            prop.accept "image/*"
+                                                            prop.className "hidden"
+#if FABLE_COMPILER
+                                                            prop.onChange (fun (files: File list) ->
+                                                                files |> List.tryHead |> Option.iter (fun f -> dispatch (UploadLocationPhoto (detail.Location.Code, box f))))
+#endif
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
                             ]
                         ]
                     ]
@@ -983,36 +1043,52 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Box photo" ]
                                             ]
                                         ]
-                                        if (match photoUrl detail.Box.PhotoPath with | Some _ -> true | None -> false) then
+                                        match photoUrl detail.Box.PhotoPath with
+                                        | Some url ->
                                             Html.div [
                                                 prop.className "mb-3"
                                                 prop.children [
-                                                    match photoUrl detail.Box.PhotoPath with
-                                                    | Some url ->
-                                                        Html.img [
-                                                            prop.className "w-48 h-48 object-cover rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity"
-                                                            prop.src url
-                                                            prop.onClick (fun _ -> dispatch (ShowImageViewer url))
-                                                        ]
-                                                    | None -> Html.none
+                                                    Html.img [
+                                                        prop.className "w-48 h-48 object-cover rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity"
+                                                        prop.src url
+                                                        prop.onClick (fun _ -> dispatch (ShowImageViewer url))
+                                                    ]
                                                 ]
                                             ]
+                                        | None -> Html.none
                                         Html.div [
                                             prop.className "flex gap-2"
                                             prop.children [
-                                                Html.input [
-                                                    prop.className "file-input file-input-bordered text-base flex-1"
-                                                    prop.type' "file"
-                                                    prop.accept "image/*"
+                                                Html.label [
+                                                    prop.className "btn btn-secondary btn-sm flex-1 cursor-pointer"
+                                                    prop.children [
+                                                        Html.text "📷 Take Photo"
+                                                        Html.input [
+                                                            prop.type' "file"
+                                                            prop.accept "image/*"
+                                                            prop.custom("capture", "environment")
+                                                            prop.className "hidden"
 #if FABLE_COMPILER
-                                                    prop.onChange (fun (files: File list) ->
-                                                        files |> List.tryHead |> Option.iter (fun f -> dispatch (UploadBoxPhoto (detail.Box.Id, box f))))
+                                                            prop.onChange (fun (files: File list) ->
+                                                                files |> List.tryHead |> Option.iter (fun f -> dispatch (UploadBoxPhoto (detail.Box.Id, box f))))
 #endif
+                                                        ]
+                                                    ]
                                                 ]
-                                                Html.button [
-                                                    prop.className "btn btn-primary btn-sm"
-                                                    prop.text "Upload"
-                                                    prop.disabled state.Loading
+                                                Html.label [
+                                                    prop.className "btn btn-outline btn-sm flex-1 cursor-pointer"
+                                                    prop.children [
+                                                        Html.text "📁 Choose"
+                                                        Html.input [
+                                                            prop.type' "file"
+                                                            prop.accept "image/*"
+                                                            prop.className "hidden"
+#if FABLE_COMPILER
+                                                            prop.onChange (fun (files: File list) ->
+                                                                files |> List.tryHead |> Option.iter (fun f -> dispatch (UploadBoxPhoto (detail.Box.Id, box f))))
+#endif
+                                                        ]
+                                                    ]
                                                 ]
                                             ]
                                         ]

@@ -159,7 +159,7 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
                                 Html.label [
                                     prop.className "label pb-3"
                                     prop.children [
-                                        Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Select target box" ]
+                                        Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Select target box" ]
                                     ]
                                 ]
                                 Html.select [
@@ -300,7 +300,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Code" ]
+                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Code" ]
                                             ]
                                         ]
                                         Html.input [
@@ -317,7 +317,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Name" ]
+                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Name" ]
                                             ]
                                         ]
                                         Html.input [
@@ -631,7 +631,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Location photo" ]
+                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Location photo" ]
                                             ]
                                         ]
                                         match photoUrlFull detail.Location.PhotoPath with
@@ -776,7 +776,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Label (optional)" ]
+                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Label (optional)" ]
                                             ]
                                         ]
                                         Html.input [
@@ -1033,7 +1033,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Assign to location" ]
+                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Assign to location" ]
                                             ]
                                         ]
                                         Html.select [
@@ -1058,7 +1058,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Box photo" ]
+                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Box photo" ]
                                             ]
                                         ]
                                         match photoUrlFull detail.Box.PhotoPath with
@@ -1275,7 +1275,7 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
                                 Html.label [
                                     prop.className "label pb-3"
                                     prop.children [
-                                        Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Select target box" ]
+                                        Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Select target box" ]
                                     ]
                                 ]
                                 Html.select [
@@ -1498,7 +1498,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Item name" ]
+                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Item name" ]
                                             ]
                                         ]
                                         Html.input [
@@ -1515,7 +1515,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Assign to box (optional)" ]
+                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Assign to box (optional)" ]
                                             ]
                                         ]
                                         Html.select [

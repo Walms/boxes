@@ -72,7 +72,7 @@
   }
 
   label {
-    @apply text-sm font-medium;
+    @apply text-xl font-medium;
   }
 
   /* Soft rose warmth on text */

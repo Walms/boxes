@@ -1199,11 +1199,12 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                         prop.className "flex items-center gap-3 flex-1 min-w-0"
                                                         prop.children [
                                                             match photoUrlThumb item.PhotoPath with
-                                                            | Some url ->
+                                                            | Some thumbUrl ->
+                                                                let fullUrl = photoUrlFull item.PhotoPath |> Option.defaultValue thumbUrl
                                                                 Html.img [
                                                                     prop.className "w-12 h-12 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                                                                    prop.src url
-                                                                    prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer url))
+                                                                    prop.src thumbUrl
+                                                                    prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer fullUrl))
                                                                 ]
                                                             | None -> Html.none
                                                             Html.span [ prop.className "text-sm truncate"; prop.text item.Name ]
@@ -1311,11 +1312,12 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                         prop.className "flex flex-col sm:flex-row sm:items-start gap-3"
                         prop.children [
                             match photoUrlThumb item.PhotoPath with
-                            | Some url ->
+                            | Some thumbUrl ->
+                                let fullUrl = photoUrlFull item.PhotoPath |> Option.defaultValue thumbUrl
                                 Html.img [
                                     prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                                    prop.src url
-                                    prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer url))
+                                    prop.src thumbUrl
+                                    prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer fullUrl))
                                 ]
                             | None ->
                                 Html.div [
@@ -1576,11 +1578,12 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         prop.className "card-body flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4"
                                         prop.children [
                                             match photoUrlThumb r.PhotoPath with
-                                            | Some url ->
+                                            | Some thumbUrl ->
+                                                let fullUrl = photoUrlFull r.PhotoPath |> Option.defaultValue thumbUrl
                                                 Html.img [
                                                     prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                                                    prop.src url
-                                                    prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer url))
+                                                    prop.src thumbUrl
+                                                    prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer fullUrl))
                                                 ]
                                             | None -> Html.none
                                             Html.div [

@@ -50,6 +50,19 @@ The Location Detail page (`#/locations/{code}`) manages a single location and it
 - **Remove box**: Each box card has a Remove button that unassigns it from the location via `unassignEntity "box" boxId` (`POST /api/moves` with empty `ToType`/`ToId`).
 - **Box cards**: Clickable box name navigates to `BoxDetail`.
 
+## Full-Screen Image Viewer
+
+All images in the app (box photos, item photos) are clickable and open a full-screen viewer. The viewer:
+
+- Displays images centered on a dark background
+- Allows native browser pinch-zoom on mobile (no custom zoom logic needed)
+- Closes via close button (✕) in top-right, click outside the image, or device back button
+- Uses state field `ViewingImageUrl: string option` to track the current image
+- Dispatches `ShowImageViewer url` on image click, `CloseImageViewer` to dismiss
+- Rendered via `imageViewer` component above the main content (always available)
+
+Images with hover effect get `cursor-pointer` and `opacity-80 transition-opacity` to indicate clickability.
+
 ## Key Patterns
 
 - Each page resets its state on navigation via `resetPageState`

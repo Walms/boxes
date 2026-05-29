@@ -13,6 +13,35 @@ let private targetValue (ev: obj) : string = failwith "JS only"
 let private photoUrl (path: string option) : string option =
     path |> Option.map (fun p -> "/api/" + p)
 
+let private imageViewer (state: State) (dispatch: Msg -> unit) : ReactElement =
+    match state.ViewingImageUrl with
+    | None -> Html.none
+    | Some url ->
+        Html.div [
+            prop.className "fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            prop.onClick (fun e ->
+                if e.currentTarget = e.target then dispatch CloseImageViewer
+            )
+            prop.children [
+                Html.div [
+                    prop.className "relative max-w-4xl max-h-screen"
+                    prop.children [
+                        Html.img [
+                            prop.className "w-full h-auto max-h-screen object-contain"
+                            prop.src url
+                        ]
+                        Html.button [
+                            prop.className "absolute top-2 right-2 btn btn-circle btn-sm btn-ghost text-white hover:bg-white/10"
+                            prop.onClick (fun _ -> dispatch CloseImageViewer)
+                            prop.children [
+                                Html.span [ prop.className "text-xl"; prop.text "✕" ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
 let private navItem (label: string) (page: Page) (dispatch: Msg -> unit) : ReactElement =
     Html.a [
         prop.text label
@@ -200,8 +229,9 @@ let private addExistingItemDialog (state: State) (dispatch: Msg -> unit) : React
                                                 match photoUrl item.PhotoPath with
                                                 | Some url ->
                                                     Html.img [
-                                                        prop.className "w-10 h-10 object-cover rounded flex-shrink-0"
+                                                        prop.className "w-10 h-10 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                                                         prop.src url
+                                                        prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer url))
                                                     ]
                                                 | None ->
                                                     Html.div [
@@ -802,8 +832,9 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                     match photoUrl detail.Box.PhotoPath with
                                                     | Some url ->
                                                         Html.img [
-                                                            prop.className "w-48 h-48 object-cover rounded border border-base-300"
+                                                            prop.className "w-48 h-48 object-cover rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity"
                                                             prop.src url
+                                                            prop.onClick (fun _ -> dispatch (ShowImageViewer url))
                                                         ]
                                                     | None -> Html.none
                                                 ]
@@ -903,8 +934,9 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                             match photoUrl item.PhotoPath with
                                                             | Some url ->
                                                                 Html.img [
-                                                                    prop.className "w-12 h-12 object-cover rounded flex-shrink-0"
+                                                                    prop.className "w-12 h-12 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                                                                     prop.src url
+                                                                    prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer url))
                                                                 ]
                                                             | None -> Html.none
                                                             Html.span [ prop.className "text-sm truncate"; prop.text item.Name ]
@@ -979,8 +1011,9 @@ let searchPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         match photoUrl r.PhotoPath with
                                         | Some url ->
                                             Html.img [
-                                                prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0"
+                                                prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                                                 prop.src url
+                                                prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer url))
                                             ]
                                         | None -> Html.none
                                         Html.div [
@@ -1083,8 +1116,9 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                             match photoUrl item.PhotoPath with
                             | Some url ->
                                 Html.img [
-                                    prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0"
+                                    prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                                     prop.src url
+                                    prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer url))
                                 ]
                             | None ->
                                 Html.div [
@@ -1298,6 +1332,7 @@ let renderPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "min-h-screen bg-base-100"
         prop.children [
+            imageViewer state dispatch
             navbar state dispatch
             Html.div [
                 prop.className "w-full mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 max-w-6xl"

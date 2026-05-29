@@ -16,6 +16,8 @@ type Msg =
     | HashChanged of Page
     | ErrorOccurred of string
     | DismissError
+    | ShowImageViewer of string
+    | CloseImageViewer
     | LocationsLoaded of Result<LocationDto array, string>
     | ShowCreateLocationForm
     | NewLocationCodeChanged of string
@@ -110,6 +112,7 @@ type State = {
     CurrentPage: Page
     Loading: bool
     Error: string option
+    ViewingImageUrl: string option
     Locations: LocationDto array
     LocationDetail: LocationDetailDto option
     ShowCreateLocationForm: bool
@@ -232,6 +235,7 @@ let private hashChangeSub (dispatch: Msg -> unit) : unit =
 
 let private resetPageState (state: State) : State =
     { state with
+        ViewingImageUrl = None
         LocationDetail = None
         ShowCreateLocationForm = false
         NewLocationCode = ""
@@ -277,6 +281,7 @@ let init () : State * Cmd<Msg> =
         CurrentPage = page
         Loading = true
         Error = None
+        ViewingImageUrl = None
         Locations = [||]
         LocationDetail = None
         ShowCreateLocationForm = false
@@ -340,6 +345,12 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | DismissError ->
         { state with Error = None }, Cmd.none
+
+    | ShowImageViewer url ->
+        { state with ViewingImageUrl = Some url }, Cmd.none
+
+    | CloseImageViewer ->
+        { state with ViewingImageUrl = None }, Cmd.none
 
     | LocationsLoaded (Ok locations) ->
         { state with Locations = locations; Loading = false }, Cmd.none

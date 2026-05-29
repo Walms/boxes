@@ -119,7 +119,7 @@ All `.card` elements have:
 ### Labels
 - Class: `label`
 - Label text: `label-text text-sm font-medium`
-- Spacing below: `pb-2`
+- Spacing below: `pb-3` (provides comfortable spacing to input)
 - Container: Wrap in `.form-control` with `mb-4` gap from next field
 
 ### File Input

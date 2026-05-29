@@ -151,7 +151,7 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
                             prop.className "form-control mb-4"
                             prop.children [
                                 Html.label [
-                                    prop.className "label pb-2"
+                                    prop.className "label pb-3"
                                     prop.children [
                                         Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Select target box" ]
                                     ]
@@ -292,7 +292,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "form-control mb-4"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label pb-2"
+                                            prop.className "label pb-3"
                                             prop.children [
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Code" ]
                                             ]
@@ -309,7 +309,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "form-control mb-6"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label pb-2"
+                                            prop.className "label pb-3"
                                             prop.children [
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Name" ]
                                             ]
@@ -623,7 +623,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "form-control"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label pb-2"
+                                            prop.className "label pb-3"
                                             prop.children [
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Location photo" ]
                                             ]
@@ -761,7 +761,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "form-control mb-6"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label pb-2"
+                                            prop.className "label pb-3"
                                             prop.children [
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Label (optional)" ]
                                             ]
@@ -1018,7 +1018,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "form-control"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label pb-2"
+                                            prop.className "label pb-3"
                                             prop.children [
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Assign to location" ]
                                             ]
@@ -1043,7 +1043,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "form-control"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label pb-2"
+                                            prop.className "label pb-3"
                                             prop.children [
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Box photo" ]
                                             ]
@@ -1252,7 +1252,7 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
                             prop.className "form-control mb-4"
                             prop.children [
                                 Html.label [
-                                    prop.className "label pb-2"
+                                    prop.className "label pb-3"
                                     prop.children [
                                         Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Select target box" ]
                                     ]
@@ -1467,7 +1467,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "form-control mb-4"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label pb-2"
+                                            prop.className "label pb-3"
                                             prop.children [
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Item name" ]
                                             ]
@@ -1484,7 +1484,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "form-control mb-6"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label pb-2"
+                                            prop.className "label pb-3"
                                             prop.children [
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Assign to box (optional)" ]
                                             ]

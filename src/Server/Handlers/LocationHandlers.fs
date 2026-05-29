@@ -9,6 +9,7 @@ open BoxTracker.Types
 open BoxTracker.Location
 open BoxTracker.PhotoPath
 open BoxTracker.Dto
+open BoxTracker.ImageProcessing
 
 let listLocations : HttpHandler =
     fun (next: HttpFunc) (ctx: HttpContext) ->
@@ -85,28 +86,40 @@ let uploadLocationPhoto (code: string) : HttpHandler =
                     return! (setStatusCode 404 >=> json {| error = $"Location '%s{code}' not found" |}) next ctx
                 | Some location ->
                     location.Photo |> Option.iter (fun p ->
-                        let fullPath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value p)
-                        if File.Exists(fullPath) then File.Delete(fullPath))
+                        let basePath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value p)
+                        let fullVariant : string = $"%s{basePath}-full.webp"
+                        let thumbVariant : string = $"%s{basePath}-thumb.webp"
+                        if File.Exists(fullVariant) then File.Delete(fullVariant)
+                        if File.Exists(thumbVariant) then File.Delete(thumbVariant)
+                        if File.Exists(basePath) then File.Delete(basePath))
                     let! form : IFormCollection = ctx.Request.ReadFormAsync()
                     let file : IFormFile = form.Files.GetFile("photo")
-                    let photoPath : PhotoPath option =
-                        if isNull file then None
-                        else
-                            let guid : Guid = Guid.NewGuid()
-                            let ext : string =
-                                let raw : string = Path.GetExtension(file.FileName)
-                                raw.TrimStart('.').ToLowerInvariant()
-                            let path : PhotoPath = BoxTracker.PhotoPath.create $"location-%s{code}" guid ext
-                            let fullPath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value path)
-                            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)) |> ignore
-                            use stream : FileStream = new FileStream(fullPath, FileMode.Create)
-                            file.CopyTo(stream)
-                            Some path
-                    match storage.UpdateLocationPhoto(code, photoPath) with
-                    | None ->
-                        return! (setStatusCode 404 >=> json {| error = $"Location '%s{code}' not found" |}) next ctx
-                    | Some updated ->
-                        return! json (locationToDto updated) next ctx
+                    if isNull file then
+                        return! (setStatusCode 400 >=> json {| error = "No photo file provided" |}) next ctx
+                    else
+                        let guid : Guid = Guid.NewGuid()
+                        let path : PhotoPath = BoxTracker.PhotoPath.createWebP $"location-%s{code}" guid
+                        let basePath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value path)
+                        let dir : string = Path.GetDirectoryName(basePath)
+                        Directory.CreateDirectory(dir) |> ignore
+
+                        let tempFile : string = Path.Combine(dir, $"temp-%s{Guid.NewGuid().ToString()}")
+                        use stream : FileStream = new FileStream(tempFile, FileMode.Create)
+                        file.CopyTo(stream)
+                        stream.Flush()
+                        stream.Close()
+
+                        let result : Result<unit, string> = processUploadedImage tempFile ($"%s{basePath}-full.webp") ($"%s{basePath}-thumb.webp")
+                        File.Delete(tempFile)
+                        match result with
+                        | Error msg ->
+                            return! (setStatusCode 400 >=> json {| error = $"Image processing failed: {msg}" |}) next ctx
+                        | Ok () ->
+                            match storage.UpdateLocationPhoto(code, Some path) with
+                            | None ->
+                                return! (setStatusCode 404 >=> json {| error = $"Location '%s{code}' not found" |}) next ctx
+                            | Some updated ->
+                                return! json (locationToDto updated) next ctx
         }
 
 let archiveLocation (code: string) : HttpHandler =

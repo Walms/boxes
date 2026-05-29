@@ -10,8 +10,14 @@ open BoxTracker.Client.Api
 [<Fable.Core.Emit("$0.target.value")>]
 let private targetValue (ev: obj) : string = failwith "JS only"
 
-let private photoUrl (path: string option) : string option =
-    path |> Option.map (fun p -> "/api/" + p)
+let private photoUrl (path: string option) (variant: string) : string option =
+    path |> Option.map (fun p -> $"/api/%s{p}-%s{variant}.webp")
+
+let private photoUrlFull (path: string option) : string option =
+    photoUrl path "full"
+
+let private photoUrlThumb (path: string option) : string option =
+    photoUrl path "thumb"
 
 let private imageViewer (state: State) (dispatch: Msg -> unit) : ReactElement =
     match state.ViewingImageUrl with
@@ -224,7 +230,7 @@ let private addExistingItemDialog (state: State) (dispatch: Msg -> unit) : React
                                             ]
                                             prop.onClick (fun _ -> dispatch (SelectedExistingItemChanged item.ItemId))
                                             prop.children [
-                                                match photoUrl item.PhotoPath with
+                                                match photoUrlFull item.PhotoPath with
                                                 | Some url ->
                                                     Html.img [
                                                         prop.className "w-10 h-10 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
@@ -628,7 +634,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Location photo" ]
                                             ]
                                         ]
-                                        match photoUrl detail.Location.PhotoPath with
+                                        match photoUrlFull detail.Location.PhotoPath with
                                         | Some url ->
                                             Html.div [
                                                 prop.className "mb-3"
@@ -1048,7 +1054,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                 Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Box photo" ]
                                             ]
                                         ]
-                                        match photoUrl detail.Box.PhotoPath with
+                                        match photoUrlFull detail.Box.PhotoPath with
                                         | Some url ->
                                             Html.div [
                                                 prop.className "mb-3"
@@ -1192,7 +1198,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                     Html.div [
                                                         prop.className "flex items-center gap-3 flex-1 min-w-0"
                                                         prop.children [
-                                                            match photoUrl item.PhotoPath with
+                                                            match photoUrlThumb item.PhotoPath with
                                                             | Some url ->
                                                                 Html.img [
                                                                     prop.className "w-12 h-12 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
@@ -1304,7 +1310,7 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                     Html.div [
                         prop.className "flex flex-col sm:flex-row sm:items-start gap-3"
                         prop.children [
-                            match photoUrl item.PhotoPath with
+                            match photoUrlThumb item.PhotoPath with
                             | Some url ->
                                 Html.img [
                                     prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
@@ -1569,7 +1575,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     Html.div [
                                         prop.className "card-body flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4"
                                         prop.children [
-                                            match photoUrl r.PhotoPath with
+                                            match photoUrlThumb r.PhotoPath with
                                             | Some url ->
                                                 Html.img [
                                                     prop.className "w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"

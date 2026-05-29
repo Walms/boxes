@@ -32,7 +32,7 @@ export function tryMakeEmpty(location, assignedBoxCount) {
 
 export function archive(_arg) {
     const loc = _arg.fields[0];
-    return new Location(loc.Code, loc.Name, true, loc.CreatedAt);
+    return new Location(loc.Code, loc.Name, true, loc.Photo, loc.CreatedAt);
 }
 
 export function get$(_arg) {

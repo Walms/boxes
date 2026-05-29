@@ -13,6 +13,7 @@
     <Compile Include="Storage.fs" />
     <Compile Include="Dto.fs" />
     <Compile Include="Labels.fs" />
+    <Compile Include="ImageProcessing.fs" />
     <Compile Include="Handlers\LocationHandlers.fs" />
     <Compile Include="Handlers\BoxHandlers.fs" />
     <Compile Include="Handlers\ItemHandlers.fs" />
@@ -29,6 +30,7 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.5" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.0.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.2" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
   </ItemGroup>
 
 </Project>

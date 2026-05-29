@@ -1,9 +1,9 @@
 
 import { Union } from "../../Client/fable_modules/fable-library-js.5.0.0/Types.js";
 import { union_type, string_type } from "../../Client/fable_modules/fable-library-js.5.0.0/Reflection.js";
+import { concat } from "../../Client/fable_modules/fable-library-js.5.0.0/String.js";
 import { defaultOf } from "../../Client/fable_modules/fable-library-js.5.0.0/Util.js";
 import { FSharpResult$2 } from "../../Client/fable_modules/fable-library-js.5.0.0/Result.js";
-import { concat } from "../../Client/fable_modules/fable-library-js.5.0.0/String.js";
 
 export class PhotoPath extends Union {
     constructor(Item) {
@@ -24,9 +24,18 @@ export function create(boxId, guid, extension) {
     return new PhotoPath(`photos/${boxId}/${guid}.${extension}`);
 }
 
+export function createWebP(boxId, guid) {
+    return new PhotoPath(concat("photos/", boxId, "/", ...guid));
+}
+
 export function value(_arg) {
     const s = _arg.fields[0];
     return s;
+}
+
+export function valueWithVariant(_arg, variant) {
+    const s = _arg.fields[0];
+    return concat(s, "-", variant, ...".webp");
 }
 
 export function tryParse(s) {

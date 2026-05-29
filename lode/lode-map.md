@@ -9,6 +9,7 @@
 - [domain/types.md](domain/types.md) — core domain types, smart constructors, Container DU, aggregate roots
 - [domain/persistence.md](domain/persistence.md) — SQLite schema, move-derived placement, FTS5 search, Storage API
 - [domain/api.md](domain/api.md) — server API handlers, DTOs, request/response contracts, label endpoints
+- [domain/image-optimization.md](domain/image-optimization.md) — photo compression, thumbnail generation, WebP serving
 
 ## Infrastructure
 - [infra/stack.md](infra/stack.md) — technology choices and versions

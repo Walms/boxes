@@ -10,17 +10,22 @@ open BoxTracker.BoxLabel
 open BoxTracker.PhotoPath
 open BoxTracker.Container
 open BoxTracker.Dto
+open BoxTracker.ImageProcessing
 
 let private deletePhotoFiles (dataDir: string) (paths: string list) : unit =
     for (path: string) in paths do
-        let fullPath : string = Path.Combine(dataDir, path)
-        if File.Exists(fullPath) then
-            File.Delete(fullPath)
+        let basePath : string = Path.Combine(dataDir, path)
+        let fullPath : string = $"%s{basePath}-full.webp"
+        let thumbPath : string = $"%s{basePath}-thumb.webp"
+        if File.Exists(fullPath) then File.Delete(fullPath)
+        if File.Exists(thumbPath) then File.Delete(thumbPath)
 
 let private deletePhotoFile (dataDir: string) (path: string) : unit =
-    let fullPath : string = Path.Combine(dataDir, path)
-    if File.Exists(fullPath) then
-        File.Delete(fullPath)
+    let basePath : string = Path.Combine(dataDir, path)
+    let fullPath : string = $"%s{basePath}-full.webp"
+    let thumbPath : string = $"%s{basePath}-thumb.webp"
+    if File.Exists(fullPath) then File.Delete(fullPath)
+    if File.Exists(thumbPath) then File.Delete(thumbPath)
 
 let listBoxes : HttpHandler =
     fun (next: HttpFunc) (ctx: HttpContext) ->
@@ -129,28 +134,39 @@ let uploadBoxPhoto (id: string) : HttpHandler =
                     return! (setStatusCode 404 >=> json {| error = $"Box '%s{id}' not found" |}) next ctx
                 | Some box ->
                     box.Photo |> Option.iter (fun p ->
-                        let fullPath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value p)
-                        if File.Exists(fullPath) then File.Delete(fullPath))
+                        let basePath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value p)
+                        let fullPath : string = $"%s{basePath}-full.webp"
+                        let thumbPath : string = $"%s{basePath}-thumb.webp"
+                        if File.Exists(fullPath) then File.Delete(fullPath)
+                        if File.Exists(thumbPath) then File.Delete(thumbPath))
                     let! form : IFormCollection = ctx.Request.ReadFormAsync()
                     let file : IFormFile = form.Files.GetFile("photo")
-                    let photoPath : PhotoPath option =
-                        if isNull file then None
-                        else
-                            let guid : Guid = Guid.NewGuid()
-                            let ext : string =
-                                let raw : string = Path.GetExtension(file.FileName)
-                                raw.TrimStart('.').ToLowerInvariant()
-                            let path : PhotoPath = BoxTracker.PhotoPath.create id guid ext
-                            let fullPath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value path)
-                            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)) |> ignore
-                            use stream : FileStream = new FileStream(fullPath, FileMode.Create)
-                            file.CopyTo(stream)
-                            Some path
-                    match storage.UpdateBoxPhoto(id, photoPath) with
-                    | None ->
-                        return! (setStatusCode 404 >=> json {| error = $"Box '%s{id}' not found" |}) next ctx
-                    | Some updated ->
-                        return! json (boxToDto updated) next ctx
+                    if isNull file then
+                        return! (setStatusCode 400 >=> json {| error = "No photo file provided" |}) next ctx
+                    else
+                        let guid : Guid = Guid.NewGuid()
+                        let path : PhotoPath = BoxTracker.PhotoPath.createWebP id guid
+                        let basePath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value path)
+                        let dir : string = Path.GetDirectoryName(basePath)
+                        Directory.CreateDirectory(dir) |> ignore
+
+                        let tempFile : string = Path.Combine(dir, $"temp-%s{Guid.NewGuid().ToString()}")
+                        use stream : FileStream = new FileStream(tempFile, FileMode.Create)
+                        file.CopyTo(stream)
+                        stream.Flush()
+                        stream.Close()
+
+                        let result : Result<unit, string> = processUploadedImage tempFile ($"%s{basePath}-full.webp") ($"%s{basePath}-thumb.webp")
+                        File.Delete(tempFile)
+                        match result with
+                        | Error msg ->
+                            return! (setStatusCode 400 >=> json {| error = $"Image processing failed: {msg}" |}) next ctx
+                        | Ok () ->
+                            match storage.UpdateBoxPhoto(id, Some path) with
+                            | None ->
+                                return! (setStatusCode 404 >=> json {| error = $"Box '%s{id}' not found" |}) next ctx
+                            | Some updated ->
+                                return! json (boxToDto updated) next ctx
         }
 
 let addItem (boxId: string) : HttpHandler =
@@ -171,22 +187,31 @@ let addItem (boxId: string) : HttpHandler =
                     | Error msg ->
                         return! (setStatusCode 400 >=> json {| error = msg |}) next ctx
                     | Ok itemName ->
-                        let photoPath : PhotoPath option =
-                            let file : IFormFile = form.Files.GetFile("photo")
-                            if isNull file then None
-                            else
-                                let guid : Guid = Guid.NewGuid()
-                                let ext : string =
-                                    let raw : string = Path.GetExtension(file.FileName)
-                                    raw.TrimStart('.').ToLowerInvariant()
-                                let path : PhotoPath = BoxTracker.PhotoPath.create boxId guid ext
-                                let fullPath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value path)
-                                Directory.CreateDirectory(Path.GetDirectoryName(fullPath)) |> ignore
-                                use stream : FileStream = new FileStream(fullPath, FileMode.Create)
-                                file.CopyTo(stream)
-                                Some path
-                        let item : Item = storage.AddItem(boxId, itemName, photoPath)
-                        return! (setStatusCode 201 >=> json (itemToDto item)) next ctx
+                        let file : IFormFile = form.Files.GetFile("photo")
+                        if isNull file then
+                            let item : Item = storage.AddItem(boxId, itemName, None)
+                            return! (setStatusCode 201 >=> json (itemToDto item)) next ctx
+                        else
+                            let guid : Guid = Guid.NewGuid()
+                            let path : PhotoPath = BoxTracker.PhotoPath.createWebP boxId guid
+                            let basePath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value path)
+                            let dir : string = Path.GetDirectoryName(basePath)
+                            Directory.CreateDirectory(dir) |> ignore
+
+                            let tempFile : string = Path.Combine(dir, $"temp-%s{Guid.NewGuid().ToString()}")
+                            use stream : FileStream = new FileStream(tempFile, FileMode.Create)
+                            file.CopyTo(stream)
+                            stream.Flush()
+                            stream.Close()
+
+                            let result : Result<unit, string> = processUploadedImage tempFile ($"%s{basePath}-full.webp") ($"%s{basePath}-thumb.webp")
+                            File.Delete(tempFile)
+                            match result with
+                            | Error msg ->
+                                return! (setStatusCode 400 >=> json {| error = $"Image processing failed: {msg}" |}) next ctx
+                            | Ok () ->
+                                let item : Item = storage.AddItem(boxId, itemName, Some path)
+                                return! (setStatusCode 201 >=> json (itemToDto item)) next ctx
         }
 
 let updateItem (boxId: string) (itemId: string) : HttpHandler =
@@ -211,6 +236,11 @@ let deleteItem (boxId: string) (itemId: string) : HttpHandler =
             let storage : Storage = ctx.GetService<Storage>()
             let config : BoxTrackerConfig = ctx.GetService<BoxTrackerConfig>()
             let photoPath : string option = storage.DeleteItem(itemId)
-            photoPath |> Option.iter (deletePhotoFile config.DataDir)
+            photoPath |> Option.iter (fun p ->
+                let basePath : string = Path.Combine(config.DataDir, p)
+                let fullPath : string = $"%s{basePath}-full.webp"
+                let thumbPath : string = $"%s{basePath}-thumb.webp"
+                if File.Exists(fullPath) then File.Delete(fullPath)
+                if File.Exists(thumbPath) then File.Delete(thumbPath))
             return! json {| success = true |} next ctx
         }

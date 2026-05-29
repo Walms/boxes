@@ -2,25 +2,26 @@
 import { Record } from "../../Client/fable_modules/fable-library-js.5.0.0/Types.js";
 import { LocationCode_$reflection } from "./LocationCode.fs.js";
 import { LocationName_$reflection } from "./LocationName.fs.js";
-import { string_type, option_type, record_type, class_type, bool_type } from "../../Client/fable_modules/fable-library-js.5.0.0/Reflection.js";
-import { ItemName_$reflection } from "./ItemName.fs.js";
+import { string_type, record_type, class_type, option_type, bool_type } from "../../Client/fable_modules/fable-library-js.5.0.0/Reflection.js";
 import { PhotoPath_$reflection } from "./PhotoPath.fs.js";
+import { ItemName_$reflection } from "./ItemName.fs.js";
 import { Container_$reflection } from "./Container.fs.js";
 import { BoxId_$reflection } from "./BoxId.fs.js";
 import { BoxLabel_$reflection } from "./BoxLabel.fs.js";
 
 export class Location extends Record {
-    constructor(Code, Name, IsArchived, CreatedAt) {
+    constructor(Code, Name, IsArchived, Photo, CreatedAt) {
         super();
         this.Code = Code;
         this.Name = Name;
         this.IsArchived = IsArchived;
+        this.Photo = Photo;
         this.CreatedAt = CreatedAt;
     }
 }
 
 export function Location_$reflection() {
-    return record_type("BoxTracker.Types.Location", [], Location, () => [["Code", LocationCode_$reflection()], ["Name", LocationName_$reflection()], ["IsArchived", bool_type], ["CreatedAt", class_type("System.DateTimeOffset")]]);
+    return record_type("BoxTracker.Types.Location", [], Location, () => [["Code", LocationCode_$reflection()], ["Name", LocationName_$reflection()], ["IsArchived", bool_type], ["Photo", option_type(PhotoPath_$reflection())], ["CreatedAt", class_type("System.DateTimeOffset")]]);
 }
 
 export class Item extends Record {

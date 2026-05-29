@@ -22,10 +22,11 @@ export function LocationCode_$reflection() {
 }
 
 export function create(raw) {
-    if (isNullOrWhiteSpace(raw)) {
+    const trimmed = raw.trim();
+    if (isNullOrWhiteSpace(trimmed)) {
         return new FSharpResult$2(1, ["Location code must not be empty"]);
     }
-    else if (raw.length > 20) {
+    else if (trimmed.length > 20) {
         return new FSharpResult$2(1, ["Location code must be 20 characters or fewer"]);
     }
     else if (!forAll((c) => {
@@ -35,11 +36,11 @@ export function create(raw) {
         else {
             return c === "-";
         }
-    }, raw.split(""))) {
+    }, trimmed.split(""))) {
         return new FSharpResult$2(1, ["Location code may only contain letters, digits, and hyphens"]);
     }
     else {
-        return new FSharpResult$2(0, [new LocationCode(raw.toUpperCase())]);
+        return new FSharpResult$2(0, [new LocationCode(trimmed.toUpperCase())]);
     }
 }
 

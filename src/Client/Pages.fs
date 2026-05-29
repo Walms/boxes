@@ -30,10 +30,10 @@ let private imageViewer (state: State) (dispatch: Msg -> unit) : ReactElement =
             )
             prop.children [
                 Html.div [
-                    prop.className "relative max-w-4xl max-h-screen"
+                    prop.className "relative w-11/12 h-5/6 max-w-7xl"
                     prop.children [
                         Html.img [
-                            prop.className "w-full h-auto max-h-screen object-contain"
+                            prop.className "w-full h-full object-contain"
                             prop.src url
                         ]
                         Html.button [

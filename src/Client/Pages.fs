@@ -157,7 +157,7 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
                                     ]
                                 ]
                                 Html.select [
-                                    prop.className "select select-bordered w-full text-base"
+                                    prop.className "select select-bordered w-full text-base ml-2"
                                     prop.value state.TargetBoxId
                                     prop.onChange (fun (s: string) -> dispatch (MoveTargetBoxChanged s))
                                     prop.children [
@@ -811,7 +811,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         prop.className "form-control"
                         prop.children [
                             Html.select [
-                                prop.className "select select-bordered"
+                                prop.className "select select-bordered text-base ml-2"
                                 prop.value state.BoxFilter
                                 prop.onChange (fun (s: string) -> dispatch (BoxFilterChanged s))
                                 prop.children [
@@ -1024,7 +1024,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             ]
                                         ]
                                         Html.select [
-                                            prop.className "select select-bordered focus:select-primary text-base"
+                                            prop.className "select select-bordered focus:select-primary text-base ml-2"
                                             prop.value state.AssignLocationCode
                                             prop.onChange (fun (s: string) -> dispatch (AssignBoxToLocation s))
                                             prop.children [
@@ -1258,7 +1258,7 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
                                     ]
                                 ]
                                 Html.select [
-                                    prop.className "select select-bordered w-full text-base"
+                                    prop.className "select select-bordered w-full text-base ml-2"
                                     prop.value state.MoveItemTargetBox
                                     prop.onChange (fun (s: string) -> dispatch (MoveItemTargetBoxChanged s))
                                     prop.children [
@@ -1490,7 +1490,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             ]
                                         ]
                                         Html.select [
-                                            prop.className "select select-bordered focus:select-primary text-base"
+                                            prop.className "select select-bordered focus:select-primary text-base ml-2"
                                             prop.value state.NewStandaloneItemBoxId
                                             prop.onChange (fun (s: string) -> dispatch (NewStandaloneItemBoxChanged s))
                                             prop.children [

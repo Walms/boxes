@@ -110,9 +110,9 @@ let private errorAlert (state: State) (dispatch: Msg -> unit) : ReactElement =
     | None -> Html.none
     | Some err ->
         Html.div [
-            prop.className "alert alert-error mb-4 rounded-lg gap-3 flex items-start sm:items-center"
+            prop.className "alert alert-error mb-4 rounded-lg gap-3 flex items-start sm:items-center text-base"
             prop.children [
-                Html.div [ prop.className "flex-1 text-sm sm:text-base"; prop.text err ]
+                Html.div [ prop.className "flex-1"; prop.text err ]
                 Html.button [
                     prop.className "btn btn-ghost btn-sm btn-circle flex-shrink-0"
                     prop.text "✕"
@@ -148,16 +148,16 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
                             prop.text "Move item to another box"
                         ]
                         Html.div [
-                            prop.className "form-control"
+                            prop.className "form-control mb-4"
                             prop.children [
                                 Html.label [
-                                    prop.className "label"
+                                    prop.className "label pb-2"
                                     prop.children [
-                                        Html.span [ prop.className "label-text"; prop.text "Select target box" ]
+                                        Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Select target box" ]
                                     ]
                                 ]
                                 Html.select [
-                                    prop.className "select select-bordered w-full"
+                                    prop.className "select select-bordered w-full text-base"
                                     prop.value state.TargetBoxId
                                     prop.onChange (fun (s: string) -> dispatch (MoveTargetBoxChanged s))
                                     prop.children [
@@ -173,15 +173,15 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
                             ]
                         ]
                         Html.div [
-                            prop.className "modal-action"
+                            prop.className "modal-action gap-2"
                             prop.children [
                                 Html.button [
-                                    prop.className "btn btn-ghost"
+                                    prop.className "btn btn-ghost btn-sm"
                                     prop.text "Cancel"
                                     prop.onClick (fun _ -> dispatch CancelMoveItem)
                                 ]
                                 Html.button [
-                                    prop.className "btn btn-primary"
+                                    prop.className "btn btn-primary btn-sm"
                                     prop.text "Move"
                                     prop.disabled (System.String.IsNullOrEmpty state.TargetBoxId)
                                     prop.onClick (fun _ -> dispatch ConfirmMoveItem)
@@ -208,17 +208,17 @@ let private addExistingItemDialog (state: State) (dispatch: Msg -> unit) : React
                         ]
                         if Array.isEmpty state.UnassignedItems then
                             Html.p [
-                                prop.className "text-center py-4 opacity-60"
+                                prop.className "text-center py-4 opacity-60 text-base"
                                 prop.text "No unassigned items available"
                             ]
                         else
                             Html.ul [
-                                prop.className "space-y-2 max-h-80 overflow-y-auto"
+                                prop.className "space-y-3 max-h-80 overflow-y-auto mb-4"
                                 prop.children [
                                     for item in state.UnassignedItems do
                                         Html.li [
                                             prop.className [
-                                                "flex items-center gap-3 p-3 rounded-lg cursor-pointer"
+                                                "flex items-center gap-3 p-3 rounded-lg cursor-pointer text-base"
                                                 if state.SelectedExistingItemId = item.ItemId then "bg-primary text-primary-content"
                                                 else "bg-base-300 hover:bg-base-200"
                                             ]
@@ -244,15 +244,15 @@ let private addExistingItemDialog (state: State) (dispatch: Msg -> unit) : React
                                 ]
                             ]
                         Html.div [
-                            prop.className "modal-action"
+                            prop.className "modal-action gap-2"
                             prop.children [
                                 Html.button [
-                                    prop.className "btn btn-ghost"
+                                    prop.className "btn btn-ghost btn-sm"
                                     prop.text "Cancel"
                                     prop.onClick (fun _ -> dispatch CancelAddExistingItem)
                                 ]
                                 Html.button [
-                                    prop.className "btn btn-primary"
+                                    prop.className "btn btn-primary btn-sm"
                                     prop.text "Add to Box"
                                     prop.disabled (System.String.IsNullOrEmpty state.SelectedExistingItemId)
                                     prop.onClick (fun _ -> dispatch ConfirmAddExistingItem)
@@ -306,7 +306,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     ]
                                 ]
                                 Html.div [
-                                    prop.className "form-control mb-4"
+                                    prop.className "form-control mb-6"
                                     prop.children [
                                         Html.label [
                                             prop.className "label pb-2"
@@ -471,17 +471,17 @@ let private addBoxToLocationDialog (state: State) (dispatch: Msg -> unit) : Reac
                         ]
                         if Array.isEmpty state.BoxesForLocationMove then
                             Html.p [
-                                prop.className "text-center py-4 opacity-60"
+                                prop.className "text-center py-4 opacity-60 text-base"
                                 prop.text "No boxes available to add"
                             ]
                         else
                             Html.ul [
-                                prop.className "space-y-2 max-h-80 overflow-y-auto"
+                                prop.className "space-y-3 max-h-80 overflow-y-auto mb-4"
                                 prop.children [
                                     for box in state.BoxesForLocationMove do
                                         Html.li [
                                             prop.className [
-                                                "flex items-center gap-3 p-3 rounded-lg cursor-pointer"
+                                                "flex items-center gap-3 p-3 rounded-lg cursor-pointer text-base"
                                                 if state.SelectedBoxForLocationMove = box.Id then "bg-primary text-primary-content"
                                                 else "bg-base-300 hover:bg-base-200"
                                             ]
@@ -507,15 +507,15 @@ let private addBoxToLocationDialog (state: State) (dispatch: Msg -> unit) : Reac
                                 ]
                             ]
                         Html.div [
-                            prop.className "modal-action"
+                            prop.className "modal-action gap-2"
                             prop.children [
                                 Html.button [
-                                    prop.className "btn btn-ghost"
+                                    prop.className "btn btn-ghost btn-sm"
                                     prop.text "Cancel"
                                     prop.onClick (fun _ -> dispatch CancelAddBoxToLocation)
                                 ]
                                 Html.button [
-                                    prop.className "btn btn-primary"
+                                    prop.className "btn btn-primary btn-sm"
                                     prop.text "Add to Location"
                                     prop.disabled (System.String.IsNullOrEmpty state.SelectedBoxForLocationMove)
                                     prop.onClick (fun _ -> dispatch ConfirmAddBoxToLocation)
@@ -687,7 +687,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4"
                     prop.children [
                         Html.h2 [
-                            prop.className "text-lg font-semibold"
+                            prop.className "text-lg sm:text-xl font-bold"
                             prop.text $"Boxes (%i{detail.Boxes.Length})"
                         ]
                         Html.button [
@@ -752,22 +752,22 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
             if state.ShowCreateBoxForm then
                 Html.div [
-                    prop.className "card bg-base-200 mb-4"
+                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
                     prop.children [
                         Html.div [
-                            prop.className "card-body"
+                            prop.className "card-body p-4 sm:p-6"
                             prop.children [
                                 Html.div [
-                                    prop.className "form-control"
+                                    prop.className "form-control mb-6"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label"
+                                            prop.className "label pb-2"
                                             prop.children [
-                                                Html.span [ prop.className "label-text"; prop.text "Label (optional)" ]
+                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Label (optional)" ]
                                             ]
                                         ]
                                         Html.input [
-                                            prop.className "input input-bordered"
+                                            prop.className "input input-bordered focus:input-primary text-base"
                                             prop.placeholder "e.g. Kitchen supplies"
                                             prop.value state.NewBoxLabel
                                             prop.onChange (fun (s: string) -> dispatch (NewBoxLabelChanged s))
@@ -775,8 +775,13 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     ]
                                 ]
                                 Html.div [
-                                    prop.className "card-actions justify-end"
+                                    prop.className "flex gap-2 justify-end"
                                     prop.children [
+                                        Html.button [
+                                            prop.className "btn btn-ghost btn-sm"
+                                            prop.text "Cancel"
+                                            prop.onClick (fun _ -> dispatch ShowCreateBoxForm)
+                                        ]
                                         Html.button [
                                             prop.className "btn btn-primary btn-sm"
                                             prop.text "Create"
@@ -1108,7 +1113,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "text-lg font-semibold"
+                                            prop.className "text-lg sm:text-xl font-bold"
                                             prop.text $"Items (%i{detail.Items.Length})"
                                         ]
                                         Html.button [
@@ -1244,16 +1249,16 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
                             prop.text "Move item to a box"
                         ]
                         Html.div [
-                            prop.className "form-control"
+                            prop.className "form-control mb-4"
                             prop.children [
                                 Html.label [
-                                    prop.className "label"
+                                    prop.className "label pb-2"
                                     prop.children [
-                                        Html.span [ prop.className "label-text"; prop.text "Select target box" ]
+                                        Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Select target box" ]
                                     ]
                                 ]
                                 Html.select [
-                                    prop.className "select select-bordered w-full"
+                                    prop.className "select select-bordered w-full text-base"
                                     prop.value state.MoveItemTargetBox
                                     prop.onChange (fun (s: string) -> dispatch (MoveItemTargetBoxChanged s))
                                     prop.children [
@@ -1268,15 +1273,15 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
                             ]
                         ]
                         Html.div [
-                            prop.className "modal-action"
+                            prop.className "modal-action gap-2"
                             prop.children [
                                 Html.button [
-                                    prop.className "btn btn-ghost"
+                                    prop.className "btn btn-ghost btn-sm"
                                     prop.text "Cancel"
                                     prop.onClick (fun _ -> dispatch CancelMoveItemStandalone)
                                 ]
                                 Html.button [
-                                    prop.className "btn btn-primary"
+                                    prop.className "btn btn-primary btn-sm"
                                     prop.text "Move"
                                     prop.disabled (System.String.IsNullOrEmpty state.MoveItemTargetBox)
                                     prop.onClick (fun _ -> dispatch ConfirmMoveItemStandalone)
@@ -1453,22 +1458,22 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
             if state.ShowCreateItemForm then
                 Html.div [
-                    prop.className "card bg-base-200 mb-4"
+                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
                     prop.children [
                         Html.div [
-                            prop.className "card-body"
+                            prop.className "card-body p-4 sm:p-6"
                             prop.children [
                                 Html.div [
-                                    prop.className "form-control"
+                                    prop.className "form-control mb-4"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label"
+                                            prop.className "label pb-2"
                                             prop.children [
-                                                Html.span [ prop.className "label-text"; prop.text "Item name" ]
+                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Item name" ]
                                             ]
                                         ]
                                         Html.input [
-                                            prop.className "input input-bordered"
+                                            prop.className "input input-bordered focus:input-primary text-base"
                                             prop.placeholder "e.g. Kitchen knife set"
                                             prop.value state.NewStandaloneItemName
                                             prop.onChange (fun (s: string) -> dispatch (NewStandaloneItemNameChanged s))
@@ -1476,16 +1481,16 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     ]
                                 ]
                                 Html.div [
-                                    prop.className "form-control"
+                                    prop.className "form-control mb-6"
                                     prop.children [
                                         Html.label [
-                                            prop.className "label"
+                                            prop.className "label pb-2"
                                             prop.children [
-                                                Html.span [ prop.className "label-text"; prop.text "Assign to box (optional)" ]
+                                                Html.span [ prop.className "label-text text-sm font-medium"; prop.text "Assign to box (optional)" ]
                                             ]
                                         ]
                                         Html.select [
-                                            prop.className "select select-bordered"
+                                            prop.className "select select-bordered focus:select-primary text-base"
                                             prop.value state.NewStandaloneItemBoxId
                                             prop.onChange (fun (s: string) -> dispatch (NewStandaloneItemBoxChanged s))
                                             prop.children [
@@ -1500,7 +1505,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     ]
                                 ]
                                 Html.div [
-                                    prop.className "card-actions justify-end"
+                                    prop.className "flex gap-2 justify-end"
                                     prop.children [
                                         Html.button [
                                             prop.className "btn btn-ghost btn-sm"

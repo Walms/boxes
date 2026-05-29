@@ -6,7 +6,7 @@ open SixLabors.ImageSharp
 open SixLabors.ImageSharp.Processing
 open SixLabors.ImageSharp.Formats.Webp
 
-let private webpEncoder : WebpEncoder = WebpEncoder(Quality = 80)
+let private webpEncoder : WebpEncoder = WebpEncoder(Quality = 90)
 
 let private resizeImage (image: Image) (maxWidth: int) (maxHeight: int) : unit =
     if image.Width > maxWidth || image.Height > maxHeight then
@@ -23,7 +23,7 @@ let processUploadedImage (inputPath: string) (outputFullPath: string) (outputThu
         use image : Image = Image.Load(inputPath)
 
         use fullImage : Image = image.Clone(fun cfg -> ())
-        resizeImage fullImage 2000 2000
+        resizeImage fullImage 3500 3500
         fullImage.SaveAsWebp(outputFullPath, webpEncoder)
 
         use thumbImage : Image = image.Clone(fun cfg -> ())

@@ -12,8 +12,8 @@ Photos uploaded by users (boxes and items) are automatically compressed and resi
 1. User uploads a photo (any format: JPG, PNG, etc.)
 2. Temporary file is saved and processed by `ImageProcessing.processUploadedImage`
 3. Two WebP variants are generated and saved:
-   - `{guid}-full.webp` — max 2000×2000 px, 80% quality
-   - `{guid}-thumb.webp` — max 250×250 px, 80% quality
+   - `{guid}-full.webp` — max 3500×3500 px, 90% quality
+   - `{guid}-thumb.webp` — max 250×250 px, 90% quality
 4. PhotoPath stores base path: `photos/{boxId}/{guid}` (no extension)
 5. Temporary file is deleted after processing
 
@@ -21,8 +21,8 @@ Photos uploaded by users (boxes and items) are automatically compressed and resi
 ```
 data/photos/
   {boxId}/
-    {guid}-full.webp    # Full-size variant (2000×2000 max)
-    {guid}-thumb.webp   # Thumbnail variant (250×250 max)
+    {guid}-full.webp    # Full-size variant (3500×3500 max, 90% quality)
+    {guid}-thumb.webp   # Thumbnail variant (250×250 max, 90% quality)
 ```
 
 **API Serving:**

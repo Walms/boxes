@@ -945,16 +945,38 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             prop.onChange (fun (s: string) -> dispatch (NewItemNameChanged s))
                                         ]
                                         Html.div [
-                                            prop.className "form-control"
+                                            prop.className "flex gap-2"
                                             prop.children [
-                                                Html.input [
-                                                    prop.className "file-input file-input-bordered text-base"
-                                                    prop.type' "file"
-                                                    prop.accept "image/*"
+                                                Html.label [
+                                                    prop.className "btn btn-secondary btn-sm flex-1 cursor-pointer"
+                                                    prop.children [
+                                                        Html.text "📷 Take Photo"
+                                                        Html.input [
+                                                            prop.type' "file"
+                                                            prop.accept "image/*"
+                                                            prop.custom("capture", "environment")
+                                                            prop.className "hidden"
 #if FABLE_COMPILER
-                                                    prop.onChange (fun (files: File list) ->
-                                                        files |> List.tryHead |> Option.iter (fun f -> dispatch (PhotoSelected (box f))))
+                                                            prop.onChange (fun (files: File list) ->
+                                                                files |> List.tryHead |> Option.iter (fun f -> dispatch (PhotoSelected (box f))))
 #endif
+                                                        ]
+                                                    ]
+                                                ]
+                                                Html.label [
+                                                    prop.className "btn btn-outline btn-sm flex-1 cursor-pointer"
+                                                    prop.children [
+                                                        Html.text "📁 Choose"
+                                                        Html.input [
+                                                            prop.type' "file"
+                                                            prop.accept "image/*"
+                                                            prop.className "hidden"
+#if FABLE_COMPILER
+                                                            prop.onChange (fun (files: File list) ->
+                                                                files |> List.tryHead |> Option.iter (fun f -> dispatch (PhotoSelected (box f))))
+#endif
+                                                        ]
+                                                    ]
                                                 ]
                                             ]
                                         ]
@@ -1121,17 +1143,40 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                                     prop.onChange (fun (s: string) -> dispatch (EditItemNameChanged s))
                                                 ]
                                                 Html.div [
-                                                    prop.className "form-control"
+                                                    prop.className "flex gap-2"
                                                     prop.children [
-                                                        Html.input [
-                                                            prop.className "file-input file-input-bordered file-input-sm text-base"
-                                                            prop.type' "file"
-                                                            prop.accept "image/*"
+                                                        Html.label [
+                                                            prop.className "btn btn-secondary btn-xs flex-1 cursor-pointer"
+                                                            prop.children [
+                                                                Html.text "📷 Take Photo"
+                                                                Html.input [
+                                                                    prop.type' "file"
+                                                                    prop.accept "image/*"
+                                                                    prop.custom("capture", "environment")
+                                                                    prop.className "hidden"
 #if FABLE_COMPILER
-                                                            prop.onChange (fun (files: Browser.Types.File list) ->
-                                                                files |> List.tryHead |> Option.iter (fun f ->
-                                                                    dispatch (UploadItemPhoto (item.ItemId, box f))))
+                                                                    prop.onChange (fun (files: Browser.Types.File list) ->
+                                                                        files |> List.tryHead |> Option.iter (fun f ->
+                                                                            dispatch (UploadItemPhoto (item.ItemId, box f))))
 #endif
+                                                                ]
+                                                            ]
+                                                        ]
+                                                        Html.label [
+                                                            prop.className "btn btn-outline btn-xs flex-1 cursor-pointer"
+                                                            prop.children [
+                                                                Html.text "📁 Choose"
+                                                                Html.input [
+                                                                    prop.type' "file"
+                                                                    prop.accept "image/*"
+                                                                    prop.className "hidden"
+#if FABLE_COMPILER
+                                                                    prop.onChange (fun (files: Browser.Types.File list) ->
+                                                                        files |> List.tryHead |> Option.iter (fun f ->
+                                                                            dispatch (UploadItemPhoto (item.ItemId, box f))))
+#endif
+                                                                ]
+                                                            ]
                                                         ]
                                                     ]
                                                 ]

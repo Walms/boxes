@@ -377,22 +377,76 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                             ]
                         ]
                     for loc in filteredLocations do
+                        let isEditingThisLoc = state.EditingLocationCodeInList = Some loc.Code
                         Html.div [
-                            prop.className "card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer active:scale-95 transform duration-100"
-                            prop.onClick (fun _ -> dispatch (Navigate (LocationDetail loc.Code)))
+                            prop.className "card bg-base-200"
                             prop.children [
                                 Html.div [
                                     prop.className "card-body p-4 sm:p-5"
                                     prop.children [
-                                        Html.h2 [
-                                            prop.className "card-title text-lg"
-                                            prop.children [
-                                                Html.text loc.Name
-                                                if loc.IsArchived then
-                                                    Html.span [ prop.className "badge badge-ghost badge-sm"; prop.text "Archived" ]
+                                        if isEditingThisLoc then
+                                            Html.div [
+                                                prop.className "flex flex-col sm:flex-row items-end gap-2"
+                                                prop.children [
+                                                    Html.input [
+                                                        prop.className "input input-bordered input-sm flex-1 w-full text-base"
+                                                        prop.value state.EditLocationNameInListValue
+                                                        prop.onChange (fun (s: string) -> dispatch (EditLocationNameInListChanged s))
+                                                    ]
+                                                    Html.div [
+                                                        prop.className "flex gap-2 w-full sm:w-auto"
+                                                        prop.children [
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Cancel"
+                                                                prop.onClick (fun _ -> dispatch CancelEditLocationInList)
+                                                            ]
+                                                            Html.button [
+                                                                prop.className "btn btn-primary btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Save"
+                                                                prop.onClick (fun _ -> dispatch SubmitEditLocationInList)
+                                                            ]
+                                                        ]
+                                                    ]
+                                                ]
                                             ]
-                                        ]
-                                        Html.p [ prop.className "text-sm opacity-70"; prop.text loc.Code ]
+                                        else
+                                            Html.div [
+                                                prop.className "flex items-start justify-between gap-2"
+                                                prop.children [
+                                                    Html.div [
+                                                        prop.className "flex-1 min-w-0 cursor-pointer"
+                                                        prop.onClick (fun _ -> dispatch (Navigate (LocationDetail loc.Code)))
+                                                        prop.children [
+                                                            Html.h2 [
+                                                                prop.className "card-title text-lg flex items-center gap-2 flex-wrap hover:opacity-80"
+                                                                prop.children [
+                                                                    Html.text loc.Name
+                                                                    if loc.IsArchived then
+                                                                        Html.span [ prop.className "badge badge-ghost badge-sm"; prop.text "Archived" ]
+                                                                ]
+                                                            ]
+                                                            Html.p [ prop.className "text-sm opacity-70"; prop.text loc.Code ]
+                                                        ]
+                                                    ]
+                                                    Html.div [
+                                                        prop.className "flex gap-1 flex-shrink-0"
+                                                        prop.children [
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-sm"
+                                                                prop.text "Edit"
+                                                                prop.onClick (fun e -> e.stopPropagation(); dispatch (StartEditLocationInList (loc.Code, loc.Name)))
+                                                            ]
+                                                            if not loc.IsArchived then
+                                                                Html.button [
+                                                                    prop.className "btn btn-ghost btn-sm text-warning"
+                                                                    prop.text "Archive"
+                                                                    prop.onClick (fun e -> e.stopPropagation(); dispatch (ArchiveLocationFromList loc.Code))
+                                                                ]
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
                                     ]
                                 ]
                             ]
@@ -733,24 +787,77 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                             ]
                         ]
                     for box in filteredBoxes do
+                        let isEditingThisBox = state.EditingBoxIdInList = Some box.Id
                         Html.div [
-                            prop.className "card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer active:scale-95 transform duration-100"
-                            prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))
+                            prop.className "card bg-base-200"
                             prop.children [
                                 Html.div [
                                     prop.className "card-body p-4 sm:p-5"
                                     prop.children [
-                                        Html.h2 [
-                                            prop.className "card-title text-lg"
-                                            prop.text (box.Label |> Option.defaultValue box.Id)
-                                        ]
-                                        match box.LocationCode with
-                                        | Some code ->
-                                            Html.span [
-                                                prop.className "badge badge-outline badge-sm"
-                                                prop.text code
+                                        if isEditingThisBox then
+                                            Html.div [
+                                                prop.className "flex flex-col sm:flex-row items-end gap-2"
+                                                prop.children [
+                                                    Html.input [
+                                                        prop.className "input input-bordered input-sm flex-1 w-full text-base"
+                                                        prop.value state.EditBoxLabelInListValue
+                                                        prop.onChange (fun (s: string) -> dispatch (EditBoxLabelInListChanged s))
+                                                    ]
+                                                    Html.div [
+                                                        prop.className "flex gap-2 w-full sm:w-auto"
+                                                        prop.children [
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Cancel"
+                                                                prop.onClick (fun _ -> dispatch CancelEditBoxInList)
+                                                            ]
+                                                            Html.button [
+                                                                prop.className "btn btn-primary btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Save"
+                                                                prop.onClick (fun _ -> dispatch SubmitEditBoxInList)
+                                                            ]
+                                                        ]
+                                                    ]
+                                                ]
                                             ]
-                                        | None -> Html.none
+                                        else
+                                            Html.div [
+                                                prop.className "flex items-start justify-between gap-2"
+                                                prop.children [
+                                                    Html.div [
+                                                        prop.className "flex-1 min-w-0 cursor-pointer"
+                                                        prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))
+                                                        prop.children [
+                                                            Html.h2 [
+                                                                prop.className "card-title text-lg truncate hover:opacity-80"
+                                                                prop.text (box.Label |> Option.defaultValue box.Id)
+                                                            ]
+                                                            match box.LocationCode with
+                                                            | Some code ->
+                                                                Html.span [
+                                                                    prop.className "badge badge-outline badge-sm"
+                                                                    prop.text code
+                                                                ]
+                                                            | None -> Html.none
+                                                        ]
+                                                    ]
+                                                    Html.div [
+                                                        prop.className "flex gap-1 flex-shrink-0"
+                                                        prop.children [
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-sm"
+                                                                prop.text "Edit"
+                                                                prop.onClick (fun e -> e.stopPropagation(); dispatch (StartEditBoxInList (box.Id, box.Label)))
+                                                            ]
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-sm text-error"
+                                                                prop.text "Delete"
+                                                                prop.onClick (fun e -> e.stopPropagation(); dispatch (DeleteBoxFromList box.Id))
+                                                            ]
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
                                     ]
                                 ]
                             ]

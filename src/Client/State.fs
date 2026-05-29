@@ -108,6 +108,20 @@ type Msg =
     | PrintBoxLabel
     | PrintLocationLabel
     | PrintMultipleBoxLabels
+    | StartEditBoxInList of string * string option
+    | EditBoxLabelInListChanged of string
+    | SubmitEditBoxInList
+    | CancelEditBoxInList
+    | BoxUpdatedInList of Result<BoxDto, string>
+    | DeleteBoxFromList of string
+    | BoxDeletedFromList of Result<unit, string>
+    | StartEditLocationInList of string * string
+    | EditLocationNameInListChanged of string
+    | SubmitEditLocationInList
+    | CancelEditLocationInList
+    | LocationUpdatedInList of Result<LocationDto, string>
+    | ArchiveLocationFromList of string
+    | LocationArchivedFromList of Result<LocationDto, string>
 
 type State = {
     CurrentPage: Page
@@ -155,6 +169,10 @@ type State = {
     AddingBoxToLocation: bool
     BoxesForLocationMove: BoxDto array
     SelectedBoxForLocationMove: string
+    EditingBoxIdInList: string option
+    EditBoxLabelInListValue: string
+    EditingLocationCodeInList: string option
+    EditLocationNameInListValue: string
 }
 
 [<Fable.Core.Emit("window.location.hash")>]
@@ -269,6 +287,10 @@ let private resetPageState (state: State) : State =
         AddingBoxToLocation = false
         BoxesForLocationMove = [||]
         SelectedBoxForLocationMove = ""
+        EditingBoxIdInList = None
+        EditBoxLabelInListValue = ""
+        EditingLocationCodeInList = None
+        EditLocationNameInListValue = ""
     }
 
 let private navigateCmd (page: Page) : Cmd<Msg> =
@@ -323,6 +345,10 @@ let init () : State * Cmd<Msg> =
         AddingBoxToLocation = false
         BoxesForLocationMove = [||]
         SelectedBoxForLocationMove = ""
+        EditingBoxIdInList = None
+        EditBoxLabelInListValue = ""
+        EditingLocationCodeInList = None
+        EditLocationNameInListValue = ""
     }
     let cmds : Cmd<Msg> = Cmd.batch [
         Cmd.ofEffect hashChangeSub
@@ -890,3 +916,81 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | PrintMultipleBoxLabels ->
         state, Cmd.none
+
+    | StartEditBoxInList (boxId, currentLabel) ->
+        { state with EditingBoxIdInList = Some boxId; EditBoxLabelInListValue = currentLabel |> Option.defaultValue "" }, Cmd.none
+
+    | EditBoxLabelInListChanged label ->
+        { state with EditBoxLabelInListValue = label }, Cmd.none
+
+    | SubmitEditBoxInList ->
+        match state.EditingBoxIdInList with
+        | None -> state, Cmd.none
+        | Some boxId ->
+            let label : string = state.EditBoxLabelInListValue.Trim()
+            if System.String.IsNullOrEmpty label then state, Cmd.none
+            else
+                let locCode : string =
+                    state.Boxes |> Array.tryFind (fun b -> b.Id = boxId)
+                    |> Option.bind (fun b -> b.LocationCode)
+                    |> Option.defaultValue ""
+                { state with Loading = true },
+                Cmd.OfAsync.either (fun () -> updateBox boxId label locCode) () BoxUpdatedInList (fun ex -> ErrorOccurred ex.Message)
+
+    | CancelEditBoxInList ->
+        { state with EditingBoxIdInList = None; EditBoxLabelInListValue = "" }, Cmd.none
+
+    | BoxUpdatedInList (Ok updatedBox) ->
+        let boxes : BoxDto array = state.Boxes |> Array.map (fun b -> if b.Id = updatedBox.Id then updatedBox else b)
+        { state with Boxes = boxes; EditingBoxIdInList = None; EditBoxLabelInListValue = ""; Loading = false }, Cmd.none
+
+    | BoxUpdatedInList (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | DeleteBoxFromList boxId ->
+        { state with Loading = true },
+        Cmd.OfAsync.either (fun () -> deleteBox boxId) () BoxDeletedFromList (fun ex -> ErrorOccurred ex.Message)
+
+    | BoxDeletedFromList (Ok _) ->
+        { state with Loading = false },
+        Cmd.OfAsync.either (fun () -> getBoxes (if System.String.IsNullOrEmpty state.BoxFilter then None else Some state.BoxFilter)) () BoxesLoaded (fun ex -> ErrorOccurred ex.Message)
+
+    | BoxDeletedFromList (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | StartEditLocationInList (code, currentName) ->
+        { state with EditingLocationCodeInList = Some code; EditLocationNameInListValue = currentName }, Cmd.none
+
+    | EditLocationNameInListChanged name ->
+        { state with EditLocationNameInListValue = name }, Cmd.none
+
+    | SubmitEditLocationInList ->
+        match state.EditingLocationCodeInList with
+        | None -> state, Cmd.none
+        | Some code ->
+            let name : string = state.EditLocationNameInListValue.Trim()
+            if System.String.IsNullOrEmpty name then state, Cmd.none
+            else
+                { state with Loading = true },
+                Cmd.OfAsync.either (fun () -> updateLocation code name) () LocationUpdatedInList (fun ex -> ErrorOccurred ex.Message)
+
+    | CancelEditLocationInList ->
+        { state with EditingLocationCodeInList = None; EditLocationNameInListValue = "" }, Cmd.none
+
+    | LocationUpdatedInList (Ok updatedLoc) ->
+        let locations : LocationDto array = state.Locations |> Array.map (fun l -> if l.Code = updatedLoc.Code then updatedLoc else l)
+        { state with Locations = locations; EditingLocationCodeInList = None; EditLocationNameInListValue = ""; Loading = false }, Cmd.none
+
+    | LocationUpdatedInList (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | ArchiveLocationFromList code ->
+        { state with Loading = true },
+        Cmd.OfAsync.either (fun () -> archiveLocation code) () LocationArchivedFromList (fun ex -> ErrorOccurred ex.Message)
+
+    | LocationArchivedFromList (Ok archivedLoc) ->
+        let locations : LocationDto array = state.Locations |> Array.map (fun l -> if l.Code = archivedLoc.Code then archivedLoc else l)
+        { state with Locations = locations; Loading = false }, Cmd.none
+
+    | LocationArchivedFromList (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none

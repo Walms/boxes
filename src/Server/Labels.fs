@@ -32,10 +32,12 @@ let private labelPageCss : string =
         width: 100mm;
         height: 60mm;
         box-sizing: border-box;
-        padding: 2.5mm;
+        padding: 2mm;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 2.5mm;
+        justify-content: center;
+        gap: 1mm;
         page-break-after: always;
         font-family: 'Courier New', 'Courier', monospace;
         background: white !important;
@@ -49,34 +51,30 @@ let private labelPageCss : string =
         justify-content: center;
     }
     .label-qr svg {
-        width: 50mm;
-        height: 50mm;
+        width: 42mm;
+        height: 42mm;
         display: block;
     }
     .label-text {
-        flex: 1;
-        min-width: 0;
+        width: 100%;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        overflow: hidden;
+        align-items: center;
+        text-align: center;
         font-family: 'Courier New', 'Courier', monospace;
     }
     .label-id {
-        font-size: 16pt;
+        font-size: 10pt;
         font-weight: bold;
         letter-spacing: 0.5px;
         line-height: 1.2;
         word-break: break-all;
-        margin-bottom: 1mm;
     }
     .label-sub {
         font-size: 9pt;
         margin-top: 0.5mm;
         word-break: break-word;
         line-height: 1.3;
-        max-height: 8mm;
-        overflow: hidden;
     }
     .no-print {
         display: block;

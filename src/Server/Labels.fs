@@ -51,8 +51,8 @@ let private labelPageCss : string =
         justify-content: center;
     }
     .label-qr svg {
-        width: 42mm;
-        height: 42mm;
+        width: 34mm;
+        height: 34mm;
         display: block;
     }
     .label-text {
@@ -64,14 +64,14 @@ let private labelPageCss : string =
         font-family: 'Courier New', 'Courier', monospace;
     }
     .label-id {
-        font-size: 10pt;
+        font-size: 18pt;
         font-weight: bold;
         letter-spacing: 0.5px;
         line-height: 1.2;
         word-break: break-all;
     }
     .label-sub {
-        font-size: 9pt;
+        font-size: 15pt;
         margin-top: 0.5mm;
         word-break: break-word;
         line-height: 1.3;

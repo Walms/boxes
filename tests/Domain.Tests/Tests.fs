@@ -177,6 +177,7 @@ let ``Location.tryMakeEmpty rejects location with assigned boxes`` () : unit =
         Code = code
         Name = BoxTracker.LocationName.create "Test" |> Result.defaultWith (fun _ -> failwith "bad name")
         IsArchived = false
+        Photo = None
         CreatedAt = System.DateTimeOffset.UtcNow
     }
     let result : Result<_, string> = BoxTracker.Location.tryMakeEmpty loc 3
@@ -190,6 +191,7 @@ let ``Location.tryMakeEmpty accepts location with zero boxes`` () : unit =
         Code = code
         Name = BoxTracker.LocationName.create "Test" |> Result.defaultWith (fun _ -> failwith "bad name")
         IsArchived = false
+        Photo = None
         CreatedAt = System.DateTimeOffset.UtcNow
     }
     let result : Result<_, string> = BoxTracker.Location.tryMakeEmpty loc 0
@@ -203,6 +205,7 @@ let ``Location.archive sets IsArchived to true`` () : unit =
         Code = code
         Name = BoxTracker.LocationName.create "Test" |> Result.defaultWith (fun _ -> failwith "bad name")
         IsArchived = false
+        Photo = None
         CreatedAt = System.DateTimeOffset.UtcNow
     }
     let empty : BoxTracker.Location.EmptyLocation =

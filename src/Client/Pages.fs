@@ -10,6 +10,9 @@ open BoxTracker.Client.Api
 [<Fable.Core.Emit("$0.target.value")>]
 let private targetValue (ev: obj) : string = failwith "JS only"
 
+[<Fable.Core.Emit("new Date($0).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })")>]
+let private formatDate (iso: string) : string = failwith "JS only"
+
 let private photoUrl (path: string option) (variant: string) : string option =
     path |> Option.map (fun p -> $"/api/%s{p}-%s{variant}.webp")
 
@@ -921,6 +924,12 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                                         ]
                                                                     ]
                                                                     Html.li [
+                                                                        Html.a [
+                                                                            prop.text "View History"
+                                                                            prop.onClick (fun _ -> dispatch (ShowHistory ("box", detail.Box.Id, detail.Box.Label |> Option.defaultValue detail.Box.Id, Some detail.Box.CreatedAt)))
+                                                                        ]
+                                                                    ]
+                                                                    Html.li [
                                                                         Html.label [
                                                                             prop.className "flex gap-2 items-center cursor-pointer"
                                                                             prop.children [
@@ -1146,6 +1155,12 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                                 prop.children [
                                                                     Html.li [
                                                                         Html.a [
+                                                                            prop.text "View History"
+                                                                            prop.onClick (fun _ -> dispatch (ShowHistory ("item", item.Id, item.Name, Some item.AddedAt)))
+                                                                        ]
+                                                                    ]
+                                                                    Html.li [
+                                                                        Html.a [
                                                                             prop.text "Move to box"
                                                                             prop.onClick (fun _ -> dispatch (ShowMoveItemDialog item.Id))
                                                                         ]
@@ -1366,6 +1381,12 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                             prop.children [
                                                 Html.li [
                                                     Html.a [
+                                                        prop.text "View History"
+                                                        prop.onClick (fun _ -> dispatch (ShowHistory ("item", item.ItemId, item.ItemName, None)))
+                                                    ]
+                                                ]
+                                                Html.li [
+                                                    Html.a [
                                                         prop.text "Edit"
                                                         prop.onClick (fun _ -> dispatch (StartEditItem (item.ItemId, item.ItemName)))
                                                     ]
@@ -1522,11 +1543,97 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
         ]
     ]
 
+let private historyModal (state: State) (dispatch: Msg -> unit) : ReactElement =
+    if not state.ShowHistoryModal then Html.none
+    else
+        let moveDescription (move: MoveDto) =
+            match move.ToType, move.ToId with
+            | Some "location", Some code ->
+                let name =
+                    state.AvailableLocations
+                    |> Array.tryFind (fun l -> l.Code = code)
+                    |> Option.map (fun l -> l.Name)
+                    |> Option.defaultValue code
+                $"Moved to %s{name}"
+            | Some "box", Some id -> $"Moved to %s{id}"
+            | _ -> "Unassigned"
+
+        let moves = state.HistoryMoves |> Array.rev
+        let events : (string * string) list = [
+            match state.HistoryCreatedAt with
+            | Some dt -> yield ("Created", dt)
+            | None -> ()
+            for move in moves do
+                yield (moveDescription move, move.MovedAt)
+        ]
+        let eventsArr = List.toArray events
+
+        Html.div [
+            prop.className "modal modal-open z-50"
+            prop.onClick (fun e -> if e.currentTarget = e.target then dispatch CloseHistory)
+            prop.children [
+                Html.div [
+                    prop.className "modal-box w-11/12 max-w-lg"
+                    prop.children [
+                        Html.div [
+                            prop.className "flex items-center justify-between mb-1"
+                            prop.children [
+                                Html.h3 [ prop.className "font-bold text-lg"; prop.text "History" ]
+                                Html.button [
+                                    prop.className "btn btn-ghost btn-sm btn-circle"
+                                    prop.text "✕"
+                                    prop.onClick (fun _ -> dispatch CloseHistory)
+                                ]
+                            ]
+                        ]
+                        Html.p [ prop.className "text-sm opacity-60 mb-4 truncate"; prop.text state.HistoryTitle ]
+                        if state.HistoryLoading then
+                            Html.div [
+                                prop.className "flex justify-center p-8"
+                                prop.children [ Html.span [ prop.className "loading loading-spinner loading-md" ] ]
+                            ]
+                        elif Array.isEmpty eventsArr then
+                            Html.p [ prop.className "text-center py-6 opacity-60 text-sm"; prop.text "No history recorded yet" ]
+                        else
+                            Html.ul [
+                                prop.className "space-y-0 py-2"
+                                prop.children [
+                                    for i in 0 .. eventsArr.Length - 1 do
+                                        let (label, timestamp) = eventsArr.[i]
+                                        let isLast = i = eventsArr.Length - 1
+                                        Html.li [
+                                            prop.className "flex gap-3 items-start"
+                                            prop.children [
+                                                Html.div [
+                                                    prop.className "flex flex-col items-center flex-shrink-0 pt-0.5"
+                                                    prop.children [
+                                                        Html.div [ prop.className "w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-base-100" ]
+                                                        if not isLast then
+                                                            Html.div [ prop.className "w-px bg-base-300 flex-1 min-h-5 mt-1" ]
+                                                    ]
+                                                ]
+                                                Html.div [
+                                                    prop.className "pb-4 min-w-0"
+                                                    prop.children [
+                                                        Html.p [ prop.className "text-sm font-medium leading-tight"; prop.text label ]
+                                                        Html.p [ prop.className "text-xs opacity-60 mt-0.5"; prop.text (formatDate timestamp) ]
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                ]
+                            ]
+                    ]
+                ]
+            ]
+        ]
+
 let renderPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "min-h-screen bg-base-100"
         prop.children [
             imageViewer state dispatch
+            historyModal state dispatch
             navbar state dispatch
             Html.div [
                 prop.className "w-full mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 max-w-6xl"

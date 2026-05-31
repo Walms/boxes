@@ -605,17 +605,17 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                         prop.className "flex gap-2 w-full sm:w-auto flex-col sm:flex-row"
                                                         prop.children [
                                                             Html.button [
-                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
+                                                                prop.className "btn btn-ghost btn-sm w-full sm:w-auto"
                                                                 prop.text "Edit"
                                                                 prop.onClick (fun _ -> dispatch StartEditLocationName)
                                                             ]
                                                             Html.button [
-                                                                prop.className "btn btn-outline btn-sm flex-1 sm:flex-none"
+                                                                prop.className "btn btn-outline btn-sm w-full sm:w-auto"
                                                                 prop.text "Print Label"
                                                                 prop.onClick (fun _ -> dispatch PrintLocationLabel)
                                                             ]
                                                             Html.button [
-                                                                prop.className "btn btn-error btn-sm flex-1 sm:flex-none"
+                                                                prop.className "btn btn-error btn-sm w-full sm:w-auto"
                                                                 prop.text "Archive"
                                                                 prop.onClick (fun _ -> dispatch ArchiveLocation)
                                                             ]
@@ -1007,17 +1007,17 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                         prop.className "flex gap-2 w-full sm:w-auto flex-col sm:flex-row"
                                                         prop.children [
                                                             Html.button [
-                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
+                                                                prop.className "btn btn-ghost btn-sm w-full sm:w-auto"
                                                                 prop.text "Edit"
                                                                 prop.onClick (fun _ -> dispatch StartEditBoxLabel)
                                                             ]
                                                             Html.button [
-                                                                prop.className "btn btn-outline btn-sm flex-1 sm:flex-none"
+                                                                prop.className "btn btn-outline btn-sm w-full sm:w-auto"
                                                                 prop.text "Print Label"
                                                                 prop.onClick (fun _ -> dispatch PrintBoxLabel)
                                                             ]
                                                             Html.button [
-                                                                prop.className "btn btn-error btn-sm flex-1 sm:flex-none"
+                                                                prop.className "btn btn-error btn-sm w-full sm:w-auto"
                                                                 prop.text "Delete"
                                                                 prop.onClick (fun _ -> dispatch DeleteBox)
                                                             ]

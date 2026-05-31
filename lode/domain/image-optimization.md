@@ -8,14 +8,18 @@ Photos uploaded by users (boxes and items) are automatically compressed and resi
 
 ## How It Works
 
-**Upload Processing:**
-1. User uploads a photo (any format: JPG, PNG, etc.)
-2. Temporary file is saved and processed by `ImageProcessing.processUploadedImage`
+**Upload Processing:** (now runs asynchronously — see
+[async-photo-processing.md](async-photo-processing.md))
+1. User uploads a photo (any format: JPG, PNG, etc.); the request returns `202`
+   immediately with a `photo_job` and the client polls for status.
+2. The raw upload is staged in `data/photo-jobs/{guid}`; a background worker
+   processes it via `ImageProcessing.processUploadedImage`.
 3. Two WebP variants are generated and saved:
    - `{guid}-full.webp` — max 3500×3500 px, 90% quality
    - `{guid}-thumb.webp` — max 250×250 px, 90% quality
-4. PhotoPath stores base path: `photos/{boxId}/{guid}` (no extension)
-5. Temporary file is deleted after processing
+4. PhotoPath stores base path: `photos/{boxId}/{guid}` (no extension); the
+   entity's `photo_path` is set only once processing completes.
+5. The raw staged file is deleted after processing (success or failure).
 
 **File Storage:**
 ```

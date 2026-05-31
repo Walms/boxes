@@ -38,6 +38,20 @@ type SearchResultDto = {
     AddedAt: string
 }
 
+type PhotoJobDto = {
+    Id: string
+    EntityType: string
+    EntityId: string
+    Status: string
+    Error: string option
+    PhotoPath: string option
+}
+
+type AddItemResultDto = {
+    Item: ItemDto
+    PhotoJobId: string option
+}
+
 type MoveDto = {
     Id: string
     EntityType: string
@@ -209,11 +223,11 @@ let getItem (id: string) : Async<Result<ItemDto, string>> =
 let deleteItemStandalone (itemId: string) : Async<Result<unit, string>> =
     deleteReq $"/api/items/%s{itemId}"
 
-let addItem (boxId: string) (name: string) (photo: obj option) : Async<Result<ItemDto, string>> =
+let addItem (boxId: string) (name: string) (photo: obj option) : Async<Result<AddItemResultDto, string>> =
     let fd : obj = createFormData ()
     formDataAppendString fd "name" name
     photo |> Option.iter (fun p -> formDataAppend fd "photo" p)
-    upload<ItemDto> $"/api/boxes/%s{boxId}/items" fd
+    upload<AddItemResultDto> $"/api/boxes/%s{boxId}/items" fd
 
 let updateItem (boxId: string) (itemId: string) (name: string) : Async<Result<ItemDto, string>> =
     send<ItemDto> "PUT" $"/api/boxes/%s{boxId}/items/%s{itemId}" (Some {| Name = name |})
@@ -236,20 +250,23 @@ let listItems () : Async<Result<SearchResultDto array, string>> =
 let updateItemStandalone (itemId: string) (name: string) : Async<Result<ItemDto, string>> =
     send<ItemDto> "PUT" $"/api/items/%s{itemId}" (Some {| Name = name |})
 
-let updateItemPhoto (itemId: string) (photo: obj) : Async<Result<ItemDto, string>> =
+let updateItemPhoto (itemId: string) (photo: obj) : Async<Result<PhotoJobDto, string>> =
     let fd : obj = createFormData ()
     formDataAppend fd "photo" photo
-    upload<ItemDto> $"/api/items/%s{itemId}/photo" fd
+    upload<PhotoJobDto> $"/api/items/%s{itemId}/photo" fd
 
-let uploadBoxPhoto (boxId: string) (photo: obj) : Async<Result<BoxDto, string>> =
+let uploadBoxPhoto (boxId: string) (photo: obj) : Async<Result<PhotoJobDto, string>> =
     let fd : obj = createFormData ()
     formDataAppend fd "photo" photo
-    upload<BoxDto> $"/api/boxes/%s{boxId}/photo" fd
+    upload<PhotoJobDto> $"/api/boxes/%s{boxId}/photo" fd
 
-let uploadLocationPhoto (locationCode: string) (photo: obj) : Async<Result<LocationDto, string>> =
+let uploadLocationPhoto (locationCode: string) (photo: obj) : Async<Result<PhotoJobDto, string>> =
     let fd : obj = createFormData ()
     formDataAppend fd "photo" photo
-    upload<LocationDto> $"/api/locations/%s{locationCode}/photo" fd
+    upload<PhotoJobDto> $"/api/locations/%s{locationCode}/photo" fd
+
+let getPhotoJob (jobId: string) : Async<Result<PhotoJobDto, string>> =
+    get<PhotoJobDto> $"/api/photo-jobs/%s{jobId}"
 
 let searchItems (query: string) : Async<Result<SearchResultDto array, string>> =
     get<SearchResultDto array> $"/api/items?q=%s{query}"

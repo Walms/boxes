@@ -124,6 +124,11 @@ type Storage (connectionString: string) =
         | None ->
             let conn : SqliteConnection = new SqliteConnection(connectionString)
             conn.Open()
+            // WAL mode + a busy timeout let the background photo worker and the
+            // request handlers safely share the database from separate connections.
+            let pragma : SqliteCommand = conn.CreateCommand()
+            pragma.CommandText <- "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;"
+            pragma.ExecuteNonQuery() |> ignore
             let c : SqliteCommand = conn.CreateCommand()
             c.CommandText <- createTables
             c.ExecuteNonQuery() |> ignore

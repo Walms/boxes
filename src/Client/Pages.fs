@@ -638,11 +638,15 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         ]
                                     ]
                                 | None -> Html.none
-                                if state.UploadingPhoto then
+                                if state.UploadingPhoto || state.PhotoProcessing then
                                     Html.div [
-                                        prop.className "flex justify-center p-4"
+                                        prop.className "flex justify-center items-center gap-2 p-4"
                                         prop.children [
                                             Html.span [ prop.className "loading loading-spinner loading-md" ]
+                                            Html.span [
+                                                prop.className "text-sm opacity-70"
+                                                prop.text (if state.PhotoProcessing then "Processing…" else "Uploading…")
+                                            ]
                                         ]
                                     ]
                                 else Html.none
@@ -1018,11 +1022,15 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         ]
                                     ]
                                 | None -> Html.none
-                                if state.UploadingPhoto then
+                                if state.UploadingPhoto || state.PhotoProcessing then
                                     Html.div [
-                                        prop.className "flex justify-center p-4"
+                                        prop.className "flex justify-center items-center gap-2 p-4"
                                         prop.children [
                                             Html.span [ prop.className "loading loading-spinner loading-md" ]
+                                            Html.span [
+                                                prop.className "text-sm opacity-70"
+                                                prop.text (if state.PhotoProcessing then "Processing…" else "Uploading…")
+                                            ]
                                         ]
                                     ]
                                 else Html.none
@@ -1284,11 +1292,15 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                                     prop.value state.EditItemNameValue
                                                     prop.onChange (fun (s: string) -> dispatch (EditItemNameChanged s))
                                                 ]
-                                                if state.UploadingPhoto then
+                                                if state.UploadingPhoto || state.PhotoProcessing then
                                                     Html.div [
-                                                        prop.className "flex justify-center p-4"
+                                                        prop.className "flex justify-center items-center gap-2 p-4"
                                                         prop.children [
                                                             Html.span [ prop.className "loading loading-spinner loading-md" ]
+                                                            Html.span [
+                                                                prop.className "text-sm opacity-70"
+                                                                prop.text (if state.PhotoProcessing then "Processing…" else "Uploading…")
+                                                            ]
                                                         ]
                                                     ]
                                                 else Html.div [

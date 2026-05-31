@@ -777,7 +777,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         prop.className "form-control"
                         prop.children [
                             Html.select [
-                                prop.className "select select-bordered text-base ml-2"
+                                prop.className "select select-bordered text-base w-full sm:w-auto ml-0 sm:ml-2"
                                 prop.value state.BoxFilter
                                 prop.onChange (fun (s: string) -> dispatch (BoxFilterChanged s))
                                 prop.children [
@@ -826,7 +826,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "card-body p-4 sm:p-5"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "card-title text-lg truncate"
+                                            prop.className "card-title text-sm truncate"
                                             prop.text (box.Label |> Option.defaultValue box.Id)
                                         ]
                                         match box.LocationCode with

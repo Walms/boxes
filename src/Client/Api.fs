@@ -35,6 +35,7 @@ type SearchResultDto = {
     BoxLabel: string option
     LocationCode: string option
     LocationName: string option
+    AddedAt: string
 }
 
 type MoveDto = {

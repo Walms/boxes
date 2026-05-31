@@ -47,6 +47,7 @@ type SearchResultResponse = {
     BoxLabel: string option
     LocationCode: string option
     LocationName: string option
+    AddedAt: DateTimeOffset
 }
 
 type MoveResponse = {
@@ -144,6 +145,7 @@ let searchResultToDto (r: SearchResult) : SearchResultResponse = {
     BoxLabel = r.BoxLabel
     LocationCode = r.LocationCode
     LocationName = r.LocationName
+    AddedAt = r.AddedAt
 }
 
 let moveToDto (m: Move) : MoveResponse = {

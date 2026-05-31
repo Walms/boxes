@@ -9,7 +9,8 @@ open BoxTracker.Types
 open BoxTracker.Location
 open BoxTracker.PhotoPath
 open BoxTracker.Dto
-open BoxTracker.ImageProcessing
+open BoxTracker.PhotoJobStore
+open BoxTracker.Handlers.PhotoJobHandlers
 
 let listLocations : HttpHandler =
     fun (next: HttpFunc) (ctx: HttpContext) ->
@@ -80,46 +81,18 @@ let uploadLocationPhoto (code: string) : HttpHandler =
                 return! (setStatusCode 400 >=> json {| error = "Expected multipart/form-data" |}) next ctx
             else
                 let storage : Storage = ctx.GetService<Storage>()
-                let config : BoxTrackerConfig = ctx.GetService<BoxTrackerConfig>()
                 match storage.GetLocation(code) with
                 | None ->
                     return! (setStatusCode 404 >=> json {| error = $"Location '%s{code}' not found" |}) next ctx
                 | Some location ->
-                    location.Photo |> Option.iter (fun p ->
-                        let basePath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value p)
-                        let fullVariant : string = $"%s{basePath}-full.webp"
-                        let thumbVariant : string = $"%s{basePath}-thumb.webp"
-                        if File.Exists(fullVariant) then File.Delete(fullVariant)
-                        if File.Exists(thumbVariant) then File.Delete(thumbVariant)
-                        if File.Exists(basePath) then File.Delete(basePath))
                     let! form : IFormCollection = ctx.Request.ReadFormAsync()
                     let file : IFormFile = form.Files.GetFile("photo")
                     if isNull file then
                         return! (setStatusCode 400 >=> json {| error = "No photo file provided" |}) next ctx
                     else
-                        let guid : Guid = Guid.NewGuid()
-                        let path : PhotoPath = BoxTracker.PhotoPath.createWebP $"location-%s{code}" guid
-                        let basePath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value path)
-                        let dir : string = Path.GetDirectoryName(basePath)
-                        Directory.CreateDirectory(dir) |> ignore
-
-                        let tempFile : string = Path.Combine(dir, $"temp-%s{Guid.NewGuid().ToString()}")
-                        use stream : FileStream = new FileStream(tempFile, FileMode.Create)
-                        file.CopyTo(stream)
-                        stream.Flush()
-                        stream.Close()
-
-                        let result : Result<unit, string> = processUploadedImage tempFile ($"%s{basePath}-full.webp") ($"%s{basePath}-thumb.webp")
-                        File.Delete(tempFile)
-                        match result with
-                        | Error msg ->
-                            return! (setStatusCode 400 >=> json {| error = $"Image processing failed: {msg}" |}) next ctx
-                        | Ok () ->
-                            match storage.UpdateLocationPhoto(code, Some path) with
-                            | None ->
-                                return! (setStatusCode 404 >=> json {| error = $"Location '%s{code}' not found" |}) next ctx
-                            | Some updated ->
-                                return! json (locationToDto updated) next ctx
+                        let oldPhoto : string option = location.Photo |> Option.map BoxTracker.PhotoPath.value
+                        let! job : PhotoJob = enqueuePhotoJob ctx "location" code $"location-%s{code}" oldPhoto file
+                        return! (setStatusCode 202 >=> json (photoJobToDto job)) next ctx
         }
 
 let archiveLocation (code: string) : HttpHandler =

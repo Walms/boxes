@@ -10,7 +10,8 @@ open BoxTracker.BoxLabel
 open BoxTracker.PhotoPath
 open BoxTracker.Container
 open BoxTracker.Dto
-open BoxTracker.ImageProcessing
+open BoxTracker.PhotoJobStore
+open BoxTracker.Handlers.PhotoJobHandlers
 
 let private deletePhotoFiles (dataDir: string) (paths: string list) : unit =
     for (path: string) in paths do
@@ -128,45 +129,18 @@ let uploadBoxPhoto (id: string) : HttpHandler =
                 return! (setStatusCode 400 >=> json {| error = "Expected multipart/form-data" |}) next ctx
             else
                 let storage : Storage = ctx.GetService<Storage>()
-                let config : BoxTrackerConfig = ctx.GetService<BoxTrackerConfig>()
                 match storage.GetBox(id) with
                 | None ->
                     return! (setStatusCode 404 >=> json {| error = $"Box '%s{id}' not found" |}) next ctx
                 | Some box ->
-                    box.Photo |> Option.iter (fun p ->
-                        let basePath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value p)
-                        let fullPath : string = $"%s{basePath}-full.webp"
-                        let thumbPath : string = $"%s{basePath}-thumb.webp"
-                        if File.Exists(fullPath) then File.Delete(fullPath)
-                        if File.Exists(thumbPath) then File.Delete(thumbPath))
                     let! form : IFormCollection = ctx.Request.ReadFormAsync()
                     let file : IFormFile = form.Files.GetFile("photo")
                     if isNull file then
                         return! (setStatusCode 400 >=> json {| error = "No photo file provided" |}) next ctx
                     else
-                        let guid : Guid = Guid.NewGuid()
-                        let path : PhotoPath = BoxTracker.PhotoPath.createWebP id guid
-                        let basePath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value path)
-                        let dir : string = Path.GetDirectoryName(basePath)
-                        Directory.CreateDirectory(dir) |> ignore
-
-                        let tempFile : string = Path.Combine(dir, $"temp-%s{Guid.NewGuid().ToString()}")
-                        use stream : FileStream = new FileStream(tempFile, FileMode.Create)
-                        file.CopyTo(stream)
-                        stream.Flush()
-                        stream.Close()
-
-                        let result : Result<unit, string> = processUploadedImage tempFile ($"%s{basePath}-full.webp") ($"%s{basePath}-thumb.webp")
-                        File.Delete(tempFile)
-                        match result with
-                        | Error msg ->
-                            return! (setStatusCode 400 >=> json {| error = $"Image processing failed: {msg}" |}) next ctx
-                        | Ok () ->
-                            match storage.UpdateBoxPhoto(id, Some path) with
-                            | None ->
-                                return! (setStatusCode 404 >=> json {| error = $"Box '%s{id}' not found" |}) next ctx
-                            | Some updated ->
-                                return! json (boxToDto updated) next ctx
+                        let oldPhoto : string option = box.Photo |> Option.map BoxTracker.PhotoPath.value
+                        let! job : PhotoJob = enqueuePhotoJob ctx "box" id id oldPhoto file
+                        return! (setStatusCode 202 >=> json (photoJobToDto job)) next ctx
         }
 
 let addItem (boxId: string) : HttpHandler =
@@ -176,7 +150,6 @@ let addItem (boxId: string) : HttpHandler =
                 return! (setStatusCode 400 >=> json {| error = "Expected multipart/form-data" |}) next ctx
             else
                 let storage : Storage = ctx.GetService<Storage>()
-                let config : BoxTrackerConfig = ctx.GetService<BoxTrackerConfig>()
                 match storage.GetBox(boxId) with
                 | None ->
                     return! (setStatusCode 404 >=> json {| error = $"Box '%s{boxId}' not found" |}) next ctx
@@ -188,30 +161,14 @@ let addItem (boxId: string) : HttpHandler =
                         return! (setStatusCode 400 >=> json {| error = msg |}) next ctx
                     | Ok itemName ->
                         let file : IFormFile = form.Files.GetFile("photo")
+                        // The item is created immediately; any photo is processed
+                        // asynchronously and attached when the job completes.
+                        let item : Item = storage.AddItem(boxId, itemName, None)
                         if isNull file then
-                            let item : Item = storage.AddItem(boxId, itemName, None)
-                            return! (setStatusCode 201 >=> json (itemToDto item)) next ctx
+                            return! (setStatusCode 201 >=> json { Item = itemToDto item; PhotoJobId = None }) next ctx
                         else
-                            let guid : Guid = Guid.NewGuid()
-                            let path : PhotoPath = BoxTracker.PhotoPath.createWebP boxId guid
-                            let basePath : string = Path.Combine(config.DataDir, BoxTracker.PhotoPath.value path)
-                            let dir : string = Path.GetDirectoryName(basePath)
-                            Directory.CreateDirectory(dir) |> ignore
-
-                            let tempFile : string = Path.Combine(dir, $"temp-%s{Guid.NewGuid().ToString()}")
-                            use stream : FileStream = new FileStream(tempFile, FileMode.Create)
-                            file.CopyTo(stream)
-                            stream.Flush()
-                            stream.Close()
-
-                            let result : Result<unit, string> = processUploadedImage tempFile ($"%s{basePath}-full.webp") ($"%s{basePath}-thumb.webp")
-                            File.Delete(tempFile)
-                            match result with
-                            | Error msg ->
-                                return! (setStatusCode 400 >=> json {| error = $"Image processing failed: {msg}" |}) next ctx
-                            | Ok () ->
-                                let item : Item = storage.AddItem(boxId, itemName, Some path)
-                                return! (setStatusCode 201 >=> json (itemToDto item)) next ctx
+                            let! job : PhotoJob = enqueuePhotoJob ctx "item" (item.Id.ToString()) boxId None file
+                            return! (setStatusCode 201 >=> json { Item = itemToDto item; PhotoJobId = Some job.Id }) next ctx
         }
 
 let updateItem (boxId: string) (itemId: string) : HttpHandler =

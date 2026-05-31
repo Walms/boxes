@@ -14,6 +14,8 @@ open Microsoft.Extensions.DependencyInjection
 open Giraffe
 open BoxTracker.Router
 open BoxTracker.Storage
+open BoxTracker.PhotoJobStore
+open BoxTracker.PhotoProcessing
 open BoxTracker.Dto
 
 let dataDir : string =
@@ -49,6 +51,14 @@ let configureServices (services: IServiceCollection) : unit =
     storage.Connect() |> ignore
     services.AddSingleton<Storage>(storage) |> ignore
     services.AddSingleton<BoxTrackerConfig>({ DataDir = dataDir }) |> ignore
+
+    // Photo processing runs on a durable, server-side queue so uploads return
+    // quickly and processing survives client disconnects and server restarts.
+    let photoJobStore : PhotoJobStore = new PhotoJobStore(connStr)
+    photoJobStore.Connect()
+    services.AddSingleton<PhotoJobStore>(photoJobStore) |> ignore
+    services.AddSingleton<PhotoJobSignal>(PhotoJobSignal()) |> ignore
+    services.AddHostedService<PhotoProcessingService>() |> ignore
 
 [<EntryPoint>]
 let main (args: string array) : int =

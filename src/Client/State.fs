@@ -124,6 +124,9 @@ type Msg =
     | LocationArchivedFromList of Result<LocationDto, string>
     | UploadLocationPhoto of string * obj
     | LocationPhotoUploaded of Result<LocationDto, string>
+    | ShowHistory of string * string * string * string option
+    | HistoryLoaded of Result<MoveDto array, string>
+    | CloseHistory
 
 type State = {
     CurrentPage: Page
@@ -176,6 +179,13 @@ type State = {
     EditBoxLabelInListValue: string
     EditingLocationCodeInList: string option
     EditLocationNameInListValue: string
+    ShowHistoryModal: bool
+    HistoryTitle: string
+    HistoryEntityType: string
+    HistoryEntityId: string
+    HistoryCreatedAt: string option
+    HistoryMoves: MoveDto array
+    HistoryLoading: bool
 }
 
 [<Fable.Core.Emit("window.location.hash")>]
@@ -294,6 +304,13 @@ let private resetPageState (state: State) : State =
         EditBoxLabelInListValue = ""
         EditingLocationCodeInList = None
         EditLocationNameInListValue = ""
+        ShowHistoryModal = false
+        HistoryTitle = ""
+        HistoryEntityType = ""
+        HistoryEntityId = ""
+        HistoryCreatedAt = None
+        HistoryMoves = [||]
+        HistoryLoading = false
     }
 
 let private navigateCmd (page: Page) : Cmd<Msg> =
@@ -353,6 +370,13 @@ let init () : State * Cmd<Msg> =
         EditBoxLabelInListValue = ""
         EditingLocationCodeInList = None
         EditLocationNameInListValue = ""
+        ShowHistoryModal = false
+        HistoryTitle = ""
+        HistoryEntityType = ""
+        HistoryEntityId = ""
+        HistoryCreatedAt = None
+        HistoryMoves = [||]
+        HistoryLoading = false
     }
     let cmds : Cmd<Msg> = Cmd.batch [
         Cmd.ofEffect hashChangeSub
@@ -1012,3 +1036,23 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | LocationPhotoUploaded (Error err) ->
         { state with Error = Some err; Loading = false; UploadingPhoto = false }, Cmd.none
+
+    | ShowHistory (entityType, entityId, title, createdAt) ->
+        { state with
+            ShowHistoryModal = true
+            HistoryEntityType = entityType
+            HistoryEntityId = entityId
+            HistoryTitle = title
+            HistoryCreatedAt = createdAt
+            HistoryMoves = [||]
+            HistoryLoading = true },
+        Cmd.OfAsync.either (fun () -> getMoveHistory entityType entityId) () HistoryLoaded (fun ex -> ErrorOccurred ex.Message)
+
+    | HistoryLoaded (Ok moves) ->
+        { state with HistoryMoves = moves; HistoryLoading = false }, Cmd.none
+
+    | HistoryLoaded (Error err) ->
+        { state with Error = Some err; HistoryLoading = false; ShowHistoryModal = false }, Cmd.none
+
+    | CloseHistory ->
+        { state with ShowHistoryModal = false; HistoryMoves = [||] }, Cmd.none

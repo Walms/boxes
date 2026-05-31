@@ -50,6 +50,18 @@ The Location Detail page (`#/locations/{code}`) manages a single location and it
 - **Remove box**: Each box card has a Remove button that unassigns it from the location via `unassignEntity "box" boxId` (`POST /api/moves` with empty `ToType`/`ToId`).
 - **Box cards**: Clickable box name navigates to `BoxDetail`.
 
+## History Modal
+
+All boxes and items have a history timeline accessible via "View History" in their action menus (Actions ▾ or ⋮):
+
+- **Trigger**: "View History" in box Actions ▾ dropdown (box detail page); "View History" in item ⋮ dropdown (box detail and items pages).
+- **Data source**: `GET /api/moves?entityType=&entityId=` returns `MoveDto array` ordered newest-first; the modal reverses to show oldest-first chronology.
+- **Timeline events**: Creation timestamp (`CreatedAt`/`AddedAt`, if available) as first event, then each move. Move descriptions: "Moved to {location name}" for boxes (looks up name from `AvailableLocations`), "Moved to {box id}" for items, "Unassigned" for removals.
+- **State fields**: `ShowHistoryModal`, `HistoryTitle`, `HistoryEntityType`, `HistoryEntityId`, `HistoryCreatedAt: string option`, `HistoryMoves`, `HistoryLoading`.
+- **Messages**: `ShowHistory (entityType, entityId, title, createdAt option)` → triggers API fetch; `HistoryLoaded`, `CloseHistory`.
+- **Rendered**: `historyModal` component above all pages in `renderPage` (next to `imageViewer`).
+- Reset on navigation via `resetPageState`.
+
 ## Full-Screen Image Viewer
 
 All images in the app (box photos, item photos) are clickable and open a full-screen viewer. The viewer:

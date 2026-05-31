@@ -1382,7 +1382,7 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                                 Html.li [
                                                     Html.a [
                                                         prop.text "View History"
-                                                        prop.onClick (fun _ -> dispatch (ShowHistory ("item", item.ItemId, item.ItemName, None)))
+                                                        prop.onClick (fun _ -> dispatch (ShowHistory ("item", item.ItemId, item.ItemName, Some item.AddedAt)))
                                                     ]
                                                 ]
                                                 Html.li [

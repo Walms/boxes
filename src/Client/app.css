@@ -45,6 +45,38 @@
   --radius-box: 0rem;
 }
 
+/* ---------------------------------------------------------------------------
+   One font, a few sizes.
+
+   Press Start 2P is the single typeface across the whole app. It is wide and
+   chunky, so the type scale is deliberately tiny and collapsed down to just
+   four steps. Every Tailwind text utility (text-xs … text-3xl) is remapped
+   onto these four steps, so the many scattered size classes throughout the
+   UI resolve to one consistent scale instead of a dozen arbitrary sizes.
+
+   The four steps:
+     small   0.50rem  — captions, badges, helper text   (text-xs / text-sm)
+     body    0.60rem  — default body / list text         (text-base)
+     title   0.85rem  — sub-headings / emphasis          (text-lg / text-xl)
+     display 1.10rem  — page + section headings          (text-2xl / text-3xl)
+--------------------------------------------------------------------------- */
+@theme {
+  --text-xs: 0.5rem;
+  --text-xs--line-height: 1.7;
+  --text-sm: 0.5rem;
+  --text-sm--line-height: 1.7;
+  --text-base: 0.6rem;
+  --text-base--line-height: 1.7;
+  --text-lg: 0.85rem;
+  --text-lg--line-height: 1.6;
+  --text-xl: 0.85rem;
+  --text-xl--line-height: 1.6;
+  --text-2xl: 1.1rem;
+  --text-2xl--line-height: 1.5;
+  --text-3xl: 1.1rem;
+  --text-3xl--line-height: 1.5;
+}
+
 @layer base {
   :root {
     /* Pixel-art design tokens — softened: thinner outlines, gentler shadows */
@@ -53,11 +85,14 @@
     --nin-shadow-sm: 2px 2px 0 rgba(42, 47, 62, 0.45);
   }
 
+  /* One typeface everywhere: the classic 8-bit Nintendo title font.
+     Root size stays 16px so the rem-based scale and spacing tokens are stable;
+     body text is dialled right down because Press Start 2P is very wide. */
   html {
-    font-family: "VT323", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo,
-      Consolas, "DejaVu Sans Mono", monospace;
+    font-family: "Press Start 2P", ui-monospace, "Cascadia Code", "Source Code Pro",
+      Menlo, Consolas, "DejaVu Sans Mono", monospace;
     font-size: 16px;
-    letter-spacing: 0.01em;
+    letter-spacing: 0;
 
     /* Design system spacing scale (semantic) */
     --spacing-xs: 0.25rem;
@@ -68,10 +103,13 @@
     --spacing-2xl: 3rem;
   }
 
-  /* Headings + brand use the classic 8/16-bit Nintendo title font.
-     Press Start 2P is wide, so sizes are dialled down and line-height opened. */
+  body {
+    font-size: var(--text-base);   /* body step — 0.6rem */
+    line-height: 1.7;
+  }
+
+  /* Headings reuse the same four-step scale — no bespoke sizes. */
   h1, h2, h3 {
-    font-family: "Press Start 2P", "VT323", ui-monospace, monospace;
     line-height: 1.5;
     letter-spacing: 0;
     color: var(--nin-ink);
@@ -79,20 +117,12 @@
     text-shadow: 1px 1px 0 rgba(231, 234, 240, 0.9);
   }
 
-  h1 { font-size: 0.68rem; }
-  @media (min-width: 640px) {
-    h1 { font-size: 0.86rem; }
-  }
-
-  h2 { font-size: 0.54rem; }
-  @media (min-width: 640px) {
-    h2 { font-size: 0.64rem; }
-  }
-
-  h3 { font-size: 0.49rem; }
+  h1 { font-size: var(--text-2xl); }   /* display — 1.1rem  */
+  h2 { font-size: var(--text-lg);  }   /* title   — 0.85rem */
+  h3 { font-size: var(--text-base); }  /* body    — 0.6rem  */
 
   label {
-    @apply text-lg font-medium;
+    @apply text-base font-medium;
   }
 
   body {

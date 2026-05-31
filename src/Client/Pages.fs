@@ -190,7 +190,7 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
                                     prop.onClick (fun _ -> dispatch CancelMoveItem)
                                 ]
                                 Html.button [
-                                    prop.className "btn btn-primary btn-sm"
+                                    prop.className "btn btn-success btn-sm"
                                     prop.text "Move"
                                     prop.disabled (System.String.IsNullOrEmpty state.TargetBoxId)
                                     prop.onClick (fun _ -> dispatch ConfirmMoveItem)
@@ -261,7 +261,7 @@ let private addExistingItemDialog (state: State) (dispatch: Msg -> unit) : React
                                     prop.onClick (fun _ -> dispatch CancelAddExistingItem)
                                 ]
                                 Html.button [
-                                    prop.className "btn btn-primary btn-sm"
+                                    prop.className "btn btn-success btn-sm"
                                     prop.text "Add to Box"
                                     prop.disabled (System.String.IsNullOrEmpty state.SelectedExistingItemId)
                                     prop.onClick (fun _ -> dispatch ConfirmAddExistingItem)
@@ -284,7 +284,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         prop.text "Locations"
                     ]
                     Html.button [
-                        prop.className "btn btn-primary btn-sm sm:btn-md w-full sm:w-auto"
+                        prop.className "btn btn-success btn-sm sm:btn-md w-full sm:w-auto"
                         prop.text "+ New Location"
                         prop.onClick (fun _ -> dispatch ShowCreateLocationForm)
                     ]
@@ -340,7 +340,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             prop.onClick (fun _ -> dispatch ShowCreateLocationForm)
                                         ]
                                         Html.button [
-                                            prop.className "btn btn-primary btn-sm"
+                                            prop.className "btn btn-success btn-sm"
                                             prop.text "Create"
                                             prop.onClick (fun _ -> dispatch SubmitCreateLocation)
                                         ]
@@ -470,7 +470,7 @@ let private addBoxToLocationDialog (state: State) (dispatch: Msg -> unit) : Reac
                                     prop.onClick (fun _ -> dispatch CancelAddBoxToLocation)
                                 ]
                                 Html.button [
-                                    prop.className "btn btn-primary btn-sm"
+                                    prop.className "btn btn-success btn-sm"
                                     prop.text "Add to Location"
                                     prop.disabled (System.String.IsNullOrEmpty state.SelectedBoxForLocationMove)
                                     prop.onClick (fun _ -> dispatch ConfirmAddBoxToLocation)
@@ -528,7 +528,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                                 prop.onClick (fun _ -> dispatch CancelEditLocationName)
                                                             ]
                                                             Html.button [
-                                                                prop.className "btn btn-primary btn-sm flex-1 sm:flex-none"
+                                                                prop.className "btn btn-success btn-sm flex-1 sm:flex-none"
                                                                 prop.text "Save"
                                                                 prop.onClick (fun _ -> dispatch SubmitEditLocationName)
                                                             ]
@@ -710,7 +710,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         prop.text "Boxes"
                     ]
                     Html.button [
-                        prop.className "btn btn-primary btn-sm sm:btn-md w-full sm:w-auto"
+                        prop.className "btn btn-success btn-sm sm:btn-md w-full sm:w-auto"
                         prop.text "+ New Box"
                         prop.onClick (fun _ -> dispatch ShowCreateBoxForm)
                     ]
@@ -749,7 +749,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             prop.onClick (fun _ -> dispatch ShowCreateBoxForm)
                                         ]
                                         Html.button [
-                                            prop.className "btn btn-primary btn-sm"
+                                            prop.className "btn btn-success btn-sm"
                                             prop.text "Create"
                                             prop.onClick (fun _ -> dispatch SubmitCreateBox)
                                         ]
@@ -889,7 +889,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                         prop.onClick (fun _ -> dispatch CancelEditBoxLabel)
                                                     ]
                                                     Html.button [
-                                                        prop.className "btn btn-primary btn-sm flex-1 sm:flex-none"
+                                                        prop.className "btn btn-success btn-sm flex-1 sm:flex-none"
                                                         prop.text "Save"
                                                         prop.onClick (fun _ -> dispatch SubmitEditBoxLabel)
                                                     ]
@@ -1116,7 +1116,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                     ]
                                                 ]
                                                 Html.button [
-                                                    prop.className "btn btn-primary w-full"
+                                                    prop.className "btn btn-success w-full"
                                                     prop.text "Add Item"
                                                     prop.onClick (fun _ -> dispatch SubmitAddItem)
                                                 ]
@@ -1248,7 +1248,7 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
                                     prop.onClick (fun _ -> dispatch CancelMoveItemStandalone)
                                 ]
                                 Html.button [
-                                    prop.className "btn btn-primary btn-sm"
+                                    prop.className "btn btn-success btn-sm"
                                     prop.text "Move"
                                     prop.disabled (System.String.IsNullOrEmpty state.MoveItemTargetBox)
                                     prop.onClick (fun _ -> dispatch ConfirmMoveItemStandalone)
@@ -1350,7 +1350,7 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                                             prop.onClick (fun _ -> dispatch CancelEditItem)
                                                         ]
                                                         Html.button [
-                                                            prop.className "btn btn-primary btn-sm flex-1"
+                                                            prop.className "btn btn-success btn-sm flex-1"
                                                             prop.text "Save"
                                                             prop.onClick (fun _ -> dispatch SubmitEditItem)
                                                         ]
@@ -1446,7 +1446,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         prop.text $"Items (%i{state.AllItems.Length})"
                     ]
                     Html.button [
-                        prop.className "btn btn-primary btn-sm sm:btn-md w-full sm:w-auto"
+                        prop.className "btn btn-success btn-sm sm:btn-md w-full sm:w-auto"
                         prop.text "+ New Item"
                         prop.onClick (fun _ -> dispatch ShowCreateItemForm)
                     ]
@@ -1509,7 +1509,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             prop.onClick (fun _ -> dispatch (Navigate ItemsList))
                                         ]
                                         Html.button [
-                                            prop.className "btn btn-primary btn-sm"
+                                            prop.className "btn btn-success btn-sm"
                                             prop.text "Create"
                                             prop.disabled (System.String.IsNullOrEmpty(state.NewStandaloneItemName.Trim()))
                                             prop.onClick (fun _ -> dispatch SubmitCreateStandaloneItem)

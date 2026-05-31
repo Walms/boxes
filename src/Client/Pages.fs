@@ -394,7 +394,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "card-body p-4 sm:p-5"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "card-title text-lg flex items-center gap-2 flex-wrap"
+                                            prop.className "text-base break-words flex items-center gap-2 flex-wrap"
                                             prop.children [
                                                 Html.text loc.Name
                                                 if loc.IsArchived then
@@ -1360,7 +1360,7 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                         ]
                                     else
                                         Html.p [
-                                            prop.className "font-semibold text-sm truncate"
+                                            prop.className "text-base break-words"
                                             prop.text item.ItemName
                                         ]
                                         Html.p [

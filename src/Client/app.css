@@ -6,38 +6,40 @@
   default: true;
   color-scheme: light;
 
-  /* Iconic Super Mario sky-blue page backdrop with white "manual paper" cards */
-  --color-base-100: #5c94fc;          /* SMB sky blue — the page backdrop */
-  --color-base-200: #ffffff;          /* white panels / navbar / cards */
-  --color-base-300: #d6deff;          /* soft sky tint for borders / dropdowns */
-  --color-base-content: #15172b;      /* near-black navy ink */
+  /* Muted 16-bit "application" chrome — soft slate-grey desktop, light panels.
+     Modelled on SNES non-game software (Mario Paint / BS-X style UI) rather
+     than the bold primaries of a platformer. */
+  --color-base-100: #aab2c4;          /* desaturated slate desktop backdrop */
+  --color-base-200: #e7eaf0;          /* light grey panels / navbar / cards */
+  --color-base-300: #c3c9d6;          /* mid-grey borders / dropdowns */
+  --color-base-content: #2a2f3e;      /* soft dark slate ink (not pure black) */
 
-  /* Mario red primary */
-  --color-primary: #e52521;
-  --color-primary-content: #ffffff;
+  /* Dusty brick red primary */
+  --color-primary: #b5544e;
+  --color-primary-content: #f5eeee;
 
-  /* Pipe / Luigi green secondary */
-  --color-secondary: #00a651;
-  --color-secondary-content: #ffffff;
+  /* Muted sage / pipe green secondary */
+  --color-secondary: #5a8f78;
+  --color-secondary-content: #f2f6f4;
 
-  /* Coin / ?-block yellow accent */
-  --color-accent: #fbd000;
-  --color-accent-content: #15172b;
+  /* Faded gold accent */
+  --color-accent: #cda94f;
+  --color-accent-content: #2a2f3e;
 
-  /* Cartridge-grey neutral */
-  --color-neutral: #15172b;
-  --color-neutral-content: #ffffff;
+  /* Slate neutral */
+  --color-neutral: #3a4055;
+  --color-neutral-content: #eef0f5;
 
-  --color-error: #e52521;
-  --color-error-content: #ffffff;
-  --color-success: #00a651;
-  --color-success-content: #ffffff;
-  --color-warning: #fbd000;
-  --color-warning-content: #15172b;
-  --color-info: #2e6fe8;
-  --color-info-content: #ffffff;
+  --color-error: #b5544e;
+  --color-error-content: #f5eeee;
+  --color-success: #5a8f78;
+  --color-success-content: #f2f6f4;
+  --color-warning: #cda94f;
+  --color-warning-content: #2a2f3e;
+  --color-info: #5d7aa8;
+  --color-info-content: #eef0f5;
 
-  /* Sharp pixel-art corners — nothing rounded in 1990 */
+  /* Sharp pixel-art corners */
   --radius-selector: 0rem;
   --radius-field: 0rem;
   --radius-box: 0rem;
@@ -45,17 +47,17 @@
 
 @layer base {
   :root {
-    /* Pixel-art design tokens */
-    --nin-ink: #15172b;
-    --nin-shadow: 4px 4px 0 var(--nin-ink);
-    --nin-shadow-sm: 3px 3px 0 var(--nin-ink);
+    /* Pixel-art design tokens — softened: thinner outlines, gentler shadows */
+    --nin-ink: #2a2f3e;
+    --nin-shadow: 2px 2px 0 rgba(42, 47, 62, 0.55);
+    --nin-shadow-sm: 2px 2px 0 rgba(42, 47, 62, 0.45);
   }
 
   html {
     font-family: "VT323", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo,
       Consolas, "DejaVu Sans Mono", monospace;
-    font-size: 18px;
-    letter-spacing: 0.02em;
+    font-size: 16px;
+    letter-spacing: 0.01em;
 
     /* Design system spacing scale (semantic) */
     --spacing-xs: 0.25rem;
@@ -66,71 +68,94 @@
     --spacing-2xl: 3rem;
   }
 
-  /* Headings + brand use the quintessential 8/16-bit Nintendo title font.
-     Press Start 2P is wide, so sizes are dialled down and line-height opened up. */
+  /* Headings + brand use the classic 8/16-bit Nintendo title font.
+     Press Start 2P is wide, so sizes are dialled down and line-height opened. */
   h1, h2, h3 {
     font-family: "Press Start 2P", "VT323", ui-monospace, monospace;
     line-height: 1.5;
     letter-spacing: 0;
     color: var(--nin-ink);
-    /* Hard one-pixel offset drop shadow — like a sprite outline */
-    text-shadow: 2px 2px 0 #ffffff, 3px 3px 0 var(--nin-ink);
+    /* Single soft offset — dampened from the earlier bold double shadow */
+    text-shadow: 1px 1px 0 rgba(231, 234, 240, 0.9);
   }
 
-  h1 {
-    font-size: 1.25rem;
-  }
-
+  h1 { font-size: 1.05rem; }
   @media (min-width: 640px) {
-    h1 { font-size: 1.6rem; }
+    h1 { font-size: 1.35rem; }
   }
 
-  h2 {
-    font-size: 1rem;
-  }
-
+  h2 { font-size: 0.85rem; }
   @media (min-width: 640px) {
-    h2 { font-size: 1.2rem; }
+    h2 { font-size: 1rem; }
   }
 
-  h3 {
-    font-size: 0.85rem;
-  }
+  h3 { font-size: 0.75rem; }
 
   label {
-    @apply text-xl font-medium;
+    @apply text-lg font-medium;
   }
 
   body {
     position: relative;
   }
+
+  /* ---- CRT interlacing / scanline overlay -------------------------------- */
+  /* Subtle horizontal scanlines for that interlaced-tube look */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(42, 47, 62, 0.07) 2px,
+      rgba(42, 47, 62, 0.07) 3px
+    );
+  }
+
+  /* Gentle tube vignette to round off the corners of the "screen" */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 60%,
+      rgba(42, 47, 62, 0.16) 100%
+    );
+  }
 }
 
 @layer components {
-  /* ---- Chunky pixel-art controls ---------------------------------------- */
+  /* ---- Softened pixel controls ------------------------------------------- */
 
-  /* Buttons: thick ink outline + hard offset shadow that "presses" down */
+  /* Buttons: thin ink outline + gentle offset shadow that presses down */
   .btn {
-    border: 3px solid var(--nin-ink) !important;
+    border: 2px solid var(--nin-ink) !important;
     border-radius: 0 !important;
     box-shadow: var(--nin-shadow);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
     font-weight: 700;
     transition: transform 60ms steps(2), box-shadow 60ms steps(2);
   }
 
   .btn:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0 var(--nin-ink);
+    box-shadow: 3px 3px 0 rgba(42, 47, 62, 0.55);
   }
 
   .btn:active {
-    transform: translate(3px, 3px);
-    box-shadow: 1px 1px 0 var(--nin-ink);
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 rgba(42, 47, 62, 0.4);
   }
 
-  /* Circle/ghost buttons stay light — drop the heavy shadow where it'd crowd */
+  /* Circle/ghost buttons stay light */
   .btn-circle {
     box-shadow: none;
   }
@@ -148,63 +173,63 @@
     box-shadow: none;
   }
 
-  /* Panels: white cartridge-label cards with a bold outline + offset shadow */
+  /* Panels: light grey software panels with a thin outline + soft shadow */
   .card, .modal-box, .dropdown-content, .alert, .menu.dropdown-content {
-    border: 3px solid var(--nin-ink) !important;
+    border: 2px solid var(--nin-ink) !important;
     border-radius: 0 !important;
     box-shadow: var(--nin-shadow);
   }
 
-  /* Navbar: white panel capped by the classic red Nintendo strip */
+  /* Navbar: panel capped by a thin muted accent strip */
   .navbar {
-    border-bottom: 4px solid var(--nin-ink) !important;
-    box-shadow: 0 4px 0 0 var(--color-primary);
+    border-bottom: 2px solid var(--nin-ink) !important;
+    box-shadow: 0 2px 0 0 var(--color-primary);
   }
 
-  /* Inputs / selects / textareas: inset pixel fields, coin-yellow focus ring */
+  /* Inputs / selects / textareas: inset pixel fields, faded-gold focus ring */
   .input, .select, .textarea {
-    border: 3px solid var(--nin-ink) !important;
+    border: 2px solid var(--nin-ink) !important;
     border-radius: 0 !important;
   }
   .input:focus, .select:focus, .textarea:focus,
   .input:focus-within, .select:focus-within, .textarea:focus-within {
     outline: none;
-    box-shadow: 0 0 0 3px var(--color-accent), var(--nin-shadow-sm);
+    box-shadow: 0 0 0 2px var(--color-accent), var(--nin-shadow-sm);
   }
 
-  /* Loading spinner in Mario red */
+  /* Loading spinner in muted brick */
   .loading {
     color: var(--color-primary);
     animation-duration: 0.4s !important;
   }
 
-  /* Full-screen image viewer above everything */
+  /* Full-screen image viewer above the scanlines + vignette for max fidelity */
   .image-viewer {
     z-index: 10000 !important;
   }
 
   /* ---- Entity type colour coding (locations / boxes / items) ------------- */
-  /* Thick pixel left-border in distinct Nintendo hues */
+  /* Thin pixel left-border in muted, distinct hues */
   .entity-location {
-    border-left: 6px solid #7c5cfc !important;  /* SNES button purple */
-    background-color: #7c5cfc14 !important;
+    border-left: 5px solid #6f6aa8 !important;  /* muted indigo */
+    background-color: #6f6aa812 !important;
   }
   .entity-location:hover {
-    background-color: #7c5cfc24 !important;
+    background-color: #6f6aa820 !important;
   }
   .entity-box {
-    border-left: 6px solid #00a651 !important;  /* pipe green */
-    background-color: #00a65114 !important;
+    border-left: 5px solid #5a8f78 !important;  /* sage green */
+    background-color: #5a8f7812 !important;
   }
   .entity-box:hover {
-    background-color: #00a65124 !important;
+    background-color: #5a8f7820 !important;
   }
   .entity-item {
-    border-left: 6px solid #e52521 !important;  /* Mario red */
-    background-color: #e5252114 !important;
+    border-left: 5px solid #b5544e !important;  /* brick red */
+    background-color: #b5544e12 !important;
   }
   .entity-item:hover {
-    background-color: #e5252124 !important;
+    background-color: #b5544e20 !important;
   }
 
   /* Snappy, steppy transitions — no smooth easing in the 16-bit era */

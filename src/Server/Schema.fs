@@ -24,6 +24,22 @@ let createTables : string =
         added_at    TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS photo_job (
+        id             TEXT PRIMARY KEY,
+        entity_type    TEXT NOT NULL,
+        entity_id      TEXT NOT NULL,
+        status         TEXT NOT NULL,
+        error          TEXT,
+        source_path    TEXT NOT NULL,
+        photo_path     TEXT NOT NULL,
+        old_photo_path TEXT,
+        created_at     TEXT NOT NULL,
+        updated_at     TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_photo_job_status
+        ON photo_job (status, created_at);
+
     CREATE TABLE IF NOT EXISTS move (
         id          TEXT PRIMARY KEY,
         entity_type TEXT NOT NULL,

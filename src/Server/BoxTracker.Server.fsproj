@@ -11,9 +11,12 @@
   <ItemGroup>
     <Compile Include="Schema.fs" />
     <Compile Include="Storage.fs" />
+    <Compile Include="PhotoJobStore.fs" />
     <Compile Include="Dto.fs" />
     <Compile Include="Labels.fs" />
     <Compile Include="ImageProcessing.fs" />
+    <Compile Include="PhotoProcessing.fs" />
+    <Compile Include="Handlers\PhotoJobHandlers.fs" />
     <Compile Include="Handlers\LocationHandlers.fs" />
     <Compile Include="Handlers\BoxHandlers.fs" />
     <Compile Include="Handlers\ItemHandlers.fs" />

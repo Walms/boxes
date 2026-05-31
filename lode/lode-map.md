@@ -10,6 +10,7 @@
 - [domain/persistence.md](domain/persistence.md) — SQLite schema, move-derived placement, FTS5 search, Storage API
 - [domain/api.md](domain/api.md) — server API handlers, DTOs, request/response contracts, label endpoints
 - [domain/image-optimization.md](domain/image-optimization.md) — photo compression, thumbnail generation, WebP serving
+- [domain/async-photo-processing.md](domain/async-photo-processing.md) — durable photo_job queue, background worker, upload/processing split
 
 ## Infrastructure
 - [infra/stack.md](infra/stack.md) — technology choices and versions

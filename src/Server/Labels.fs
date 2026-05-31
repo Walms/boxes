@@ -32,17 +32,33 @@ let private labelPageCss : string =
         width: 100mm;
         height: 60mm;
         box-sizing: border-box;
-        padding: 2mm;
+        padding: 2mm 3mm;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 1mm;
+        gap: 1.5mm;
         page-break-after: always;
         font-family: 'Courier New', 'Courier', monospace;
         background: white !important;
         border: 2px solid #000 !important;
         box-shadow: inset 0 0 0 1px #000;
+    }
+    .label-name {
+        font-size: 30pt;
+        font-weight: bold;
+        line-height: 1.1;
+        word-break: break-word;
+        text-align: center;
+        width: 100%;
+    }
+    .label-footer {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 3mm;
+        width: 100%;
     }
     .label-qr {
         flex-shrink: 0;
@@ -51,30 +67,31 @@ let private labelPageCss : string =
         justify-content: center;
     }
     .label-qr svg {
+        width: 20mm;
+        height: 20mm;
+        display: block;
+    }
+    .label-qr-large svg {
         width: 34mm;
         height: 34mm;
         display: block;
     }
-    .label-text {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        font-family: 'Courier New', 'Courier', monospace;
-    }
     .label-id {
-        font-size: 18pt;
+        font-size: 11pt;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+        line-height: 1.3;
+        word-break: break-all;
+        text-align: center;
+    }
+    .label-id-large {
+        font-size: 20pt;
         font-weight: bold;
         letter-spacing: 0.5px;
         line-height: 1.2;
         word-break: break-all;
-    }
-    .label-sub {
-        font-size: 15pt;
-        margin-top: 0.5mm;
-        word-break: break-word;
-        line-height: 1.3;
+        text-align: center;
+        width: 100%;
     }
     .no-print {
         display: block;
@@ -88,10 +105,17 @@ let private labelPageCss : string =
 
 let boxLabelHtml (boxId: string) (label: string option) (locationCode: string option) (locationName: string option) : string =
     let qrSvg : string = generateQrSvg boxId 10
-    let labelLine : string =
+    let body : string =
         match label with
-        | Some l -> $"<div class=\"label-sub\">%s{escapeHtml l}</div>"
-        | None -> ""
+        | Some l ->
+            $"""  <div class="label-name">%s{escapeHtml l}</div>
+  <div class="label-footer">
+    <div class="label-qr">%s{qrSvg}</div>
+    <div class="label-id">%s{escapeHtml boxId}</div>
+  </div>"""
+        | None ->
+            $"""  <div class="label-qr label-qr-large">%s{qrSvg}</div>
+  <div class="label-id-large">%s{escapeHtml boxId}</div>"""
     $"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -104,11 +128,7 @@ let boxLabelHtml (boxId: string) (label: string option) (locationCode: string op
   <button onclick="window.print()">Print Label</button>
 </div>
 <div class="label">
-  <div class="label-qr">%s{qrSvg}</div>
-  <div class="label-text">
-    <div class="label-id">%s{escapeHtml boxId}</div>
-    %s{labelLine}
-  </div>
+%s{body}
 </div>
 </body>
 </html>"""
@@ -127,10 +147,10 @@ let locationLabelHtml (code: string) (name: string) : string =
   <button onclick="window.print()">Print Label</button>
 </div>
 <div class="label">
-  <div class="label-qr">%s{qrSvg}</div>
-  <div class="label-text">
+  <div class="label-name">%s{escapeHtml name}</div>
+  <div class="label-footer">
+    <div class="label-qr">%s{qrSvg}</div>
     <div class="label-id">%s{escapeHtml code}</div>
-    <div class="label-sub">%s{escapeHtml name}</div>
   </div>
 </div>
 </body>
@@ -141,16 +161,19 @@ let batchBoxLabelHtml (boxes: (string * string option * string option * string o
         boxes
         |> List.map (fun (boxId, label, locationCode, locationName) ->
             let qrSvg : string = generateQrSvg boxId 10
-            let labelLine : string =
+            let body : string =
                 match label with
-                | Some l -> $"<div class=\"label-sub\">%s{escapeHtml l}</div>"
-                | None -> ""
-            $"""<div class="label">
-  <div class="label-qr">%s{qrSvg}</div>
-  <div class="label-text">
+                | Some l ->
+                    $"""  <div class="label-name">%s{escapeHtml l}</div>
+  <div class="label-footer">
+    <div class="label-qr">%s{qrSvg}</div>
     <div class="label-id">%s{escapeHtml boxId}</div>
-    %s{labelLine}
-  </div>
+  </div>"""
+                | None ->
+                    $"""  <div class="label-qr label-qr-large">%s{qrSvg}</div>
+  <div class="label-id-large">%s{escapeHtml boxId}</div>"""
+            $"""<div class="label">
+%s{body}
 </div>""")
         |> String.concat "\n"
     $"""<!DOCTYPE html>

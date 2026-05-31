@@ -6,6 +6,7 @@ open BoxTracker.Handlers.BoxHandlers
 open BoxTracker.Handlers.ItemHandlers
 open BoxTracker.Handlers.MoveHandlers
 open BoxTracker.Handlers.LabelHandlers
+open BoxTracker.Handlers.PhotoJobHandlers
 
 let webApp : HttpHandler =
     choose [
@@ -40,6 +41,8 @@ let webApp : HttpHandler =
             ])
 
         GET >=> route "/api/items" >=> searchItems
+
+        GET >=> routef "/api/photo-jobs/%s" getPhotoJob
 
         POST >=> route "/api/moves" >=> recordMove
         GET >=> route "/api/moves" >=> getMoveHistory

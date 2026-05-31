@@ -50,11 +50,10 @@ type Msg =
     | DeleteBox
     | BoxDeleted of Result<unit, string>
     | UploadBoxPhoto of string * obj
-    | BoxPhotoUploaded of Result<BoxDto, string>
     | NewItemNameChanged of string
     | PhotoSelected of obj
     | SubmitAddItem
-    | ItemAdded of Result<ItemDto, string>
+    | ItemAdded of Result<AddItemResultDto, string>
     | DeleteItem of string
     | ItemDeleted of Result<unit, string>
     | ShowMoveItemDialog of string
@@ -86,7 +85,6 @@ type Msg =
     | CancelMoveItemStandalone
     | BoxesForItemMoveLoaded of BoxDto array
     | UploadItemPhoto of string * obj
-    | ItemPhotoUploaded of Result<ItemDto, string>
     | ShowAddExistingItemDialog
     | UnassignedItemsLoaded of Result<SearchResultDto array, string>
     | SelectedExistingItemChanged of string
@@ -123,12 +121,19 @@ type Msg =
     | ArchiveLocationFromList of string
     | LocationArchivedFromList of Result<LocationDto, string>
     | UploadLocationPhoto of string * obj
-    | LocationPhotoUploaded of Result<LocationDto, string>
+    | PhotoUploadStarted of Result<PhotoJobDto, string>
+    | PollPhotoJob of string
+    | PhotoJobPolled of Result<PhotoJobDto, string>
+    | ShowHistory of string * string * string * string option
+    | HistoryLoaded of Result<MoveDto array, string>
+    | CloseHistory
 
 type State = {
     CurrentPage: Page
     Loading: bool
     UploadingPhoto: bool
+    PhotoProcessing: bool
+    PhotoJobId: string option
     Error: string option
     ViewingImageUrl: string option
     Locations: LocationDto array
@@ -176,6 +181,13 @@ type State = {
     EditBoxLabelInListValue: string
     EditingLocationCodeInList: string option
     EditLocationNameInListValue: string
+    ShowHistoryModal: bool
+    HistoryTitle: string
+    HistoryEntityType: string
+    HistoryEntityId: string
+    HistoryCreatedAt: string option
+    HistoryMoves: MoveDto array
+    HistoryLoading: bool
 }
 
 [<Fable.Core.Emit("window.location.hash")>]
@@ -254,6 +266,8 @@ let private hashChangeSub (dispatch: Msg -> unit) : unit =
 
 let private resetPageState (state: State) : State =
     { state with
+        PhotoProcessing = false
+        PhotoJobId = None
         ViewingImageUrl = None
         LocationSearch = ""
         LocationDetail = None
@@ -294,10 +308,22 @@ let private resetPageState (state: State) : State =
         EditBoxLabelInListValue = ""
         EditingLocationCodeInList = None
         EditLocationNameInListValue = ""
+        ShowHistoryModal = false
+        HistoryTitle = ""
+        HistoryEntityType = ""
+        HistoryEntityId = ""
+        HistoryCreatedAt = None
+        HistoryMoves = [||]
+        HistoryLoading = false
     }
 
 let private navigateCmd (page: Page) : Cmd<Msg> =
     Cmd.ofEffect (fun (dispatch: Msg -> unit) -> dispatch (Navigate page))
+
+/// Poll a server-side photo job again after a short delay.
+let private schedulePollCmd (jobId: string) : Cmd<Msg> =
+    Cmd.ofEffect (fun (dispatch: Msg -> unit) ->
+        setTimeout (fun () -> dispatch (PollPhotoJob jobId)) 800 |> ignore)
 
 let init () : State * Cmd<Msg> =
     let hash : string = getHash ()
@@ -306,6 +332,8 @@ let init () : State * Cmd<Msg> =
         CurrentPage = page
         Loading = true
         UploadingPhoto = false
+        PhotoProcessing = false
+        PhotoJobId = None
         Error = None
         ViewingImageUrl = None
         Locations = [||]
@@ -353,6 +381,13 @@ let init () : State * Cmd<Msg> =
         EditBoxLabelInListValue = ""
         EditingLocationCodeInList = None
         EditLocationNameInListValue = ""
+        ShowHistoryModal = false
+        HistoryTitle = ""
+        HistoryEntityType = ""
+        HistoryEntityId = ""
+        HistoryCreatedAt = None
+        HistoryMoves = [||]
+        HistoryLoading = false
     }
     let cmds : Cmd<Msg> = Cmd.batch [
         Cmd.ofEffect hashChangeSub
@@ -570,18 +605,8 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | UploadBoxPhoto (boxId, photo) ->
-        { state with Loading = true; UploadingPhoto = true },
-        Cmd.OfAsync.either (fun () -> uploadBoxPhoto boxId photo) () BoxPhotoUploaded (fun ex -> ErrorOccurred ex.Message)
-
-    | BoxPhotoUploaded (Ok _) ->
-        match state.BoxDetail with
-        | None -> { state with Loading = false; UploadingPhoto = false }, Cmd.none
-        | Some detail ->
-            { state with Loading = false; UploadingPhoto = false },
-            navigateCmd (BoxDetail detail.Box.Id)
-
-    | BoxPhotoUploaded (Error err) ->
-        { state with Error = Some err; Loading = false; UploadingPhoto = false }, Cmd.none
+        { state with UploadingPhoto = true; PhotoProcessing = false; Error = None },
+        Cmd.OfAsync.either (fun () -> uploadBoxPhoto boxId photo) () PhotoUploadStarted (fun ex -> ErrorOccurred ex.Message)
 
     | NewItemNameChanged name ->
         { state with NewItemName = name }, Cmd.none
@@ -599,12 +624,18 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
                 { state with Loading = true; NewItemName = "" },
                 Cmd.OfAsync.either (fun () -> addItem detail.Box.Id name state.SelectedPhoto) () ItemAdded (fun ex -> ErrorOccurred ex.Message)
 
-    | ItemAdded (Ok _) ->
+    | ItemAdded (Ok result) ->
         match state.BoxDetail with
         | None -> { state with Loading = false; SelectedPhoto = None }, Cmd.none
         | Some detail ->
-            { state with Loading = false; SelectedPhoto = None },
-            navigateCmd (BoxDetail detail.Box.Id)
+            match result.PhotoJobId with
+            | Some jobId ->
+                // Item is created; its photo is still processing on the server.
+                { state with Loading = false; SelectedPhoto = None; PhotoProcessing = true; PhotoJobId = Some jobId },
+                schedulePollCmd jobId
+            | None ->
+                { state with Loading = false; SelectedPhoto = None },
+                navigateCmd (BoxDetail detail.Box.Id)
 
     | ItemAdded (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -782,15 +813,8 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with MovingItemStandaloneId = None; MoveItemTargetBox = "" }, Cmd.none
 
     | UploadItemPhoto (itemId, photo) ->
-        { state with Loading = true; UploadingPhoto = true },
-        Cmd.OfAsync.either (fun () -> updateItemPhoto itemId photo) () ItemPhotoUploaded (fun ex -> ErrorOccurred ex.Message)
-
-    | ItemPhotoUploaded (Ok _) ->
-        { state with Loading = false; UploadingPhoto = false },
-        navigateCmd ItemsList
-
-    | ItemPhotoUploaded (Error err) ->
-        { state with Error = Some err; Loading = false; UploadingPhoto = false }, Cmd.none
+        { state with UploadingPhoto = true; PhotoProcessing = false; Error = None },
+        Cmd.OfAsync.either (fun () -> updateItemPhoto itemId photo) () PhotoUploadStarted (fun ex -> ErrorOccurred ex.Message)
 
     | ShowAddExistingItemDialog ->
         { state with AddingExistingItem = true; SelectedExistingItemId = "" },
@@ -1000,15 +1024,66 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | UploadLocationPhoto (locationCode, photo) ->
-        { state with Loading = true; UploadingPhoto = true },
-        Cmd.OfAsync.either (fun () -> uploadLocationPhoto locationCode photo) () LocationPhotoUploaded (fun ex -> ErrorOccurred ex.Message)
+        { state with UploadingPhoto = true; PhotoProcessing = false; Error = None },
+        Cmd.OfAsync.either (fun () -> uploadLocationPhoto locationCode photo) () PhotoUploadStarted (fun ex -> ErrorOccurred ex.Message)
 
-    | LocationPhotoUploaded (Ok _) ->
-        match state.LocationDetail with
-        | None -> { state with Loading = false; UploadingPhoto = false }, Cmd.none
-        | Some detail ->
-            { state with Loading = false; UploadingPhoto = false },
-            navigateCmd (LocationDetail detail.Location.Code)
+    | PhotoUploadStarted (Ok job) ->
+        match job.Status with
+        | "completed" ->
+            { state with UploadingPhoto = false; PhotoProcessing = false; PhotoJobId = None },
+            navigateCmd state.CurrentPage
+        | "failed" ->
+            { state with UploadingPhoto = false; PhotoProcessing = false; PhotoJobId = None; Error = Some(job.Error |> Option.defaultValue "Image processing failed") },
+            Cmd.none
+        | _ ->
+            // Upload finished; the server is now processing the photo.
+            { state with UploadingPhoto = false; PhotoProcessing = true; PhotoJobId = Some job.Id },
+            schedulePollCmd job.Id
 
-    | LocationPhotoUploaded (Error err) ->
-        { state with Error = Some err; Loading = false; UploadingPhoto = false }, Cmd.none
+    | PhotoUploadStarted (Error err) ->
+        { state with Error = Some err; UploadingPhoto = false; PhotoProcessing = false }, Cmd.none
+
+    | PollPhotoJob jobId ->
+        match state.PhotoJobId with
+        | Some current when current = jobId ->
+            state, Cmd.OfAsync.either getPhotoJob jobId PhotoJobPolled (fun ex -> ErrorOccurred ex.Message)
+        | _ ->
+            // A newer job replaced this one (or processing was cancelled); stop polling.
+            state, Cmd.none
+
+    | PhotoJobPolled (Ok job) ->
+        match state.PhotoJobId with
+        | Some current when current = job.Id ->
+            match job.Status with
+            | "completed" ->
+                { state with PhotoProcessing = false; PhotoJobId = None },
+                navigateCmd state.CurrentPage
+            | "failed" ->
+                { state with PhotoProcessing = false; PhotoJobId = None; Error = Some(job.Error |> Option.defaultValue "Image processing failed") },
+                Cmd.none
+            | _ ->
+                state, schedulePollCmd job.Id
+        | _ -> state, Cmd.none
+
+    | PhotoJobPolled (Error err) ->
+        { state with Error = Some err; PhotoProcessing = false; PhotoJobId = None }, Cmd.none
+
+    | ShowHistory (entityType, entityId, title, createdAt) ->
+        { state with
+            ShowHistoryModal = true
+            HistoryEntityType = entityType
+            HistoryEntityId = entityId
+            HistoryTitle = title
+            HistoryCreatedAt = createdAt
+            HistoryMoves = [||]
+            HistoryLoading = true },
+        Cmd.OfAsync.either (fun () -> getMoveHistory entityType entityId) () HistoryLoaded (fun ex -> ErrorOccurred ex.Message)
+
+    | HistoryLoaded (Ok moves) ->
+        { state with HistoryMoves = moves; HistoryLoading = false }, Cmd.none
+
+    | HistoryLoaded (Error err) ->
+        { state with Error = Some err; HistoryLoading = false; ShowHistoryModal = false }, Cmd.none
+
+    | CloseHistory ->
+        { state with ShowHistoryModal = false; HistoryMoves = [||] }, Cmd.none

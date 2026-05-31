@@ -20,6 +20,7 @@ type SearchResult = {
     BoxLabel: string option
     LocationCode: string option
     LocationName: string option
+    AddedAt: DateTimeOffset
 }
 
 type Storage (connectionString: string) =
@@ -105,9 +106,11 @@ type Storage (connectionString: string) =
         let locationName : string option =
             if reader.IsDBNull(6) then None
             else Some(reader.GetString(6))
+        let addedAt : DateTimeOffset = reader.GetDateTimeOffset(7)
         { ItemId = itemId; ItemName = itemName; PhotoPath = photoPath
           BoxId = boxId; BoxLabel = boxLabel
-          LocationCode = locationCode; LocationName = locationName }
+          LocationCode = locationCode; LocationName = locationName
+          AddedAt = addedAt }
 
     let readList (read: SqliteDataReader -> 'T) (reader: SqliteDataReader) : 'T list =
         let results : ResizeArray<'T> = ResizeArray()
@@ -121,6 +124,11 @@ type Storage (connectionString: string) =
         | None ->
             let conn : SqliteConnection = new SqliteConnection(connectionString)
             conn.Open()
+            // WAL mode + a busy timeout let the background photo worker and the
+            // request handlers safely share the database from separate connections.
+            let pragma : SqliteCommand = conn.CreateCommand()
+            pragma.CommandText <- "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;"
+            pragma.ExecuteNonQuery() |> ignore
             let c : SqliteCommand = conn.CreateCommand()
             c.CommandText <- createTables
             c.ExecuteNonQuery() |> ignore
@@ -739,7 +747,8 @@ type Storage (connectionString: string) =
                        COALESCE(item_lp.to_id, '') as box_id,
                        b.label as box_label,
                        box_lp.to_id as location_code,
-                       l.name as location_name
+                       l.name as location_name,
+                       i.added_at
                 FROM item_search s
                 JOIN item i ON i.id = s.item_id
                 LEFT JOIN (
@@ -776,7 +785,8 @@ type Storage (connectionString: string) =
                        COALESCE(item_lp.to_id, '') as box_id,
                        b.label as box_label,
                        box_lp.to_id as location_code,
-                       l.name as location_name
+                       l.name as location_name,
+                       i.added_at
                 FROM item i
                 LEFT JOIN (
                     SELECT entity_id, to_type, to_id

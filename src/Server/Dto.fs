@@ -10,6 +10,7 @@ open BoxTracker.ItemName
 open BoxTracker.PhotoPath
 open BoxTracker.Container
 open BoxTracker.Storage
+open BoxTracker.PhotoJobStore
 
 type BoxTrackerConfig = {
     DataDir: string
@@ -47,6 +48,21 @@ type SearchResultResponse = {
     BoxLabel: string option
     LocationCode: string option
     LocationName: string option
+    AddedAt: DateTimeOffset
+}
+
+type PhotoJobResponse = {
+    Id: string
+    EntityType: string
+    EntityId: string
+    Status: string
+    Error: string option
+    PhotoPath: string option   // populated once the job has completed
+}
+
+type AddItemResponse = {
+    Item: ItemResponse
+    PhotoJobId: string option
 }
 
 type MoveResponse = {
@@ -144,6 +160,16 @@ let searchResultToDto (r: SearchResult) : SearchResultResponse = {
     BoxLabel = r.BoxLabel
     LocationCode = r.LocationCode
     LocationName = r.LocationName
+    AddedAt = r.AddedAt
+}
+
+let photoJobToDto (job: PhotoJob) : PhotoJobResponse = {
+    Id = job.Id
+    EntityType = job.EntityType
+    EntityId = job.EntityId
+    Status = job.Status
+    Error = job.Error
+    PhotoPath = if job.Status = StatusCompleted then Some job.PhotoPath else None
 }
 
 let moveToDto (m: Move) : MoveResponse = {

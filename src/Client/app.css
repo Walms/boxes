@@ -2,52 +2,60 @@
 @plugin "daisyui";
 
 @plugin "daisyui/theme" {
-  name: "cassette";
+  name: "nintendo";
   default: true;
   color-scheme: light;
 
-  /* Soft cream backgrounds — like pastel cassette shells */
-  --color-base-100: oklch(0.97 0.008 60);
-  --color-base-200: oklch(0.93 0.012 60);
-  --color-base-300: oklch(0.88 0.016 60);
-  --color-base-content: oklch(0.28 0.05 330);
+  /* Iconic Super Mario sky-blue page backdrop with white "manual paper" cards */
+  --color-base-100: #5c94fc;          /* SMB sky blue — the page backdrop */
+  --color-base-200: #ffffff;          /* white panels / navbar / cards */
+  --color-base-300: #d6deff;          /* soft sky tint for borders / dropdowns */
+  --color-base-content: #15172b;      /* near-black navy ink */
 
-  /* Dusty rose primary */
-  --color-primary: oklch(0.62 0.14 340);
-  --color-primary-content: oklch(0.97 0.01 340);
+  /* Mario red primary */
+  --color-primary: #e52521;
+  --color-primary-content: #ffffff;
 
-  /* Soft sage secondary */
-  --color-secondary: oklch(0.58 0.09 165);
-  --color-secondary-content: oklch(0.97 0.01 165);
+  /* Pipe / Luigi green secondary */
+  --color-secondary: #00a651;
+  --color-secondary-content: #ffffff;
 
-  /* Soft lavender accent */
-  --color-accent: oklch(0.66 0.13 285);
-  --color-accent-content: oklch(0.97 0.01 285);
+  /* Coin / ?-block yellow accent */
+  --color-accent: #fbd000;
+  --color-accent-content: #15172b;
 
-  --color-neutral: oklch(0.82 0.02 60);
-  --color-neutral-content: oklch(0.30 0.04 330);
+  /* Cartridge-grey neutral */
+  --color-neutral: #15172b;
+  --color-neutral-content: #ffffff;
 
-  --color-error: oklch(0.58 0.18 25);
-  --color-error-content: oklch(0.97 0.01 25);
-  --color-success: oklch(0.55 0.13 150);
-  --color-success-content: oklch(0.97 0.01 150);
-  --color-warning: oklch(0.68 0.14 60);
-  --color-warning-content: oklch(0.20 0.04 60);
-  --color-info: oklch(0.58 0.09 220);
-  --color-info-content: oklch(0.97 0.01 220);
+  --color-error: #e52521;
+  --color-error-content: #ffffff;
+  --color-success: #00a651;
+  --color-success-content: #ffffff;
+  --color-warning: #fbd000;
+  --color-warning-content: #15172b;
+  --color-info: #2e6fe8;
+  --color-info-content: #ffffff;
 
-  /* Gently rounded — softened cassette */
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.375rem;
+  /* Sharp pixel-art corners — nothing rounded in 1990 */
+  --radius-selector: 0rem;
+  --radius-field: 0rem;
+  --radius-box: 0rem;
 }
 
 @layer base {
+  :root {
+    /* Pixel-art design tokens */
+    --nin-ink: #15172b;
+    --nin-shadow: 4px 4px 0 var(--nin-ink);
+    --nin-shadow-sm: 3px 3px 0 var(--nin-ink);
+  }
+
   html {
-    font-family: "VT323", "IBM Plex Mono", ui-monospace, "Cascadia Code",
-      "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
-    font-size: 17px;
-    letter-spacing: 0.03em;
+    font-family: "VT323", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo,
+      Consolas, "DejaVu Sans Mono", monospace;
+    font-size: 18px;
+    letter-spacing: 0.02em;
 
     /* Design system spacing scale (semantic) */
     --spacing-xs: 0.25rem;
@@ -58,153 +66,154 @@
     --spacing-2xl: 3rem;
   }
 
-  /* Typography hierarchy */
+  /* Headings + brand use the quintessential 8/16-bit Nintendo title font.
+     Press Start 2P is wide, so sizes are dialled down and line-height opened up. */
+  h1, h2, h3 {
+    font-family: "Press Start 2P", "VT323", ui-monospace, monospace;
+    line-height: 1.5;
+    letter-spacing: 0;
+    color: var(--nin-ink);
+    /* Hard one-pixel offset drop shadow — like a sprite outline */
+    text-shadow: 2px 2px 0 #ffffff, 3px 3px 0 var(--nin-ink);
+  }
+
   h1 {
-    @apply text-2xl sm:text-3xl font-bold;
+    font-size: 1.25rem;
+  }
+
+  @media (min-width: 640px) {
+    h1 { font-size: 1.6rem; }
   }
 
   h2 {
-    @apply text-lg sm:text-2xl font-bold;
+    font-size: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    h2 { font-size: 1.2rem; }
   }
 
   h3 {
-    @apply text-lg font-bold;
+    font-size: 0.85rem;
   }
 
   label {
     @apply text-xl font-medium;
   }
 
-  /* Soft rose warmth on text */
   body {
-    text-shadow: 0 0 5px oklch(0.62 0.14 340 / 0.12);
     position: relative;
-  }
-
-  /* Very subtle scanline overlay — barely there */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      transparent 3px,
-      oklch(0.62 0.14 340 / 0.03) 3px,
-      oklch(0.62 0.14 340 / 0.03) 4px
-    );
-  }
-
-  /* Soft vignette — dusty rose edges */
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 9998;
-    pointer-events: none;
-    background: radial-gradient(
-      ellipse at center,
-      transparent 65%,
-      oklch(0.62 0.14 340 / 0.08) 100%
-    );
-  }
-
-  /* Soft rose glow on headings */
-  h1, h2, h3 {
-    text-shadow: 0 0 8px oklch(0.62 0.14 340 / 0.25),
-                 0 0 20px oklch(0.66 0.13 285 / 0.10);
-  }
-
-  /* Rose-tinted borders */
-  .border, [class*="border-"] {
-    border-color: oklch(0.62 0.14 340 / 0.3);
-  }
-
-  /* Horizontal rule as tape-head separator */
-  hr {
-    border-color: oklch(0.62 0.14 340 / 0.25);
-    box-shadow: 0 0 4px oklch(0.62 0.14 340 / 0.15);
   }
 }
 
-/* Button phosphor glow on hover */
 @layer components {
-  .btn-primary:hover, .btn-primary:focus {
-    box-shadow: 0 0 12px oklch(0.62 0.14 340 / 0.45),
-                0 0 28px oklch(0.62 0.14 340 / 0.15);
+  /* ---- Chunky pixel-art controls ---------------------------------------- */
+
+  /* Buttons: thick ink outline + hard offset shadow that "presses" down */
+  .btn {
+    border: 3px solid var(--nin-ink) !important;
+    border-radius: 0 !important;
+    box-shadow: var(--nin-shadow);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    transition: transform 60ms steps(2), box-shadow 60ms steps(2);
   }
 
-  .btn-secondary:hover, .btn-secondary:focus {
-    box-shadow: 0 0 12px oklch(0.58 0.09 165 / 0.45),
-                0 0 28px oklch(0.58 0.09 165 / 0.15);
+  .btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--nin-ink);
   }
 
-  /* Cards get a soft rose border highlight */
-  .card, .modal-box {
-    border: 1px solid oklch(0.62 0.14 340 / 0.2);
-    box-shadow: 0 2px 8px oklch(0.62 0.14 340 / 0.08);
+  .btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: 1px 1px 0 var(--nin-ink);
   }
 
-  /* Navbar soft rose strip */
+  /* Circle/ghost buttons stay light — drop the heavy shadow where it'd crowd */
+  .btn-circle {
+    box-shadow: none;
+  }
+  .btn-circle:hover {
+    transform: translate(0, 0);
+    box-shadow: var(--nin-shadow-sm);
+  }
+  .btn-ghost {
+    box-shadow: none;
+    border-color: transparent !important;
+  }
+  .btn-ghost:hover {
+    border-color: var(--nin-ink) !important;
+    transform: translate(0, 0);
+    box-shadow: none;
+  }
+
+  /* Panels: white cartridge-label cards with a bold outline + offset shadow */
+  .card, .modal-box, .dropdown-content, .alert, .menu.dropdown-content {
+    border: 3px solid var(--nin-ink) !important;
+    border-radius: 0 !important;
+    box-shadow: var(--nin-shadow);
+  }
+
+  /* Navbar: white panel capped by the classic red Nintendo strip */
   .navbar {
-    border-bottom: 2px solid oklch(0.62 0.14 340 / 0.2) !important;
-    box-shadow: 0 2px 10px oklch(0.62 0.14 340 / 0.08);
+    border-bottom: 4px solid var(--nin-ink) !important;
+    box-shadow: 0 4px 0 0 var(--color-primary);
   }
 
-  /* Input fields with soft rose focus */
-  .input:focus, .select:focus, .textarea:focus {
+  /* Inputs / selects / textareas: inset pixel fields, coin-yellow focus ring */
+  .input, .select, .textarea {
+    border: 3px solid var(--nin-ink) !important;
+    border-radius: 0 !important;
+  }
+  .input:focus, .select:focus, .textarea:focus,
+  .input:focus-within, .select:focus-within, .textarea:focus-within {
     outline: none;
-    box-shadow: 0 0 0 2px oklch(0.62 0.14 340 / 0.4),
-                0 0 10px oklch(0.62 0.14 340 / 0.15);
+    box-shadow: 0 0 0 3px var(--color-accent), var(--nin-shadow-sm);
   }
 
-  /* Loading — soft rose */
+  /* Loading spinner in Mario red */
   .loading {
-    color: oklch(0.62 0.14 340);
-    filter: drop-shadow(0 0 3px oklch(0.62 0.14 340 / 0.5));
+    color: var(--color-primary);
     animation-duration: 0.4s !important;
   }
 
-  /* Full-screen image viewer sits above scanlines and vignette for max fidelity */
+  /* Full-screen image viewer above everything */
   .image-viewer {
     z-index: 10000 !important;
   }
 
-  /* Entity type color coding — locations, boxes, items */
+  /* ---- Entity type colour coding (locations / boxes / items) ------------- */
+  /* Thick pixel left-border in distinct Nintendo hues */
   .entity-location {
-    border-left: 4px solid oklch(0.66 0.13 285 / 0.8) !important;
-    background-color: oklch(0.66 0.13 285 / 0.06) !important;
+    border-left: 6px solid #7c5cfc !important;  /* SNES button purple */
+    background-color: #7c5cfc14 !important;
   }
   .entity-location:hover {
-    background-color: oklch(0.66 0.13 285 / 0.10) !important;
+    background-color: #7c5cfc24 !important;
   }
   .entity-box {
-    border-left: 4px solid oklch(0.58 0.09 165 / 0.8) !important;
-    background-color: oklch(0.58 0.09 165 / 0.06) !important;
+    border-left: 6px solid #00a651 !important;  /* pipe green */
+    background-color: #00a65114 !important;
   }
   .entity-box:hover {
-    background-color: oklch(0.58 0.09 165 / 0.10) !important;
+    background-color: #00a65124 !important;
   }
   .entity-item {
-    border-left: 4px solid oklch(0.62 0.14 340 / 0.8) !important;
-    background-color: oklch(0.62 0.14 340 / 0.06) !important;
+    border-left: 6px solid #e52521 !important;  /* Mario red */
+    background-color: #e5252114 !important;
   }
   .entity-item:hover {
-    background-color: oklch(0.62 0.14 340 / 0.10) !important;
+    background-color: #e5252124 !important;
   }
 
-  /* Snappy transitions — keep the look, lose the lag */
+  /* Snappy, steppy transitions — no smooth easing in the 16-bit era */
   .transition-colors {
     transition-duration: 60ms !important;
   }
-
   .transition-opacity {
     transition-duration: 60ms !important;
   }
-
-  /* Card press snap */
   .active\:scale-95:active {
     transition-duration: 40ms !important;
   }

@@ -79,17 +79,17 @@
     text-shadow: 1px 1px 0 rgba(231, 234, 240, 0.9);
   }
 
-  h1 { font-size: 1.05rem; }
+  h1 { font-size: 0.9rem; }
   @media (min-width: 640px) {
-    h1 { font-size: 1.35rem; }
+    h1 { font-size: 1.15rem; }
   }
 
-  h2 { font-size: 0.85rem; }
+  h2 { font-size: 0.72rem; }
   @media (min-width: 640px) {
-    h2 { font-size: 1rem; }
+    h2 { font-size: 0.85rem; }
   }
 
-  h3 { font-size: 0.75rem; }
+  h3 { font-size: 0.65rem; }
 
   label {
     @apply text-lg font-medium;

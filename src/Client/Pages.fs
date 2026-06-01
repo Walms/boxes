@@ -576,9 +576,9 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                                     ]
                                                                     Html.li [
                                                                         Html.label [
-                                                                            prop.className "flex gap-2 items-center cursor-pointer"
+                                                                            prop.className "cursor-pointer"
                                                                             prop.children [
-                                                                                Html.text "📷 Take Photo"
+                                                                                Html.text "Take Photo"
                                                                                 Html.input [
                                                                                     prop.type' "file"
                                                                                     prop.accept "image/*"
@@ -594,9 +594,9 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                                     ]
                                                                     Html.li [
                                                                         Html.label [
-                                                                            prop.className "flex gap-2 items-center cursor-pointer"
+                                                                            prop.className "cursor-pointer"
                                                                             prop.children [
-                                                                                Html.text "📁 Choose Photo"
+                                                                                Html.text "Choose Photo"
                                                                                 Html.input [
                                                                                     prop.type' "file"
                                                                                     prop.accept "image/*"
@@ -935,9 +935,9 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                                     ]
                                                                     Html.li [
                                                                         Html.label [
-                                                                            prop.className "flex gap-2 items-center cursor-pointer"
+                                                                            prop.className "cursor-pointer"
                                                                             prop.children [
-                                                                                Html.text "📷 Take Photo"
+                                                                                Html.text "Take Photo"
                                                                                 Html.input [
                                                                                     prop.type' "file"
                                                                                     prop.accept "image/*"
@@ -953,9 +953,9 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                                     ]
                                                                     Html.li [
                                                                         Html.label [
-                                                                            prop.className "flex gap-2 items-center cursor-pointer"
+                                                                            prop.className "cursor-pointer"
                                                                             prop.children [
-                                                                                Html.text "📁 Choose Photo"
+                                                                                Html.text "Choose Photo"
                                                                                 Html.input [
                                                                                     prop.type' "file"
                                                                                     prop.accept "image/*"

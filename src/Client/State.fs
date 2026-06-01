@@ -127,6 +127,9 @@ type Msg =
     | ShowHistory of string * string * string * string option
     | HistoryLoaded of Result<MoveDto array, string>
     | CloseHistory
+    | OpenScanner
+    | CloseScanner
+    | QrScanned of string
 
 type State = {
     CurrentPage: Page
@@ -188,6 +191,7 @@ type State = {
     HistoryCreatedAt: string option
     HistoryMoves: MoveDto array
     HistoryLoading: bool
+    ScannerOpen: bool
 }
 
 [<Fable.Core.Emit("window.location.hash")>]
@@ -315,6 +319,7 @@ let private resetPageState (state: State) : State =
         HistoryCreatedAt = None
         HistoryMoves = [||]
         HistoryLoading = false
+        ScannerOpen = false
     }
 
 let private navigateCmd (page: Page) : Cmd<Msg> =
@@ -388,6 +393,7 @@ let init () : State * Cmd<Msg> =
         HistoryCreatedAt = None
         HistoryMoves = [||]
         HistoryLoading = false
+        ScannerOpen = false
     }
     let cmds : Cmd<Msg> = Cmd.batch [
         Cmd.ofEffect hashChangeSub
@@ -1087,3 +1093,13 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | CloseHistory ->
         { state with ShowHistoryModal = false; HistoryMoves = [||] }, Cmd.none
+
+    | OpenScanner -> { state with ScannerOpen = true }, Cmd.none
+
+    | CloseScanner -> { state with ScannerOpen = false }, Cmd.none
+
+    | QrScanned text ->
+        let page =
+            if text.StartsWith("BOX-") then BoxDetail text
+            else LocationDetail text
+        { state with ScannerOpen = false }, navigateCmd page

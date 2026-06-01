@@ -933,11 +933,11 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                         prop.text (detail.Box.Label |> Option.defaultValue detail.Box.Id)
                                                     ]
                                                     Html.div [
-                                                        prop.className "dropdown dropdown-end flex-shrink-0"
+                                                        prop.className "dropdown dropdown-end w-full sm:w-auto"
                                                         prop.children [
                                                             Html.button [
                                                                 prop.tabIndex 0
-                                                                prop.className "btn btn-sm"
+                                                                prop.className "btn btn-sm w-full sm:w-auto"
                                                                 prop.text "Actions ▾"
                                                             ]
                                                             Html.ul [

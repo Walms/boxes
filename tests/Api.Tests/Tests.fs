@@ -10,6 +10,7 @@ open BoxTracker.Container
 let private withStorage (test: Storage -> 'T) : 'T =
     let tempFile : string = Path.GetTempFileName()
     let connStr : string = $"Data Source=%s{tempFile}"
+    Storage.InitializeSchema(connStr)
     use storage : Storage = new Storage(connStr)
     storage.Connect()
     try

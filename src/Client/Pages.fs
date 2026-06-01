@@ -1746,7 +1746,7 @@ let private historyModal (state: State) (dispatch: Msg -> unit) : ReactElement =
         if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
     };
 })($0, $1, $2, $3)
-""")]
+""")>]
 let private initScanner (videoEl: obj) (jsQR: obj) (onFound: string -> unit) (onError: string -> unit) : (unit -> unit) = failwith "JS only"
 
 [<Fable.Core.Emit("document.getElementById($0)")>]

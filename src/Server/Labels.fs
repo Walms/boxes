@@ -45,7 +45,7 @@ let private labelPageCss : string =
         box-shadow: inset 0 0 0 1px #000;
     }
     .label-name {
-        font-size: 30pt;
+        font-size: 26pt;
         font-weight: bold;
         line-height: 1.1;
         word-break: break-word;
@@ -67,8 +67,8 @@ let private labelPageCss : string =
         justify-content: center;
     }
     .label-qr svg {
-        width: 28mm;
-        height: 28mm;
+        width: 24mm;
+        height: 24mm;
         display: block;
     }
     .label-qr-large svg {

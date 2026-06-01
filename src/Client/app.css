@@ -203,6 +203,12 @@
     box-shadow: none;
   }
 
+  /* Menu labels (e.g. file-input wrappers) must match <a> item styling */
+  .menu :where(li > label) {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
   /* Panels: light grey software panels with a thin outline + soft shadow */
   .card, .modal-box, .dropdown-content, .alert, .menu.dropdown-content {
     border: 2px solid var(--nin-ink) !important;

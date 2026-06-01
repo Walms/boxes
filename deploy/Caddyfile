@@ -3,6 +3,9 @@ movingstuff.duckdns.org, localhost, 127.0.0.1 {
 		daniel $2a$14$vEnr6H9gyb5O3hk59WPYNOA347EqE6JfUAKDlMvLLqOigBHeq.ZhC
 	}
 
+	# Caddy does not compress by default; compress text assets and JSON.
+	encode zstd gzip
+
 	handle /api/* {
 		reverse_proxy localhost:5000
 	}

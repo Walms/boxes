@@ -82,6 +82,13 @@ server {
     auth_basic "BoxTracker";
     auth_basic_user_file /etc/nginx/.htpasswd;
 
+    gzip on;
+    gzip_comp_level 6;
+    gzip_min_length 1024;
+    gzip_proxied any;
+    gzip_vary on;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+
     location / {
         try_files $uri $uri/ /index.html;
     }
@@ -213,6 +220,14 @@ Saturn listens on `localhost:5000` (127.0.0.1 + ::1). nginx proxy on same VM can
 ## Access
 - **Frontend**: http://158.179.31.108 (username: `daniel`, password: `8busstop`)
 - **Direct API**: http://158.179.31.108/api/locations (with basic auth)
+
+## Page-Load Performance
+
+The deployment target is tiny (1/8 OCPU, 1 GB RAM), so first-load weight and round trips matter:
+- **Reverse proxy compresses text assets.** nginx config has `gzip on`; the Caddyfile has `encode zstd gzip` (Caddy does *not* compress by default). This shrinks the JS bundle, the bulk of first-load time.
+- **Server-side response compression** is enabled in `Program.fs` (`UseResponseCompression`, with `application/json` added to the compressible set) so `/api/*` JSON is compressed even on direct hits.
+- **Fonts load non-render-blocking.** `index.html` loads Google Fonts via `media="print" onload="this.media='all'"` (with a `<noscript>` fallback) so first paint doesn't wait on the external font CSS.
+- **`Storage` is request-scoped** (see [persistence.md](../domain/persistence.md#connection-model)) so the several API calls each page fires in parallel don't serialize on a single shared SQLite connection.
 
 ## Key Invariants
 - Frontend dist is deployed to `/opt/boxtracker/frontend/dist/`, not `/opt/boxtracker/frontend/`

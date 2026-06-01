@@ -24,6 +24,7 @@ let private resizeImage (image: Image) (maxWidth: int) (maxHeight: int) : unit =
 let processUploadedImage (inputPath: string) (outputFullPath: string) (outputThumbPath: string) : Result<unit, string> =
     try
         use image : Image = Image.Load(inputPath)
+        image.Mutate(fun ctx -> ctx.AutoOrient() |> ignore)
 
         use fullImage : Image = image.Clone(fun cfg -> ())
         resizeImage fullImage 3500 3500

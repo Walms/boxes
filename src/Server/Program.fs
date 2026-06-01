@@ -7,6 +7,7 @@ open System.Text.Json.Serialization
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.ResponseCompression
 open Microsoft.AspNetCore.StaticFiles
 open Microsoft.Extensions.FileProviders
 open Microsoft.Extensions.Hosting
@@ -30,6 +31,7 @@ let configureApp (app: IApplicationBuilder) : unit =
     ensureDataDir()
     let photosDir : string = Path.Combine(dataDir, "photos")
     if not (Directory.Exists photosDir) then Directory.CreateDirectory photosDir |> ignore
+    app.UseResponseCompression() |> ignore
     app.UseStaticFiles(StaticFileOptions(
         FileProvider = new PhysicalFileProvider(photosDir),
         RequestPath = PathString("/api/photos")
@@ -39,6 +41,13 @@ let configureApp (app: IApplicationBuilder) : unit =
 let configureServices (services: IServiceCollection) : unit =
     services.AddGiraffe() |> ignore
 
+    // Compress API JSON responses (the bundle itself is gzip/zstd-compressed by
+    // the reverse proxy). application/json is added explicitly because it is not
+    // in the framework's default compressible MIME type set.
+    services.AddResponseCompression(fun (options: ResponseCompressionOptions) ->
+        options.EnableForHttps <- true
+        options.MimeTypes <- Seq.append ResponseCompressionDefaults.MimeTypes [ "application/json" ]) |> ignore
+
     let jsonOpts : JsonSerializerOptions = JsonSerializerOptions()
     jsonOpts.PropertyNameCaseInsensitive <- true
     jsonOpts.Converters.Add(JsonFSharpConverter(JsonFSharpOptions.Default()))
@@ -47,9 +56,11 @@ let configureServices (services: IServiceCollection) : unit =
     let dbPath : string = Path.Combine(dataDir, "boxtracker.db")
     let connStr : string = $"Data Source=%s{dbPath}"
 
-    let storage : Storage = new Storage(connStr)
-    storage.Connect() |> ignore
-    services.AddSingleton<Storage>(storage) |> ignore
+    // Create the schema and set WAL mode once at startup. Storage is then
+    // registered per-request so concurrent requests each use their own pooled
+    // SQLite connection instead of serializing on a single shared one.
+    Storage.InitializeSchema(connStr)
+    services.AddScoped<Storage>(fun (_: IServiceProvider) -> new Storage(connStr)) |> ignore
     services.AddSingleton<BoxTrackerConfig>({ DataDir = dataDir }) |> ignore
 
     // Photo processing runs on a durable, server-side queue so uploads return

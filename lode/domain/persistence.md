@@ -1,6 +1,14 @@
 # Persistence
 
-SQLite database at `data/boxtracker.db` (configurable via `BOXTRACKER_DATA` env var). Access via `Storage` class in `src/Server/Storage.fs`, registered as a DI singleton in `Program.fs`.
+SQLite database at `data/boxtracker.db` (configurable via `BOXTRACKER_DATA` env var). Access via `Storage` class in `src/Server/Storage.fs`.
+
+## Connection model
+
+`Storage` is registered **per-request (`AddScoped`)** in `Program.fs`; each request gets its own instance holding its own SQLite connection (drawn from Microsoft.Data.Sqlite's default connection pool, returned when the scoped instance is disposed at end of request). Concurrent requests therefore use separate connections instead of serializing on one shared connection.
+
+- `Storage.InitializeSchema(connStr)` runs **once at startup**: enables `journal_mode=WAL` (a persistent DB property) and creates tables + runs idempotent `ALTER TABLE` migrations.
+- Per-instance `Connect()` only opens the connection and sets `busy_timeout=5000` (a per-connection setting). It does *not* re-run the schema.
+- WAL lets request connections and the background photo worker (`PhotoJobStore`, separate connection) read/write the DB concurrently; `busy_timeout` makes a writer wait briefly for the single write lock instead of failing.
 
 ## Tables
 

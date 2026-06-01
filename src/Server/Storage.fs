@@ -118,32 +118,43 @@ type Storage (connectionString: string) =
             results.Add(read reader)
         results |> List.ofSeq
 
+    /// Create the schema and enable WAL once at startup. WAL is a persistent
+    /// database property, so request connections and the background photo worker
+    /// all inherit it without each having to set it.
+    static member InitializeSchema(connectionString: string) : unit =
+        use conn : SqliteConnection = new SqliteConnection(connectionString)
+        conn.Open()
+        let pragma : SqliteCommand = conn.CreateCommand()
+        pragma.CommandText <- "PRAGMA journal_mode=WAL;"
+        pragma.ExecuteNonQuery() |> ignore
+        let c : SqliteCommand = conn.CreateCommand()
+        c.CommandText <- createTables
+        c.ExecuteNonQuery() |> ignore
+        // Run migration for box.photo_path (safe to run multiple times)
+        try
+            let m : SqliteCommand = conn.CreateCommand()
+            m.CommandText <- "ALTER TABLE box ADD COLUMN photo_path TEXT"
+            m.ExecuteNonQuery() |> ignore
+        with _ -> ()
+        // Run migration for location.photo_path (safe to run multiple times)
+        try
+            let m : SqliteCommand = conn.CreateCommand()
+            m.CommandText <- "ALTER TABLE location ADD COLUMN photo_path TEXT"
+            m.ExecuteNonQuery() |> ignore
+        with _ -> ()
+
     member this.Connect() : unit =
         match connection with
         | Some _ -> ()
         | None ->
             let conn : SqliteConnection = new SqliteConnection(connectionString)
             conn.Open()
-            // WAL mode + a busy timeout let the background photo worker and the
-            // request handlers safely share the database from separate connections.
+            // Each Storage instance is request-scoped and holds its own pooled
+            // connection. The busy timeout lets a writer wait briefly for the
+            // write lock instead of failing when another connection holds it.
             let pragma : SqliteCommand = conn.CreateCommand()
-            pragma.CommandText <- "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;"
+            pragma.CommandText <- "PRAGMA busy_timeout=5000;"
             pragma.ExecuteNonQuery() |> ignore
-            let c : SqliteCommand = conn.CreateCommand()
-            c.CommandText <- createTables
-            c.ExecuteNonQuery() |> ignore
-            // Run migration for box.photo_path (safe to run multiple times)
-            try
-                let m : SqliteCommand = conn.CreateCommand()
-                m.CommandText <- "ALTER TABLE box ADD COLUMN photo_path TEXT"
-                m.ExecuteNonQuery() |> ignore
-            with _ -> ()
-            // Run migration for location.photo_path (safe to run multiple times)
-            try
-                let m : SqliteCommand = conn.CreateCommand()
-                m.CommandText <- "ALTER TABLE location ADD COLUMN photo_path TEXT"
-                m.ExecuteNonQuery() |> ignore
-            with _ -> ()
             connection <- Some conn
 
     member this.Connection : SqliteConnection =

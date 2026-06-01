@@ -67,8 +67,8 @@ let private labelPageCss : string =
         justify-content: center;
     }
     .label-qr svg {
-        width: 20mm;
-        height: 20mm;
+        width: 28mm;
+        height: 28mm;
         display: block;
     }
     .label-qr-large svg {

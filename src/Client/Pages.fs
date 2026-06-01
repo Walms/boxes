@@ -2,6 +2,9 @@ module BoxTracker.Client.Pages
 
 #if FABLE_COMPILER
 open Browser.Types
+open Browser.Dom
+open Fable.Core.JsInterop
+let private jsQRFn : obj = import "default" "jsqr"
 #endif
 open Feliz
 open BoxTracker.Client.State
@@ -88,8 +91,16 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                 prop.className "flex-1 md:hidden"
             ]
             Html.div [
-                prop.className "flex-none"
+                prop.className "flex-none flex items-center"
                 prop.children [
+                    Html.button [
+                        prop.className "btn btn-ghost btn-circle btn-lg md:btn-md"
+                        prop.title "Scan QR Code"
+                        prop.onClick (fun _ -> dispatch OpenScanner)
+                        prop.children [
+                            Html.span [ prop.className "text-lg leading-none"; prop.text "⬛" ]
+                        ]
+                    ]
                     Html.div [
                         prop.className "dropdown dropdown-end"
                         prop.children [
@@ -105,6 +116,12 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     Html.li [ navItem "Locations" LocationsList dispatch ]
                                     Html.li [ navItem "Boxes" BoxesList dispatch ]
                                     Html.li [ navItem "Items" ItemsList dispatch ]
+                                    Html.li [
+                                        Html.a [
+                                            prop.text "Scan QR"
+                                            prop.onClick (fun _ -> dispatch OpenScanner)
+                                        ]
+                                    ]
                                 ]
                             ]
                         ]
@@ -1683,12 +1700,159 @@ let private historyModal (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
         ]
 
+[<Fable.Core.Emit("""
+(function(videoEl, jsQR, onFound, onError) {
+    var stream = null;
+    var rafId = 0;
+    var found = false;
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+    function scan() {
+        if (found) return;
+        if (videoEl.readyState >= 2 && videoEl.videoWidth > 0) {
+            canvas.width = videoEl.videoWidth;
+            canvas.height = videoEl.videoHeight;
+            ctx.drawImage(videoEl, 0, 0);
+            var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            var result = jsQR(img.data, img.width, img.height);
+            if (result && result.data) {
+                found = true;
+                onFound(result.data);
+                return;
+            }
+        }
+        rafId = requestAnimationFrame(scan);
+    }
+    (async function() {
+        var tried = [
+            { video: { facingMode: { exact: 'environment' } } },
+            { video: { facingMode: 'environment' } },
+            { video: true }
+        ];
+        for (var c of tried) {
+            try { stream = await navigator.mediaDevices.getUserMedia(c); break; } catch(e) {}
+        }
+        if (!stream) { onError('Camera not available'); return; }
+        videoEl.srcObject = stream;
+        try {
+            await new Promise(function(r) { videoEl.onloadedmetadata = r; });
+            await videoEl.play();
+        } catch(e) {}
+        scan();
+    })().catch(function(e) { onError(e.message || 'Camera error'); });
+    return function() {
+        found = true;
+        cancelAnimationFrame(rafId);
+        if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+    };
+})($0, $1, $2, $3)
+""")]
+let private initScanner (videoEl: obj) (jsQR: obj) (onFound: string -> unit) (onError: string -> unit) : (unit -> unit) = failwith "JS only"
+
+[<Fable.Core.Emit("document.getElementById($0)")>]
+let private getElementById (id: string) : obj = failwith "JS only"
+
+#if FABLE_COMPILER
+[<ReactComponent>]
+let private QrScannerComponent (dispatch: Msg -> unit) : ReactElement =
+    let errorMsg, setErrorMsg = React.useState<string option>(None)
+    React.useEffect(fun () ->
+        let videoEl = getElementById "qr-scanner-video"
+        let cleanup =
+            if isNull videoEl then
+                setErrorMsg (Some "Video element not found")
+                fun () -> ()
+            else
+                initScanner videoEl jsQRFn
+                    (fun text -> dispatch (QrScanned text))
+                    (fun err -> setErrorMsg (Some err))
+        { new System.IDisposable with member _.Dispose() = cleanup() }
+    , [||])
+    Html.div [
+        prop.className "relative w-full"
+        prop.children [
+            match errorMsg with
+            | Some err ->
+                Html.div [
+                    prop.className "alert alert-error text-sm"
+                    prop.text err
+                ]
+            | None ->
+                Html.div [
+                    prop.className "relative"
+                    prop.children [
+                        Html.video [
+                            prop.id "qr-scanner-video"
+                            prop.autoPlay true
+                            prop.custom ("playsInline", true)
+                            prop.className "w-full rounded-lg"
+                        ]
+                        Html.div [
+                            prop.className "absolute bottom-2 inset-x-0 flex justify-center"
+                            prop.children [
+                                Html.span [
+                                    prop.className "badge badge-primary text-xs px-3 py-1"
+                                    prop.text "Looking for QR code..."
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+        ]
+    ]
+#else
+let private QrScannerComponent (_dispatch: Msg -> unit) : ReactElement = Html.none
+#endif
+
+let private scannerModal (state: State) (dispatch: Msg -> unit) : ReactElement =
+    if not state.ScannerOpen then Html.none
+    else
+        Html.div [
+            prop.className "modal modal-open z-50"
+            prop.onClick (fun e ->
+                if e.currentTarget = e.target then dispatch CloseScanner
+            )
+            prop.children [
+                Html.div [
+                    prop.className "modal-box w-11/12 max-w-sm"
+                    prop.children [
+                        Html.div [
+                            prop.className "flex justify-between items-center mb-4"
+                            prop.children [
+                                Html.h3 [
+                                    prop.className "font-bold text-lg"
+                                    prop.text "Scan QR Code"
+                                ]
+                                Html.button [
+                                    prop.className "btn btn-ghost btn-sm btn-circle"
+                                    prop.text "✕"
+                                    prop.onClick (fun _ -> dispatch CloseScanner)
+                                ]
+                            ]
+                        ]
+                        QrScannerComponent dispatch
+                        Html.div [
+                            prop.className "modal-action mt-4"
+                            prop.children [
+                                Html.button [
+                                    prop.className "btn btn-ghost btn-sm"
+                                    prop.text "Cancel"
+                                    prop.onClick (fun _ -> dispatch CloseScanner)
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
 let renderPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "min-h-screen bg-base-100"
         prop.children [
             imageViewer state dispatch
             historyModal state dispatch
+            scannerModal state dispatch
             navbar state dispatch
             Html.div [
                 prop.className "w-full mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 max-w-6xl"

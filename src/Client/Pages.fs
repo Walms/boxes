@@ -165,18 +165,42 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
                                         Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Select target box" ]
                                     ]
                                 ]
-                                Html.select [
-                                    prop.className "select select-bordered w-full text-base"
-                                    prop.value state.TargetBoxId
-                                    prop.onChange (fun (s: string) -> dispatch (MoveTargetBoxChanged s))
+                                Html.div [
+                                    prop.className "dropdown w-full"
                                     prop.children [
-                                        Html.option [ prop.value ""; prop.text "Choose a box..." ]
-                                        for box in state.AvailableBoxes do
-                                            if box.Id <> currentBoxId then
-                                                Html.option [
-                                                    prop.value box.Id
-                                                    prop.text (box.Label |> Option.defaultValue box.Id)
+                                        Html.button [
+                                            prop.tabIndex 0
+                                            prop.className "btn btn-outline w-full flex justify-between items-center text-base font-normal normal-case"
+                                            prop.children [
+                                                Html.span [
+                                                    let selectedLabel =
+                                                        if System.String.IsNullOrEmpty state.TargetBoxId then "Choose a box..."
+                                                        else
+                                                            state.AvailableBoxes
+                                                            |> Array.tryFind (fun b -> b.Id = state.TargetBoxId)
+                                                            |> Option.map (fun b -> b.Label |> Option.defaultValue b.Id)
+                                                            |> Option.defaultValue "Choose a box..."
+                                                    prop.text selectedLabel
                                                 ]
+                                                Html.span [ prop.text "▾" ]
+                                            ]
+                                        ]
+                                        Html.ul [
+                                            prop.tabIndex 0
+                                            prop.className "dropdown-content menu bg-base-200 z-20 w-full p-1 shadow-lg border border-base-300 max-h-64 overflow-y-auto"
+                                            prop.children [
+                                                for box in state.AvailableBoxes do
+                                                    if box.Id <> currentBoxId then
+                                                        Html.li [
+                                                            Html.a [
+                                                                if state.TargetBoxId = box.Id then
+                                                                    prop.className "font-bold"
+                                                                prop.text (box.Label |> Option.defaultValue box.Id)
+                                                                prop.onClick (fun _ -> dispatch (MoveTargetBoxChanged box.Id))
+                                                            ]
+                                                        ]
+                                            ]
+                                        ]
                                     ]
                                 ]
                             ]
@@ -998,18 +1022,50 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                 Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Assign to location" ]
                                             ]
                                         ]
-                                        Html.select [
-                                            prop.className "select select-bordered focus:select-primary text-base w-full"
-                                            prop.value state.AssignLocationCode
-                                            prop.onChange (fun (s: string) -> dispatch (AssignBoxToLocation s))
+                                        Html.div [
+                                            prop.className "dropdown w-full"
                                             prop.children [
-                                                Html.option [ prop.value ""; prop.text "Unassigned" ]
-                                                for loc in state.AvailableLocations do
-                                                    if not loc.IsArchived then
-                                                        Html.option [
-                                                            prop.value loc.Code
-                                                            prop.text loc.Name
+                                                Html.button [
+                                                    prop.tabIndex 0
+                                                    prop.className "btn btn-outline w-full flex justify-between items-center text-base font-normal normal-case"
+                                                    prop.children [
+                                                        Html.span [
+                                                            let selectedName =
+                                                                if System.String.IsNullOrEmpty state.AssignLocationCode then "Unassigned"
+                                                                else
+                                                                    state.AvailableLocations
+                                                                    |> Array.tryFind (fun l -> l.Code = state.AssignLocationCode)
+                                                                    |> Option.map (fun l -> l.Name)
+                                                                    |> Option.defaultValue "Unassigned"
+                                                            prop.text selectedName
                                                         ]
+                                                        Html.span [ prop.text "▾" ]
+                                                    ]
+                                                ]
+                                                Html.ul [
+                                                    prop.tabIndex 0
+                                                    prop.className "dropdown-content menu bg-base-200 z-20 w-full p-1 shadow-lg border border-base-300"
+                                                    prop.children [
+                                                        Html.li [
+                                                            Html.a [
+                                                                if System.String.IsNullOrEmpty state.AssignLocationCode then
+                                                                    prop.className "font-bold"
+                                                                prop.text "Unassigned"
+                                                                prop.onClick (fun _ -> dispatch (AssignBoxToLocation ""))
+                                                            ]
+                                                        ]
+                                                        for loc in state.AvailableLocations do
+                                                            if not loc.IsArchived then
+                                                                Html.li [
+                                                                    Html.a [
+                                                                        if state.AssignLocationCode = loc.Code then
+                                                                            prop.className "font-bold"
+                                                                        prop.text loc.Name
+                                                                        prop.onClick (fun _ -> dispatch (AssignBoxToLocation loc.Code))
+                                                                    ]
+                                                                ]
+                                                    ]
+                                                ]
                                             ]
                                         ]
                                     ]
@@ -1233,17 +1289,41 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
                                         Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Select target box" ]
                                     ]
                                 ]
-                                Html.select [
-                                    prop.className "select select-bordered w-full text-base"
-                                    prop.value state.MoveItemTargetBox
-                                    prop.onChange (fun (s: string) -> dispatch (MoveItemTargetBoxChanged s))
+                                Html.div [
+                                    prop.className "dropdown w-full"
                                     prop.children [
-                                        Html.option [ prop.value ""; prop.text "Choose a box..." ]
-                                        for box in state.BoxesForItemMove do
-                                            Html.option [
-                                                prop.value box.Id
-                                                prop.text (box.Label |> Option.defaultValue box.Id)
+                                        Html.button [
+                                            prop.tabIndex 0
+                                            prop.className "btn btn-outline w-full flex justify-between items-center text-base font-normal normal-case"
+                                            prop.children [
+                                                Html.span [
+                                                    let selectedLabel =
+                                                        if System.String.IsNullOrEmpty state.MoveItemTargetBox then "Choose a box..."
+                                                        else
+                                                            state.BoxesForItemMove
+                                                            |> Array.tryFind (fun b -> b.Id = state.MoveItemTargetBox)
+                                                            |> Option.map (fun b -> b.Label |> Option.defaultValue b.Id)
+                                                            |> Option.defaultValue "Choose a box..."
+                                                    prop.text selectedLabel
+                                                ]
+                                                Html.span [ prop.text "▾" ]
                                             ]
+                                        ]
+                                        Html.ul [
+                                            prop.tabIndex 0
+                                            prop.className "dropdown-content menu bg-base-200 z-20 w-full p-1 shadow-lg border border-base-300 max-h-64 overflow-y-auto"
+                                            prop.children [
+                                                for box in state.BoxesForItemMove do
+                                                    Html.li [
+                                                        Html.a [
+                                                            if state.MoveItemTargetBox = box.Id then
+                                                                prop.className "font-bold"
+                                                            prop.text (box.Label |> Option.defaultValue box.Id)
+                                                            prop.onClick (fun _ -> dispatch (MoveItemTargetBoxChanged box.Id))
+                                                        ]
+                                                    ]
+                                            ]
+                                        ]
                                     ]
                                 ]
                             ]

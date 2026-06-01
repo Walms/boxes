@@ -233,12 +233,15 @@ let private addExistingItemDialog (state: State) (dispatch: Msg -> unit) : React
                                             ]
                                             prop.onClick (fun _ -> dispatch (SelectedExistingItemChanged item.ItemId))
                                             prop.children [
-                                                match photoUrlFull item.PhotoPath with
-                                                | Some url ->
+                                                match photoUrlThumb item.PhotoPath with
+                                                | Some thumbUrl ->
+                                                    let fullUrl = photoUrlFull item.PhotoPath |> Option.defaultValue thumbUrl
                                                     Html.img [
                                                         prop.className "w-10 h-10 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                                                        prop.src url
-                                                        prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer url))
+                                                        prop.src thumbUrl
+                                                        prop.custom("loading", "lazy")
+                                                        prop.custom("decoding", "async")
+                                                        prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer fullUrl))
                                                     ]
                                                 | None ->
                                                     Html.div [
@@ -625,15 +628,17 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             ]
                                     ]
                                 ]
-                                match photoUrlFull detail.Location.PhotoPath with
-                                | Some url ->
+                                match photoUrlThumb detail.Location.PhotoPath with
+                                | Some thumbUrl ->
+                                    let fullUrl = photoUrlFull detail.Location.PhotoPath |> Option.defaultValue thumbUrl
                                     Html.div [
                                         prop.className "mt-2"
                                         prop.children [
                                             Html.img [
                                                 prop.className "w-32 h-32 object-cover rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity"
-                                                prop.src url
-                                                prop.onClick (fun _ -> dispatch (ShowImageViewer url))
+                                                prop.src thumbUrl
+                                                prop.custom("decoding", "async")
+                                                prop.onClick (fun _ -> dispatch (ShowImageViewer fullUrl))
                                             ]
                                         ]
                                     ]
@@ -1009,15 +1014,17 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         ]
                                     ]
                                 ]
-                                match photoUrlFull detail.Box.PhotoPath with
-                                | Some url ->
+                                match photoUrlThumb detail.Box.PhotoPath with
+                                | Some thumbUrl ->
+                                    let fullUrl = photoUrlFull detail.Box.PhotoPath |> Option.defaultValue thumbUrl
                                     Html.div [
                                         prop.className "mt-2"
                                         prop.children [
                                             Html.img [
                                                 prop.className "w-32 h-32 object-cover rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity"
-                                                prop.src url
-                                                prop.onClick (fun _ -> dispatch (ShowImageViewer url))
+                                                prop.src thumbUrl
+                                                prop.custom("decoding", "async")
+                                                prop.onClick (fun _ -> dispatch (ShowImageViewer fullUrl))
                                             ]
                                         ]
                                     ]
@@ -1144,6 +1151,8 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                         Html.img [
                                                             prop.className "w-9 h-9 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                                                             prop.src thumbUrl
+                                                            prop.custom("loading", "lazy")
+                                                            prop.custom("decoding", "async")
                                                             prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer fullUrl))
                                                         ]
                                                     | None -> Html.none
@@ -1277,6 +1286,8 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                 Html.img [
                                     prop.className "w-10 h-10 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                                     prop.src thumbUrl
+                                    prop.custom("loading", "lazy")
+                                    prop.custom("decoding", "async")
                                     prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer fullUrl))
                                 ]
                             | None -> Html.none

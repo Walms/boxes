@@ -7,6 +7,9 @@ open SixLabors.ImageSharp.Processing
 open SixLabors.ImageSharp.Formats.Webp
 
 let private webpEncoder : WebpEncoder = WebpEncoder(Quality = 90)
+// Thumbnails are shown at <=128 px, so a lower quality is visually
+// indistinguishable while producing noticeably smaller files that load faster.
+let private thumbEncoder : WebpEncoder = WebpEncoder(Quality = 75)
 
 let private resizeImage (image: Image) (maxWidth: int) (maxHeight: int) : unit =
     if image.Width > maxWidth || image.Height > maxHeight then
@@ -28,7 +31,7 @@ let processUploadedImage (inputPath: string) (outputFullPath: string) (outputThu
 
         use thumbImage : Image = image.Clone(fun cfg -> ())
         resizeImage thumbImage 250 250
-        thumbImage.SaveAsWebp(outputThumbPath, webpEncoder)
+        thumbImage.SaveAsWebp(outputThumbPath, thumbEncoder)
 
         Ok ()
     with

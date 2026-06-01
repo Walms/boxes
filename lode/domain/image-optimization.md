@@ -16,7 +16,8 @@ Photos uploaded by users (boxes and items) are automatically compressed and resi
    processes it via `ImageProcessing.processUploadedImage`.
 3. Two WebP variants are generated and saved:
    - `{guid}-full.webp` — max 3500×3500 px, 90% quality
-   - `{guid}-thumb.webp` — max 250×250 px, 90% quality
+   - `{guid}-thumb.webp` — max 250×250 px, 75% quality (lower quality is
+     invisible at the ≤128 px display sizes and shrinks the file further)
 4. PhotoPath stores base path: `photos/{boxId}/{guid}` (no extension); the
    entity's `photo_path` is set only once processing completes.
 5. The raw staged file is deleted after processing (success or failure).
@@ -26,13 +27,23 @@ Photos uploaded by users (boxes and items) are automatically compressed and resi
 data/photos/
   {boxId}/
     {guid}-full.webp    # Full-size variant (3500×3500 max, 90% quality)
-    {guid}-thumb.webp   # Thumbnail variant (250×250 max, 90% quality)
+    {guid}-thumb.webp   # Thumbnail variant (250×250 max, 75% quality)
 ```
 
 **API Serving:**
 - Static files middleware at `/api/photos` serves WebP files directly
 - Files are served by appending `-full` or `-thumb` suffix before `.webp` extension
 - Example: path `photos/BOX-001/abc123` becomes `/api/photos/BOX-001/abc123-full.webp` or `-thumb.webp`
+- Responses carry `Cache-Control: public, max-age=31536000, immutable`
+  (`Program.fs`, `OnPrepareResponse`). Filenames are content-addressed by guid
+  and never mutated, so the browser caches them for a year and reuses thumbnails
+  across navigations instead of re-fetching.
+
+**Client loading:**
+- List/grid thumbnails use `loading="lazy"` + `decoding="async"` so off-screen
+  images aren't fetched until scrolled near, and decoding doesn't block render.
+- Small displays always use the `thumb` variant; the `full` variant is loaded
+  only when the image viewer is opened.
 
 **Client Usage:**
 - `photoUrlFull(path)` — returns full-size image URL for detail views

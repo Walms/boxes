@@ -32,9 +32,16 @@ let configureApp (app: IApplicationBuilder) : unit =
     let photosDir : string = Path.Combine(dataDir, "photos")
     if not (Directory.Exists photosDir) then Directory.CreateDirectory photosDir |> ignore
     app.UseResponseCompression() |> ignore
+    // Photo filenames are content-addressed ({guid}-{variant}.webp) and never
+    // mutated in place, so they can be cached aggressively. Tell the browser to
+    // keep them for a year and skip revalidation, so navigating between pages
+    // reuses cached thumbnails instead of re-fetching every image.
     app.UseStaticFiles(StaticFileOptions(
         FileProvider = new PhysicalFileProvider(photosDir),
-        RequestPath = PathString("/api/photos")
+        RequestPath = PathString("/api/photos"),
+        OnPrepareResponse = fun (ctx: StaticFileResponseContext) ->
+            ctx.Context.Response.Headers.CacheControl <-
+                Microsoft.Extensions.Primitives.StringValues "public, max-age=31536000, immutable"
     )) |> ignore
     app.UseGiraffe webApp
 

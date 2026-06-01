@@ -170,7 +170,7 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
                                     prop.children [
                                         Html.button [
                                             prop.tabIndex 0
-                                            prop.className "btn btn-outline w-full flex justify-between items-center text-base font-normal normal-case"
+                                            prop.className "btn btn-outline w-full text-base font-normal normal-case"
                                             prop.children [
                                                 Html.span [
                                                     let selectedLabel =
@@ -937,7 +937,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                         prop.children [
                                                             Html.button [
                                                                 prop.tabIndex 0
-                                                                prop.className "btn btn-sm w-full sm:w-auto"
+                                                                prop.className "btn btn-outline w-full sm:w-auto text-base font-normal normal-case"
                                                                 prop.text "Actions ▾"
                                                             ]
                                                             Html.ul [
@@ -1027,7 +1027,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             prop.children [
                                                 Html.button [
                                                     prop.tabIndex 0
-                                                    prop.className "btn btn-outline w-full flex justify-between items-center text-base font-normal normal-case"
+                                                    prop.className "btn btn-outline w-full text-base font-normal normal-case"
                                                     prop.children [
                                                         Html.span [
                                                             let selectedName =
@@ -1294,7 +1294,7 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
                                     prop.children [
                                         Html.button [
                                             prop.tabIndex 0
-                                            prop.className "btn btn-outline w-full flex justify-between items-center text-base font-normal normal-case"
+                                            prop.className "btn btn-outline w-full text-base font-normal normal-case"
                                             prop.children [
                                                 Html.span [
                                                     let selectedLabel =

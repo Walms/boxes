@@ -178,6 +178,24 @@ let loadingSpinner (state: State) : ReactElement =
         ]
     else Html.none
 
+/// Full-width centred spinner for use inside a grid (spans all columns).
+let gridLoadingSpinner : ReactElement =
+    Html.div [
+        prop.className "col-span-full flex justify-center py-12"
+        prop.children [
+            Html.span [ prop.className "loading loading-spinner loading-lg" ]
+        ]
+    ]
+
+/// Centred spinner for use inside modal dialogs while their data loads.
+let dialogLoadingSpinner : ReactElement =
+    Html.div [
+        prop.className "flex justify-center py-8"
+        prop.children [
+            Html.span [ prop.className "loading loading-spinner loading-md" ]
+        ]
+    ]
+
 let photoStatusBanner (state: State) (dispatch: Msg -> unit) : ReactElement =
     if state.UploadingPhoto then
         Html.div [

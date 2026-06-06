@@ -106,7 +106,9 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             Html.div [
                 prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
                 prop.children [
-                    if Array.isEmpty state.Locations && not state.Loading then
+                    if state.Loading && Array.isEmpty state.Locations then
+                        gridLoadingSpinner
+                    elif Array.isEmpty state.Locations then
                         Html.div [
                             prop.className "col-span-full text-center py-12 opacity-60"
                             prop.children [
@@ -160,7 +162,9 @@ let private addBoxToLocationDialog (state: State) (dispatch: Msg -> unit) : Reac
                             prop.className "font-bold text-lg mb-4"
                             prop.text "Add box to this location"
                         ]
-                        if Array.isEmpty state.BoxesForLocationMove then
+                        if state.DialogLoading then
+                            dialogLoadingSpinner
+                        elif Array.isEmpty state.BoxesForLocationMove then
                             Html.p [
                                 prop.className "text-center py-4 opacity-60 text-base"
                                 prop.text "No boxes available to add"

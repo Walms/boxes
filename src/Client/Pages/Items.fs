@@ -32,19 +32,22 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
                                         Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Select target box" ]
                                     ]
                                 ]
-                                Html.ul [
-                                    prop.className "menu bg-base-200 rounded-box w-full p-1 border border-base-300 max-h-64 overflow-y-auto"
-                                    prop.children [
-                                        for box in state.BoxesForItemMove do
-                                            Html.li [
-                                                Html.a [
-                                                    prop.className (if state.MoveItemTargetBox = box.Id then "active font-bold" else "")
-                                                    prop.text (box.Label |> Option.defaultValue box.Id)
-                                                    prop.onClick (fun _ -> dispatch (MoveItemTargetBoxChanged box.Id))
+                                if state.DialogLoading then
+                                    dialogLoadingSpinner
+                                else
+                                    Html.ul [
+                                        prop.className "menu bg-base-200 rounded-box w-full p-1 border border-base-300 max-h-64 overflow-y-auto"
+                                        prop.children [
+                                            for box in state.BoxesForItemMove do
+                                                Html.li [
+                                                    Html.a [
+                                                        prop.className (if state.MoveItemTargetBox = box.Id then "active font-bold" else "")
+                                                        prop.text (box.Label |> Option.defaultValue box.Id)
+                                                        prop.onClick (fun _ -> dispatch (MoveItemTargetBoxChanged box.Id))
+                                                    ]
                                                 ]
-                                            ]
+                                        ]
                                     ]
-                                ]
                             ]
                         ]
                         Html.div [
@@ -334,21 +337,38 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             Html.div [
                 prop.className "form-control mb-4"
                 prop.children [
-                    Html.input [
-                        prop.className "input input-bordered w-full focus:input-primary text-base"
-                        prop.placeholder "Search items..."
-                        prop.value state.SearchQuery
-                        prop.onChange (fun (s: string) -> dispatch (SearchQueryChanged s))
+                    Html.div [
+                        prop.className "relative"
+                        prop.children [
+                            Html.input [
+                                prop.className "input input-bordered w-full focus:input-primary text-base"
+                                prop.placeholder "Search items..."
+                                prop.value state.SearchQuery
+                                prop.onChange (fun (s: string) -> dispatch (SearchQueryChanged s))
+                            ]
+                            if state.SearchLoading then
+                                Html.span [
+                                    prop.className "loading loading-spinner loading-sm absolute right-3 top-1/2 -translate-y-1/2 opacity-70"
+                                ]
+                        ]
                     ]
                 ]
             ]
             let itemsToShow =
                 if System.String.IsNullOrEmpty state.SearchQuery then state.AllItems
                 else state.SearchResults
+            let busy = state.Loading || state.SearchLoading
             Html.div [
                 prop.className "space-y-1"
                 prop.children [
-                    if Array.isEmpty itemsToShow && not state.Loading then
+                    if busy && Array.isEmpty itemsToShow then
+                        Html.div [
+                            prop.className "flex justify-center py-12"
+                            prop.children [
+                                Html.span [ prop.className "loading loading-spinner loading-lg" ]
+                            ]
+                        ]
+                    elif Array.isEmpty itemsToShow && not busy then
                         Html.div [
                             prop.className "text-center py-8 opacity-60"
                             prop.children [

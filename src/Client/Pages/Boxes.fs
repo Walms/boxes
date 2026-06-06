@@ -34,20 +34,23 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
                                         Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Select target box" ]
                                     ]
                                 ]
-                                Html.ul [
-                                    prop.className "menu bg-base-200 rounded-box w-full p-1 border border-base-300 max-h-64 overflow-y-auto"
-                                    prop.children [
-                                        for box in state.AvailableBoxes do
-                                            if box.Id <> currentBoxId then
-                                                Html.li [
-                                                    Html.a [
-                                                        prop.className (if state.TargetBoxId = box.Id then "active font-bold" else "")
-                                                        prop.text (box.Label |> Option.defaultValue box.Id)
-                                                        prop.onClick (fun _ -> dispatch (MoveTargetBoxChanged box.Id))
+                                if state.DialogLoading then
+                                    dialogLoadingSpinner
+                                else
+                                    Html.ul [
+                                        prop.className "menu bg-base-200 rounded-box w-full p-1 border border-base-300 max-h-64 overflow-y-auto"
+                                        prop.children [
+                                            for box in state.AvailableBoxes do
+                                                if box.Id <> currentBoxId then
+                                                    Html.li [
+                                                        Html.a [
+                                                            prop.className (if state.TargetBoxId = box.Id then "active font-bold" else "")
+                                                            prop.text (box.Label |> Option.defaultValue box.Id)
+                                                            prop.onClick (fun _ -> dispatch (MoveTargetBoxChanged box.Id))
+                                                        ]
                                                     ]
-                                                ]
+                                        ]
                                     ]
-                                ]
                             ]
                         ]
                         Html.div [
@@ -84,7 +87,9 @@ let private addExistingItemDialog (state: State) (dispatch: Msg -> unit) : React
                             prop.className "font-bold text-lg mb-4"
                             prop.text "Add existing item to this box"
                         ]
-                        if Array.isEmpty state.UnassignedItems then
+                        if state.DialogLoading then
+                            dialogLoadingSpinner
+                        elif Array.isEmpty state.UnassignedItems then
                             Html.p [
                                 prop.className "text-center py-4 opacity-60 text-base"
                                 prop.text "No unassigned items available"
@@ -248,7 +253,9 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             Html.div [
                 prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
                 prop.children [
-                    if Array.isEmpty state.Boxes && not state.Loading then
+                    if state.Loading && Array.isEmpty state.Boxes then
+                        gridLoadingSpinner
+                    elif Array.isEmpty state.Boxes then
                         Html.div [
                             prop.className "col-span-full text-center py-12 opacity-60"
                             prop.children [

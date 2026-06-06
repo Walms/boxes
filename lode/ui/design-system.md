@@ -165,6 +165,23 @@ Responsive layout for item rows:
 
 **Rule**: Modals never have full-width buttons. Titles use `h3` with `font-bold text-lg mb-4`.
 
+## Loading & Async Feedback
+
+Every async operation surfaces a loading indicator so the UI is never silently blank or showing a premature empty state.
+
+| Context | Indicator | Driven by |
+|---------|-----------|-----------|
+| Initial list load (Locations, Boxes, Items) | Full-width `loading-spinner loading-lg` spanning the grid | `state.Loading` while the collection is empty |
+| Detail page load (Location, Box, Item) | Centred `loading-spinner loading-lg` | `state.Loading` while the detail is `None` |
+| Item search (debounced) | `loading-spinner loading-sm` overlaid in the search input; large spinner replaces an empty list | `state.SearchLoading` |
+| Modal data loads (move item, add existing item, add box to location) | `loading-spinner loading-md` inside the modal body | `state.DialogLoading` |
+| Photo upload / background processing | `photoStatusBanner` (spinner + status text) | `state.UploadingPhoto`, `state.PhotoProcessing` |
+| History modal | `loading-spinner loading-md` | `state.HistoryLoading` |
+
+Shared helpers in `Pages/Common.fs`: `loadingSpinner` (centred, gated on `state.Loading`), `gridLoadingSpinner` (`col-span-full`, for grids), `dialogLoadingSpinner` (for modal bodies).
+
+**Rule**: `DialogLoading` is shared across modals (only one modal is open at a time) and is set `true` when a `Show*Dialog` message fires a fetch, cleared when its `*Loaded` message resolves. An empty-state message ("No boxes available", etc.) must only render when its loading flag is `false`, so it never flashes before data arrives.
+
 ## Empty States
 
 All empty state text:

@@ -201,6 +201,8 @@ type State = {
     HistoryCreatedAt: string option
     HistoryMoves: MoveDto array
     HistoryLoading: bool
+    DialogLoading: bool
+    SearchLoading: bool
     ScannerOpen: bool
     ItemDetail: SearchResultDto option
 }
@@ -340,6 +342,8 @@ let private resetPageState (state: State) : State =
         HistoryCreatedAt = None
         HistoryMoves = [||]
         HistoryLoading = false
+        DialogLoading = false
+        SearchLoading = false
         ScannerOpen = false
         ItemDetail = None
     }
@@ -417,6 +421,8 @@ let init () : State * Cmd<Msg> =
         HistoryCreatedAt = None
         HistoryMoves = [||]
         HistoryLoading = false
+        DialogLoading = false
+        SearchLoading = false
         ScannerOpen = false
         ItemDetail = None
     }
@@ -728,14 +734,14 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | ShowMoveItemDialog itemId ->
-        { state with MovingItemId = Some itemId; TargetBoxId = "" },
+        { state with MovingItemId = Some itemId; TargetBoxId = ""; AvailableBoxes = [||]; DialogLoading = true },
         Cmd.OfAsync.either (fun () -> getBoxes None) () BoxesForMoveLoaded (fun ex -> ErrorOccurred ex.Message)
 
     | BoxesForMoveLoaded (Ok boxes) ->
-        { state with AvailableBoxes = boxes }, Cmd.none
+        { state with AvailableBoxes = boxes; DialogLoading = false }, Cmd.none
 
     | BoxesForMoveLoaded (Error err) ->
-        { state with Error = Some err; MovingItemId = None }, Cmd.none
+        { state with Error = Some err; MovingItemId = None; DialogLoading = false }, Cmd.none
 
     | MoveTargetBoxChanged boxId ->
         { state with TargetBoxId = boxId }, Cmd.none
@@ -765,14 +771,14 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
     | SearchQueryChanged query ->
         if System.String.IsNullOrWhiteSpace query then
             state.SearchDebounceTimer |> Option.iter clearTimeout
-            { state with SearchQuery = query; SearchResults = [||]; SearchDebounceTimer = None }, Cmd.none
+            { state with SearchQuery = query; SearchResults = [||]; SearchDebounceTimer = None; SearchLoading = false }, Cmd.none
         else
             let cmd : Cmd<Msg> = Cmd.ofEffect (fun (dispatch: Msg -> unit) ->
                 state.SearchDebounceTimer |> Option.iter clearTimeout
                 let timerId : int = setTimeout (fun () -> dispatch (SearchDebounceTriggered query)) 300
                 ()
             )
-            { state with SearchQuery = query }, cmd
+            { state with SearchQuery = query; SearchLoading = true }, cmd
 
     | SearchDebounceTriggered query ->
         if query = state.SearchQuery then
@@ -782,10 +788,10 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
             state, Cmd.none
 
     | SearchResultsLoaded (Ok results) ->
-        { state with SearchResults = results; Loading = false }, Cmd.none
+        { state with SearchResults = results; Loading = false; SearchLoading = false }, Cmd.none
 
     | SearchResultsLoaded (Error err) ->
-        { state with Error = Some err; Loading = false }, Cmd.none
+        { state with Error = Some err; Loading = false; SearchLoading = false }, Cmd.none
 
     | AllItemsLoaded (Ok items) ->
         { state with AllItems = items; Loading = false }, Cmd.none
@@ -858,11 +864,11 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | ShowMoveItemStandaloneDialog itemId ->
-        { state with MovingItemStandaloneId = Some itemId; MoveItemTargetBox = "" },
+        { state with MovingItemStandaloneId = Some itemId; MoveItemTargetBox = ""; BoxesForItemMove = [||]; DialogLoading = true },
         Cmd.OfAsync.either (fun () -> getBoxes None) () (fun res -> match res with Ok boxes -> BoxesForItemMoveLoaded boxes | Error err -> ErrorOccurred err) (fun ex -> ErrorOccurred ex.Message)
 
     | BoxesForItemMoveLoaded boxes ->
-        { state with BoxesForItemMove = boxes }, Cmd.none
+        { state with BoxesForItemMove = boxes; DialogLoading = false }, Cmd.none
 
     | MoveItemTargetBoxChanged boxId ->
         { state with MoveItemTargetBox = boxId }, Cmd.none
@@ -899,16 +905,16 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
             }) () PhotoUploadStarted (fun ex -> ErrorOccurred ex.Message)
 
     | ShowAddExistingItemDialog ->
-        { state with AddingExistingItem = true; SelectedExistingItemId = "" },
+        { state with AddingExistingItem = true; SelectedExistingItemId = ""; UnassignedItems = [||]; DialogLoading = true },
         Cmd.OfAsync.either listItems () UnassignedItemsLoaded (fun ex -> ErrorOccurred ex.Message)
 
     | UnassignedItemsLoaded (Ok items) ->
         let unassigned : SearchResultDto array =
             items |> Array.filter (fun (i: SearchResultDto) -> System.String.IsNullOrEmpty i.BoxId)
-        { state with UnassignedItems = unassigned }, Cmd.none
+        { state with UnassignedItems = unassigned; DialogLoading = false }, Cmd.none
 
     | UnassignedItemsLoaded (Error err) ->
-        { state with Error = Some err; AddingExistingItem = false }, Cmd.none
+        { state with Error = Some err; AddingExistingItem = false; DialogLoading = false }, Cmd.none
 
     | SelectedExistingItemChanged itemId ->
         { state with SelectedExistingItemId = itemId }, Cmd.none
@@ -965,7 +971,7 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | ShowAddBoxToLocationDialog ->
-        { state with AddingBoxToLocation = true; SelectedBoxForLocationMove = "" },
+        { state with AddingBoxToLocation = true; SelectedBoxForLocationMove = ""; BoxesForLocationMove = [||]; DialogLoading = true },
         Cmd.OfAsync.either (fun () -> getBoxes None) () (fun res -> match res with Ok boxes -> BoxesForLocationMoveLoaded boxes | Error err -> ErrorOccurred err) (fun ex -> ErrorOccurred ex.Message)
 
     | BoxesForLocationMoveLoaded boxes ->
@@ -973,7 +979,7 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
             state.LocationDetail |> Option.map (fun d -> d.Location.Code) |> Option.defaultValue ""
         let filtered : BoxDto array =
             boxes |> Array.filter (fun b -> b.LocationCode <> Some currentLocCode)
-        { state with BoxesForLocationMove = filtered }, Cmd.none
+        { state with BoxesForLocationMove = filtered; DialogLoading = false }, Cmd.none
 
     | SelectedBoxForLocationMoveChanged boxId ->
         { state with SelectedBoxForLocationMove = boxId }, Cmd.none

@@ -1238,7 +1238,8 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             ]
                                         for item in detail.Items do
                                             Html.li [
-                                                prop.className "flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-base-200 transition-colors"
+                                                prop.className "flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-base-200 transition-colors cursor-pointer"
+                                                prop.onClick (fun _ -> dispatch (Navigate (ItemDetail item.Id)))
                                                 prop.children [
                                                     match photoUrlThumb item.PhotoPath with
                                                     | Some thumbUrl ->
@@ -1367,7 +1368,8 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
 let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultDto) : ReactElement =
     let isEditing = state.EditingItemId = Some item.ItemId
     Html.div [
-        prop.className "card entity-item transition-colors"
+        prop.className "card entity-item transition-colors cursor-pointer hover:shadow-md"
+        prop.onClick (fun _ -> if not isEditing then dispatch (Navigate (ItemDetail item.ItemId)))
         prop.children [
             Html.div [
                 prop.className "card-body p-3"
@@ -1892,6 +1894,205 @@ let private scannerModal (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
         ]
 
+let itemDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
+    match state.ItemDetail with
+    | None ->
+        if state.Loading then loadingSpinner state
+        else Html.div [ prop.text "Item not found" ]
+    | Some item ->
+        Html.div [
+            prop.children [
+                moveItemStandaloneDialog state dispatch
+                Html.div [
+                    prop.className "mb-4 sm:mb-6"
+                    prop.children [
+                        Html.button [
+                            prop.className "btn btn-ghost btn-sm gap-1"
+                            prop.text "← Back"
+                            prop.onClick (fun _ ->
+                                if System.String.IsNullOrEmpty item.BoxId then dispatch (Navigate ItemsList)
+                                else dispatch (Navigate (BoxDetail item.BoxId))
+                            )
+                        ]
+                    ]
+                ]
+                Html.div [
+                    prop.className "card entity-item shadow-sm mb-6"
+                    prop.children [
+                        Html.div [
+                            prop.className "card-body p-4 sm:p-6"
+                            prop.children [
+                                Html.div [
+                                    prop.className "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4"
+                                    prop.children [
+                                        if state.EditingItemId = Some item.ItemId then
+                                            Html.div [
+                                                prop.className "flex flex-col sm:flex-row items-end gap-2 flex-1"
+                                                prop.children [
+                                                    Html.input [
+                                                        prop.className "input input-bordered input-sm flex-1 w-full text-base"
+                                                        prop.value state.EditItemNameValue
+                                                        prop.onChange (fun (s: string) -> dispatch (EditItemNameChanged s))
+                                                    ]
+                                                    Html.div [
+                                                        prop.className "flex gap-2 w-full sm:w-auto"
+                                                        prop.children [
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Cancel"
+                                                                prop.onClick (fun _ -> dispatch CancelEditItem)
+                                                            ]
+                                                            Html.button [
+                                                                prop.className "btn btn-success btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Save"
+                                                                prop.onClick (fun _ -> dispatch SubmitEditItem)
+                                                            ]
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+                                        else
+                                            Html.h1 [
+                                                prop.className "text-2xl sm:text-3xl font-bold"
+                                                prop.text item.ItemName
+                                            ]
+                                            Html.div [
+                                                prop.className "dropdown dropdown-end w-full sm:w-auto"
+                                                prop.children [
+                                                    Html.button [
+                                                        prop.tabIndex 0
+                                                        prop.className "btn btn-outline w-full sm:w-auto text-base font-normal normal-case"
+                                                        prop.text "Actions ▾"
+                                                    ]
+                                                    Html.ul [
+                                                        prop.tabIndex 0
+                                                        prop.className "dropdown-content menu bg-base-100 rounded-box z-20 w-52 p-1 shadow-lg border border-base-300"
+                                                        prop.children [
+                                                            Html.li [
+                                                                Html.a [
+                                                                    prop.text "Edit Name"
+                                                                    prop.onClick (fun _ -> dispatch (StartEditItem (item.ItemId, item.ItemName)))
+                                                                ]
+                                                            ]
+                                                            Html.li [
+                                                                Html.a [
+                                                                    prop.text "View History"
+                                                                    prop.onClick (fun _ -> dispatch (ShowHistory ("item", item.ItemId, item.ItemName, Some item.AddedAt)))
+                                                                ]
+                                                            ]
+                                                            Html.li [
+                                                                Html.a [
+                                                                    prop.text "Move to box"
+                                                                    prop.onClick (fun _ -> dispatch (ShowMoveItemStandaloneDialog item.ItemId))
+                                                                ]
+                                                            ]
+                                                            Html.li [
+                                                                Html.label [
+                                                                    prop.className "cursor-pointer"
+                                                                    prop.children [
+                                                                        Html.text "Take Photo"
+                                                                        Html.input [
+                                                                            prop.type' "file"
+                                                                            prop.accept "image/*"
+                                                                            prop.custom("capture", "environment")
+                                                                            prop.className "hidden"
+#if FABLE_COMPILER
+                                                                            prop.onChange (fun (files: File list) ->
+                                                                                files |> List.tryHead |> Option.iter (fun f -> dispatch (UploadItemPhoto (item.ItemId, box f))))
+#endif
+                                                                        ]
+                                                                    ]
+                                                                ]
+                                                            ]
+                                                            Html.li [
+                                                                Html.label [
+                                                                    prop.className "cursor-pointer"
+                                                                    prop.children [
+                                                                        Html.text "Choose Photo"
+                                                                        Html.input [
+                                                                            prop.type' "file"
+                                                                            prop.accept "image/*"
+                                                                            prop.className "hidden"
+#if FABLE_COMPILER
+                                                                            prop.onChange (fun (files: File list) ->
+                                                                                files |> List.tryHead |> Option.iter (fun f -> dispatch (UploadItemPhoto (item.ItemId, box f))))
+#endif
+                                                                        ]
+                                                                    ]
+                                                                ]
+                                                            ]
+                                                            if not (System.String.IsNullOrEmpty item.BoxId) then
+                                                                Html.li [
+                                                                    Html.a [
+                                                                        prop.text "Unassign from box"
+                                                                        prop.onClick (fun _ -> dispatch (UnassignStandaloneItem item.ItemId))
+                                                                    ]
+                                                                ]
+                                                            Html.li [ Html.hr [] ]
+                                                            Html.li [
+                                                                Html.a [
+                                                                    prop.className "text-error"
+                                                                    prop.text "Delete Item"
+                                                                    prop.onClick (fun _ -> dispatch (DeleteStandaloneItem item.ItemId))
+                                                                ]
+                                                            ]
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+                                    ]
+                                ]
+                                match photoUrlThumb item.PhotoPath with
+                                | Some thumbUrl ->
+                                    let fullUrl = photoUrlFull item.PhotoPath |> Option.defaultValue thumbUrl
+                                    Html.div [
+                                        prop.className "mb-4"
+                                        prop.children [
+                                            Html.img [
+                                                prop.className "w-full max-w-md h-64 object-contain rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity bg-base-200"
+                                                prop.src thumbUrl
+                                                prop.custom("decoding", "async")
+                                                prop.onClick (fun _ -> dispatch (ShowImageViewer fullUrl))
+                                            ]
+                                        ]
+                                    ]
+                                | None ->
+                                    Html.div [
+                                        prop.className "mb-4 p-8 border border-dashed border-base-300 rounded-lg text-center opacity-40"
+                                        prop.children [
+                                            Html.p [ prop.text "No photo" ]
+                                        ]
+                                    ]
+                                photoStatusBanner state dispatch
+                                Html.div [
+                                    prop.className "mt-4 flex flex-wrap gap-2 items-center"
+                                    prop.children [
+                                        Html.span [ prop.className "text-sm opacity-60 mr-1"; prop.text "In:" ]
+                                        if System.String.IsNullOrEmpty item.BoxId then
+                                            Html.span [ prop.className "badge badge-ghost"; prop.text "Unassigned" ]
+                                        else
+                                            Html.button [
+                                                prop.className "btn btn-ghost btn-sm font-normal normal-case"
+                                                prop.onClick (fun _ -> dispatch (Navigate (BoxDetail item.BoxId)))
+                                                prop.text ((item.BoxLabel |> Option.defaultValue item.BoxId) + " →")
+                                            ]
+                                            match item.LocationCode, item.LocationName with
+                                            | Some code, Some name ->
+                                                Html.button [
+                                                    prop.className "btn btn-ghost btn-sm font-normal normal-case"
+                                                    prop.onClick (fun _ -> dispatch (Navigate (LocationDetail code)))
+                                                    prop.text (name + " →")
+                                                ]
+                                            | _ -> Html.none
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
 let renderPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "min-h-screen bg-base-100"
@@ -1910,6 +2111,7 @@ let renderPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     | BoxesList -> boxesPage state dispatch
                     | BoxDetail _ -> boxDetailPage state dispatch
                     | ItemsList -> itemsPage state dispatch
+                    | ItemDetail _ -> itemDetailPage state dispatch
                 ]
             ]
         ]

@@ -9,6 +9,7 @@ type Page =
     | BoxesList
     | BoxDetail of string
     | ItemsList
+    | ItemDetail of string
 
 type Msg =
     | Navigate of Page
@@ -136,6 +137,7 @@ type Msg =
     | OpenScanner
     | CloseScanner
     | QrScanned of string
+    | ItemDetailLoaded of Result<SearchResultDto array, string>
 
 type State = {
     CurrentPage: Page
@@ -200,6 +202,7 @@ type State = {
     HistoryMoves: MoveDto array
     HistoryLoading: bool
     ScannerOpen: bool
+    ItemDetail: SearchResultDto option
 }
 
 [<Fable.Core.Emit("window.location.hash")>]
@@ -227,6 +230,7 @@ let private pageFromHash (hash: string) : Page =
     | "/boxes" -> BoxesList
     | s when s.StartsWith("/boxes/") -> BoxDetail(s.[7..])
     | "/items" -> ItemsList
+    | s when s.StartsWith("/items/") -> ItemDetail(s.[7..])
     | _ -> LocationsList
 
 let private hashFromPage (page: Page) : string =
@@ -236,6 +240,7 @@ let private hashFromPage (page: Page) : string =
     | BoxesList -> "#/boxes"
     | BoxDetail id -> $"#/boxes/%s{id}"
     | ItemsList -> "#/items"
+    | ItemDetail id -> $"#/items/%s{id}"
 
 let private pageEqual (a: Page) (b: Page) : bool =
     match a, b with
@@ -244,6 +249,7 @@ let private pageEqual (a: Page) (b: Page) : bool =
     | BoxesList, BoxesList -> true
     | BoxDetail id1, BoxDetail id2 -> id1 = id2
     | ItemsList, ItemsList -> true
+    | ItemDetail id1, ItemDetail id2 -> id1 = id2
     | _ -> false
 
 let private loadPage (page: Page) : Cmd<Msg> =
@@ -267,6 +273,11 @@ let private loadPage (page: Page) : Cmd<Msg> =
             Cmd.OfAsync.either listItems () AllItemsLoaded (fun ex -> ErrorOccurred ex.Message)
             Cmd.OfAsync.either getLocations () LocationsLoaded (fun ex -> ErrorOccurred ex.Message)
             Cmd.OfAsync.either (fun () -> getBoxes None) () BoxesLoaded (fun ex -> ErrorOccurred ex.Message)
+        ]
+    | ItemDetail _ ->
+        Cmd.batch [
+            Cmd.OfAsync.either listItems () ItemDetailLoaded (fun ex -> ErrorOccurred ex.Message)
+            Cmd.OfAsync.either getLocations () AvailableLocationsLoaded (fun ex -> ErrorOccurred ex.Message)
         ]
 
 let private hashChangeSub (dispatch: Msg -> unit) : unit =
@@ -330,6 +341,7 @@ let private resetPageState (state: State) : State =
         HistoryMoves = [||]
         HistoryLoading = false
         ScannerOpen = false
+        ItemDetail = None
     }
 
 let private navigateCmd (page: Page) : Cmd<Msg> =
@@ -406,6 +418,7 @@ let init () : State * Cmd<Msg> =
         HistoryMoves = [||]
         HistoryLoading = false
         ScannerOpen = false
+        ItemDetail = None
     }
     let cmds : Cmd<Msg> = Cmd.batch [
         Cmd.ofEffect hashChangeSub
@@ -819,9 +832,13 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
                 { state with Loading = true },
                 Cmd.OfAsync.either (fun () -> updateItemStandalone itemId name) () ItemNameUpdated (fun ex -> ErrorOccurred ex.Message)
 
-    | ItemNameUpdated (Ok _) ->
+    | ItemNameUpdated (Ok item) ->
+        let targetPage =
+            match state.CurrentPage with
+            | ItemDetail _ -> ItemDetail item.Id
+            | _ -> ItemsList
         { state with EditingItemId = None; EditItemNameValue = ""; Loading = false },
-        navigateCmd ItemsList
+        navigateCmd targetPage
 
     | ItemNameUpdated (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -860,8 +877,12 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
                 Cmd.OfAsync.either (fun () -> moveEntity "item" itemId "box" state.MoveItemTargetBox) () StandaloneItemMoved (fun ex -> ErrorOccurred ex.Message)
 
     | StandaloneItemMoved (Ok _) ->
+        let targetPage =
+            match state.CurrentPage with
+            | ItemDetail _ -> state.CurrentPage
+            | _ -> ItemsList
         { state with Loading = false; MovingItemStandaloneId = None; MoveItemTargetBox = "" },
-        navigateCmd ItemsList
+        navigateCmd targetPage
 
     | StandaloneItemMoved (Error err) ->
         { state with Error = Some err; Loading = false; MovingItemStandaloneId = None }, Cmd.none
@@ -933,8 +954,12 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         Cmd.OfAsync.either (fun () -> unassignEntity "item" itemId) () StandaloneItemUnassigned (fun ex -> ErrorOccurred ex.Message)
 
     | StandaloneItemUnassigned (Ok _) ->
+        let targetPage =
+            match state.CurrentPage with
+            | ItemDetail _ -> state.CurrentPage
+            | _ -> ItemsList
         { state with Loading = false },
-        navigateCmd ItemsList
+        navigateCmd targetPage
 
     | StandaloneItemUnassigned (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -1165,3 +1190,13 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
             if text.StartsWith("BOX-") then BoxDetail text
             else LocationDetail text
         { state with ScannerOpen = false }, navigateCmd page
+
+    | ItemDetailLoaded (Ok items) ->
+        match state.CurrentPage with
+        | ItemDetail itemId ->
+            let item = items |> Array.tryFind (fun i -> i.ItemId = itemId)
+            { state with ItemDetail = item; Loading = false }, Cmd.none
+        | _ -> { state with Loading = false }, Cmd.none
+
+    | ItemDetailLoaded (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none

@@ -9,34 +9,34 @@
   /* Muted 16-bit "application" chrome — soft slate-grey desktop, light panels.
      Modelled on SNES non-game software (Mario Paint / BS-X style UI) rather
      than the bold primaries of a platformer. */
-  --color-base-100: #aab2c4;          /* desaturated slate desktop backdrop */
-  --color-base-200: #e7eaf0;          /* light grey panels / navbar / cards */
-  --color-base-300: #c3c9d6;          /* mid-grey borders / dropdowns */
+  --color-base-100: #b8c0d2;          /* desaturated slate desktop backdrop */
+  --color-base-200: #eceff6;          /* light grey panels / navbar / cards */
+  --color-base-300: #ced5e2;          /* mid-grey borders / dropdowns */
   --color-base-content: #2a2f3e;      /* soft dark slate ink (not pure black) */
 
   /* Dusty brick red primary */
-  --color-primary: #b5544e;
+  --color-primary: #c05850;
   --color-primary-content: #f5eeee;
 
   /* Muted sage / pipe green secondary */
-  --color-secondary: #5a8f78;
+  --color-secondary: #639b82;
   --color-secondary-content: #f2f6f4;
 
   /* Faded gold accent */
-  --color-accent: #cda94f;
+  --color-accent: #d4b254;
   --color-accent-content: #2a2f3e;
 
   /* Slate neutral */
-  --color-neutral: #3a4055;
+  --color-neutral: #434860;
   --color-neutral-content: #eef0f5;
 
-  --color-error: #b5544e;
+  --color-error: #c05850;
   --color-error-content: #f5eeee;
-  --color-success: #5a8f78;
+  --color-success: #639b82;
   --color-success-content: #f2f6f4;
-  --color-warning: #cda94f;
+  --color-warning: #d4b254;
   --color-warning-content: #2a2f3e;
-  --color-info: #5d7aa8;
+  --color-info: #6685b0;
   --color-info-content: #eef0f5;
 
   /* Sharp pixel-art corners */
@@ -156,7 +156,7 @@
     background: radial-gradient(
       ellipse at center,
       transparent 60%,
-      rgba(42, 47, 62, 0.16) 100%
+      rgba(42, 47, 62, 0.09) 100%
     );
   }
 }
@@ -247,25 +247,25 @@
   /* ---- Entity type colour coding (locations / boxes / items) ------------- */
   /* Thin pixel left-border in muted, distinct hues */
   .entity-location {
-    border-left: 5px solid #6f6aa8 !important;  /* muted indigo */
-    background-color: #6f6aa812 !important;
+    border-left: 5px solid #7a74b5 !important;  /* muted indigo */
+    background-color: #7a74b512 !important;
   }
   .entity-location:hover {
-    background-color: #6f6aa820 !important;
+    background-color: #7a74b520 !important;
   }
   .entity-box {
-    border-left: 5px solid #5a8f78 !important;  /* sage green */
-    background-color: #5a8f7812 !important;
+    border-left: 5px solid #639b82 !important;  /* sage green */
+    background-color: #639b8212 !important;
   }
   .entity-box:hover {
-    background-color: #5a8f7820 !important;
+    background-color: #639b8220 !important;
   }
   .entity-item {
-    border-left: 5px solid #b5544e !important;  /* brick red */
-    background-color: #b5544e12 !important;
+    border-left: 5px solid #c05850 !important;  /* brick red */
+    background-color: #c0585012 !important;
   }
   .entity-item:hover {
-    background-color: #b5544e20 !important;
+    background-color: #c0585020 !important;
   }
 
   /* Snappy, steppy transitions — no smooth easing in the 16-bit era */

@@ -87,11 +87,15 @@ Create `/etc/sudoers.d/deploy-boxtracker`:
 
 ```bash
 sudo bash -c 'cat > /etc/sudoers.d/deploy-boxtracker' << EOF
-deploy ALL=(ALL) NOPASSWD: /bin/systemctl restart boxtracker, /bin/systemctl start boxtracker, /bin/systemctl stop boxtracker
+deploy ALL=(ALL) NOPASSWD: /bin/systemctl restart boxtracker, /bin/systemctl start boxtracker, /bin/systemctl stop boxtracker, /usr/bin/apt-get install -y libjpeg-turbo-progs
 EOF
 
 sudo chmod 440 /etc/sudoers.d/deploy-boxtracker
 ```
+
+> The `apt-get install -y libjpeg-turbo-progs` entry is scoped to that exact
+> command (args included) so the deploy can self-install `jpegtran` if it is
+> ever missing, without granting broad package-management rights.
 
 Verify:
 ```bash

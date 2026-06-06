@@ -33,7 +33,7 @@
 - When modules and types share the same name (e.g. `module LocationCode` / `type LocationCode`), use fully qualified paths (`BoxTracker.LocationCode.create`) in external code to avoid ambiguity
 - Saturn 0.17.0 pulls in vulnerable JWT packages (NU1902 warnings) — cosmetic for a local-only app but noted
 - `Feliz.UseListener` 0.3.0 and `Feliz.Router` 3.0.0 are incompatible with Fable 5 (`useCallbackRef` removed, type mismatches) — removed; routing to be reimplemented later
-- .NET 10 SDK creates `dotnet-tools.json` at repo root (not `.config/`); fails to install Fable on .NET 8 SDK
+- Tool manifest lives at the canonical `.config/dotnet-tools.json` with `rollForward: false` to pin Fable to exactly 5.0.0; `dotnet new tool-manifest` on .NET 10 may emit a root-level `dotnet-tools.json` — delete it, the duplicate is non-canonical. Fable fails to install on .NET 8 SDK (requires .NET 10)
 - Feliz 3.3.3 does not expose `ReactDOM.createRoot` or `ReactDOM.render` — use `import "createRoot" "react-dom/client"` with Fable JS interop
 - All browser/DOM code in Client must be guarded with `#if FABLE_COMPILER` so `dotnet build` succeeds
 - `[<Emit>]` function bodies must use `failwith "JS only"` — `importValue`/`jsNative` are not available in `dotnet build`; the body is never called under Fable

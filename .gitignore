@@ -12,7 +12,7 @@ packages/
 ## Fable
 src/Client/.fable/
 src/Client/fable_modules/
-src/Client/*.fs.js
+**/*.fs.js
 output/
 
 ## Node

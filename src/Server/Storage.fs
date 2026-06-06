@@ -350,6 +350,45 @@ type Storage (connectionString: string) =
             this.ReindexLocationItems(code)
             this.GetLocation(code)
 
+    member this.UpdateLocationCode(oldCode: string, newCode: LocationCode) : Result<Location, string> =
+        let conn : SqliteConnection = this.Connection
+        let newCodeStr : string = LocationCode.value newCode
+        match this.GetLocation(newCodeStr) with
+        | Some _ -> Error $"Location code '%s{newCodeStr}' is already in use"
+        | None ->
+            use txn : SqliteTransaction = conn.BeginTransaction()
+            try
+                use c1 : SqliteCommand = conn.CreateCommand()
+                c1.Transaction <- txn
+                c1.CommandText <- "UPDATE location SET code = @newCode WHERE code = @oldCode"
+                c1.Parameters.AddWithValue("@newCode", newCodeStr) |> ignore
+                c1.Parameters.AddWithValue("@oldCode", oldCode) |> ignore
+                let rows : int = c1.ExecuteNonQuery()
+                if rows = 0 then
+                    txn.Rollback()
+                    Error $"Location '%s{oldCode}' not found"
+                else
+                    use c2 : SqliteCommand = conn.CreateCommand()
+                    c2.Transaction <- txn
+                    c2.CommandText <- "UPDATE move SET to_id = @newCode WHERE to_type = 'location' AND to_id = @oldCode"
+                    c2.Parameters.AddWithValue("@newCode", newCodeStr) |> ignore
+                    c2.Parameters.AddWithValue("@oldCode", oldCode) |> ignore
+                    c2.ExecuteNonQuery() |> ignore
+                    use c3 : SqliteCommand = conn.CreateCommand()
+                    c3.Transaction <- txn
+                    c3.CommandText <- "UPDATE photo_job SET entity_id = @newCode WHERE entity_type = 'location' AND entity_id = @oldCode"
+                    c3.Parameters.AddWithValue("@newCode", newCodeStr) |> ignore
+                    c3.Parameters.AddWithValue("@oldCode", oldCode) |> ignore
+                    c3.ExecuteNonQuery() |> ignore
+                    txn.Commit()
+                    this.ReindexLocationItems(newCodeStr)
+                    match this.GetLocation(newCodeStr) with
+                    | Some loc -> Ok loc
+                    | None -> Error "Failed to fetch updated location"
+            with ex ->
+                txn.Rollback()
+                Error ex.Message
+
     member this.GetAssignedBoxCount(code: string) : int =
         let conn : SqliteConnection = this.Connection
         use c : SqliteCommand = conn.CreateCommand()

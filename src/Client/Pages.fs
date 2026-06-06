@@ -556,6 +556,32 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                     ]
                                                 ]
                                             ]
+                                        elif state.EditingLocationCode then
+                                            Html.div [
+                                                prop.className "flex flex-col sm:flex-row items-end gap-2"
+                                                prop.children [
+                                                    Html.input [
+                                                        prop.className "input input-bordered input-sm flex-1 w-full text-base font-mono uppercase"
+                                                        prop.value state.EditLocationCodeValue
+                                                        prop.onChange (fun (s: string) -> dispatch (EditLocationCodeChanged s))
+                                                    ]
+                                                    Html.div [
+                                                        prop.className "flex gap-2 w-full sm:w-auto"
+                                                        prop.children [
+                                                            Html.button [
+                                                                prop.className "btn btn-ghost btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Cancel"
+                                                                prop.onClick (fun _ -> dispatch CancelEditLocationCode)
+                                                            ]
+                                                            Html.button [
+                                                                prop.className "btn btn-success btn-sm flex-1 sm:flex-none"
+                                                                prop.text "Save"
+                                                                prop.onClick (fun _ -> dispatch SubmitEditLocationCode)
+                                                            ]
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
                                         else
                                             Html.div [
                                                 prop.className "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
@@ -586,6 +612,12 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                                         Html.a [
                                                                             prop.text "Edit Name"
                                                                             prop.onClick (fun _ -> dispatch StartEditLocationName)
+                                                                        ]
+                                                                    ]
+                                                                    Html.li [
+                                                                        Html.a [
+                                                                            prop.text "Edit Code"
+                                                                            prop.onClick (fun _ -> dispatch StartEditLocationCode)
                                                                         ]
                                                                     ]
                                                                     Html.li [

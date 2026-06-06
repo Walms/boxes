@@ -194,6 +194,9 @@ let createLocation (code: string) (name: string) : Async<Result<LocationDto, str
 let updateLocation (code: string) (name: string) : Async<Result<LocationDto, string>> =
     send<LocationDto> "PUT" $"/api/locations/%s{code}" (Some {| Name = name |})
 
+let updateLocationCode (oldCode: string) (newCode: string) : Async<Result<LocationDto, string>> =
+    send<LocationDto> "PATCH" $"/api/locations/%s{oldCode}/code" (Some {| Code = newCode |})
+
 let archiveLocation (code: string) : Async<Result<LocationDto, string>> =
     send<LocationDto> "DELETE" $"/api/locations/%s{code}" None
 

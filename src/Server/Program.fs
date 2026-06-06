@@ -33,7 +33,7 @@ let configureApp (app: IApplicationBuilder) : unit =
     let photosDir : string = Path.Combine(dataDir, "photos")
     if not (Directory.Exists photosDir) then Directory.CreateDirectory photosDir |> ignore
     app.UseResponseCompression() |> ignore
-    // Photo filenames are content-addressed ({guid}-{variant}.avif) and never
+    // Photo filenames are content-addressed ({guid}-{variant}.jpg) and never
     // mutated in place, so they can be cached aggressively. Tell the browser to
     // keep them for a year and skip revalidation, so navigating between pages
     // reuses cached thumbnails instead of re-fetching every image.

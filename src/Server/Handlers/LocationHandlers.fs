@@ -95,6 +95,22 @@ let uploadLocationPhoto (code: string) : HttpHandler =
                         return! (setStatusCode 202 >=> json (photoJobToDto job)) next ctx
         }
 
+let updateLocationCode (code: string) : HttpHandler =
+    fun (next: HttpFunc) (ctx: HttpContext) ->
+        task {
+            let! request : UpdateLocationCodeRequest = ctx.BindJsonAsync<UpdateLocationCodeRequest>()
+            let storage : Storage = ctx.GetService<Storage>()
+            match BoxTracker.LocationCode.create request.Code with
+            | Error msg ->
+                return! (setStatusCode 400 >=> json {| error = msg |}) next ctx
+            | Ok newCode ->
+                match storage.UpdateLocationCode(code, newCode) with
+                | Error msg ->
+                    return! (setStatusCode 400 >=> json {| error = msg |}) next ctx
+                | Ok location ->
+                    return! json (locationToDto location) next ctx
+        }
+
 let archiveLocation (code: string) : HttpHandler =
     fun (next: HttpFunc) (ctx: HttpContext) ->
         task {

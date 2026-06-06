@@ -29,6 +29,11 @@ type Msg =
     | SubmitEditLocationName
     | LocationUpdated of Result<LocationDto, string>
     | CancelEditLocationName
+    | StartEditLocationCode
+    | EditLocationCodeChanged of string
+    | SubmitEditLocationCode
+    | LocationCodeUpdated of Result<LocationDto, string>
+    | CancelEditLocationCode
     | ArchiveLocation
     | LocationArchived of Result<LocationDto, string>
     | BoxesLoaded of Result<BoxDto array, string>
@@ -147,6 +152,8 @@ type State = {
     NewLocationName: string
     EditingLocationName: bool
     EditLocationNameValue: string
+    EditingLocationCode: bool
+    EditLocationCodeValue: string
     Boxes: BoxDto array
     BoxSearch: string
     BoxFilter: string
@@ -280,6 +287,8 @@ let private resetPageState (state: State) : State =
         NewLocationName = ""
         EditingLocationName = false
         EditLocationNameValue = ""
+        EditingLocationCode = false
+        EditLocationCodeValue = ""
         ShowCreateBoxForm = false
         NewBoxLabel = ""
         BoxDetail = None
@@ -349,6 +358,8 @@ let init () : State * Cmd<Msg> =
         NewLocationName = ""
         EditingLocationName = false
         EditLocationNameValue = ""
+        EditingLocationCode = false
+        EditLocationCodeValue = ""
         Boxes = [||]
         BoxSearch = ""
         BoxFilter = ""
@@ -492,6 +503,34 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | CancelEditLocationName ->
         { state with EditingLocationName = false }, Cmd.none
+
+    | StartEditLocationCode ->
+        let code : string =
+            state.LocationDetail |> Option.map (fun d -> d.Location.Code) |> Option.defaultValue ""
+        { state with EditingLocationCode = true; EditLocationCodeValue = code }, Cmd.none
+
+    | EditLocationCodeChanged code ->
+        { state with EditLocationCodeValue = code }, Cmd.none
+
+    | SubmitEditLocationCode ->
+        match state.LocationDetail with
+        | None -> state, Cmd.none
+        | Some detail ->
+            let code : string = state.EditLocationCodeValue.Trim()
+            if System.String.IsNullOrEmpty code then state, Cmd.none
+            else
+                { state with Loading = true },
+                Cmd.OfAsync.either (fun () -> updateLocationCode detail.Location.Code code) () LocationCodeUpdated (fun ex -> ErrorOccurred ex.Message)
+
+    | LocationCodeUpdated (Ok updatedLoc) ->
+        { state with EditingLocationCode = false; Loading = false },
+        navigateCmd (LocationDetail updatedLoc.Code)
+
+    | LocationCodeUpdated (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | CancelEditLocationCode ->
+        { state with EditingLocationCode = false }, Cmd.none
 
     | ArchiveLocation ->
         match state.LocationDetail with

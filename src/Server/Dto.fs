@@ -97,6 +97,10 @@ type UpdateLocationRequest = {
     Name: string
 }
 
+type UpdateLocationCodeRequest = {
+    Code: string
+}
+
 type CreateBoxRequest = {
     Label: string
 }

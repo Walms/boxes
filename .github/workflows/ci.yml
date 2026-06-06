@@ -148,7 +148,11 @@ jobs:
         script: |
           command -v jpegtran || sudo apt-get install -y libjpeg-turbo-progs
           sudo systemctl stop boxtracker
-          /opt/dotnet/dotnet /opt/boxtracker/server/BoxTracker.Server.dll --migrate-photos || true
+          # Must pass BOXTRACKER_DATA explicitly: this runs the DLL directly over
+          # SSH, so it does not inherit the env var the systemd unit sets. Without
+          # it the migration targets ./data (the deploy user's home) instead of
+          # the real photo store and silently converts nothing.
+          BOXTRACKER_DATA=/opt/boxtracker/data /opt/dotnet/dotnet /opt/boxtracker/server/BoxTracker.Server.dll --migrate-photos || true
           sudo systemctl start boxtracker
 
     - name: Copy backup scripts

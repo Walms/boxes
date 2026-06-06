@@ -2,36 +2,15 @@ module BoxTracker.ImageProcessing
 
 open System
 open System.IO
-open System.Diagnostics
 open SixLabors.ImageSharp
 open SixLabors.ImageSharp.Processing
-open SixLabors.ImageSharp.Formats.Jpeg
+open SixLabors.ImageSharp.Formats.Avif
 
-let private jpegEncoder (quality: int) : JpegEncoder = JpegEncoder(Quality = Nullable quality)
-
-// jpegtran (libjpeg-turbo-progs on Ubuntu) losslessly rewrites a baseline
-// JPEG as progressive, so the browser can show a blurry preview of the whole
-// image immediately rather than revealing it line by line on slow connections.
-// Silently skips if jpegtran is not installed.
-let private makeProgressive (path: string) : unit =
-    let tmpPath = path + ".tmp"
-    try
-        let psi =
-            ProcessStartInfo(
-                FileName = "jpegtran",
-                Arguments = $"-progressive -copy none \"{path}\" \"{tmpPath}\"",
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            )
-        use proc = Process.Start(psi)
-        proc.WaitForExit()
-        if proc.ExitCode = 0 && File.Exists(tmpPath) then
-            File.Move(tmpPath, path, true)
-        else
-            if File.Exists(tmpPath) then File.Delete(tmpPath)
-    with _ ->
-        if File.Exists(tmpPath) then File.Delete(tmpPath)
+// AVIF encoding is slow in ImageSharp's pure-C# codec — expect 20-60 s for a
+// large image on a low-end VPS. That's fine here because processing runs on
+// the background job queue; the file-size savings (~30-50% vs WebP) directly
+// reduce the bandwidth that was causing sluggish loads.
+let private avifEncoder (quality: int) : AvifEncoder = AvifEncoder(Quality = Nullable quality)
 
 let private resizeImage (image: Image) (maxWidth: int) (maxHeight: int) : unit =
     if image.Width > maxWidth || image.Height > maxHeight then
@@ -49,20 +28,18 @@ let processUploadedImage (inputPath: string) (outputFullPath: string) (outputThu
         image.Mutate(fun ctx -> ctx.AutoOrient() |> ignore)
 
         use fullImage : Image = image.Clone(fun cfg -> ())
-        resizeImage fullImage 3500 3500
-        fullImage.SaveAsJpeg(outputFullPath, jpegEncoder 85)
-        makeProgressive outputFullPath
+        resizeImage fullImage 2000 2000
+        fullImage.SaveAsAvif(outputFullPath, avifEncoder 80)
 
         use thumbImage : Image = image.Clone(fun cfg -> ())
         resizeImage thumbImage 250 250
-        thumbImage.SaveAsJpeg(outputThumbPath, jpegEncoder 75)
-        makeProgressive outputThumbPath
+        thumbImage.SaveAsAvif(outputThumbPath, avifEncoder 65)
 
         Ok ()
     with
     | ex -> Error $"Failed to process image: {ex.Message}"
 
-let migrateToProgressiveJpeg (dataDir: string) : unit =
+let migratePhotos (dataDir: string) : unit =
     let photosDir = Path.Combine(dataDir, "photos")
     if not (Directory.Exists photosDir) then
         eprintfn "Photos directory not found: %s" photosDir
@@ -75,20 +52,19 @@ let migrateToProgressiveJpeg (dataDir: string) : unit =
         let mutable skipped = 0
         let mutable failed = 0
         for webpFile in webpFiles do
-            let jpgFile = Path.ChangeExtension(webpFile, ".jpg")
-            if File.Exists(jpgFile) then
+            let avifFile = Path.ChangeExtension(webpFile, ".avif")
+            if File.Exists(avifFile) then
                 try File.Delete(webpFile) with _ -> ()
                 skipped <- skipped + 1
             else
                 try
                     use image = Image.Load(webpFile)
-                    let quality = if webpFile.Contains("-thumb.") then 75 else 85
-                    image.SaveAsJpeg(jpgFile, jpegEncoder quality)
-                    makeProgressive jpgFile
+                    let quality = if webpFile.Contains("-thumb.") then 65 else 80
+                    image.SaveAsAvif(avifFile, avifEncoder quality)
                     File.Delete(webpFile)
                     migrated <- migrated + 1
                 with ex ->
                     eprintfn "Failed to migrate %s: %s" (Path.GetFileName webpFile) ex.Message
-                    if File.Exists(jpgFile) then File.Delete(jpgFile)
+                    if File.Exists(avifFile) then File.Delete(avifFile)
                     failed <- failed + 1
         printfn "Migration complete: %d migrated, %d skipped, %d failed" migrated skipped failed

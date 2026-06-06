@@ -30,8 +30,8 @@ type PhotoProcessingService (store: PhotoJobStore, signal: PhotoJobSignal, confi
 
     let deleteVariants (relBase: string) : unit =
         let basePath : string = Path.Combine(dataDir, relBase)
-        let fullPath : string = $"%s{basePath}-full.jpg"
-        let thumbPath : string = $"%s{basePath}-thumb.jpg"
+        let fullPath : string = $"%s{basePath}-full.avif"
+        let thumbPath : string = $"%s{basePath}-thumb.avif"
         if File.Exists(fullPath) then File.Delete(fullPath)
         if File.Exists(thumbPath) then File.Delete(thumbPath)
 
@@ -41,7 +41,7 @@ type PhotoProcessingService (store: PhotoJobStore, signal: PhotoJobSignal, confi
         if not (String.IsNullOrEmpty dir) then Directory.CreateDirectory(dir) |> ignore
         let sourceAbs : string = Path.Combine(dataDir, job.SourcePath)
         let result : Result<unit, string> =
-            processUploadedImage sourceAbs ($"%s{basePath}-full.jpg") ($"%s{basePath}-thumb.jpg")
+            processUploadedImage sourceAbs ($"%s{basePath}-full.avif") ($"%s{basePath}-thumb.avif")
         match result with
         | Error msg ->
             store.MarkFailed(job.Id, msg)

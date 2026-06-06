@@ -17,7 +17,7 @@ let private targetValue (ev: obj) : string = failwith "JS only"
 let private formatDate (iso: string) : string = failwith "JS only"
 
 let private photoUrl (path: string option) (variant: string) : string option =
-    path |> Option.map (fun p -> $"/api/%s{p}-%s{variant}.jpg")
+    path |> Option.map (fun p -> $"/api/%s{p}-%s{variant}.avif")
 
 let private photoUrlFull (path: string option) : string option =
     photoUrl path "full"

@@ -157,6 +157,35 @@ let private loadingSpinner (state: State) : ReactElement =
         ]
     else Html.none
 
+let private photoStatusBanner (state: State) (dispatch: Msg -> unit) : ReactElement =
+    if state.UploadingPhoto then
+        Html.div [
+            prop.className "flex items-center gap-2 p-3"
+            prop.children [
+                Html.span [ prop.className "loading loading-spinner loading-sm" ]
+                Html.span [ prop.className "text-sm opacity-70"; prop.text "Uploading…" ]
+            ]
+        ]
+    elif state.PhotoProcessing then
+        Html.div [
+            prop.className "alert alert-info rounded-lg gap-3 flex items-center text-sm py-2 px-3 mt-2"
+            prop.children [
+                Html.div [
+                    prop.className "flex-1"
+                    prop.children [
+                        Html.span [ prop.className "loading loading-spinner loading-xs mr-2" ]
+                        Html.text "Processing photo in the background — you can navigate away."
+                    ]
+                ]
+                Html.button [
+                    prop.className "btn btn-ghost btn-xs"
+                    prop.text "OK"
+                    prop.onClick (fun _ -> dispatch DismissPhotoProcessing)
+                ]
+            ]
+        ]
+    else Html.none
+
 let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement =
     match state.MovingItemId with
     | None -> Html.none
@@ -692,18 +721,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         ]
                                     ]
                                 | None -> Html.none
-                                if state.UploadingPhoto || state.PhotoProcessing then
-                                    Html.div [
-                                        prop.className "flex justify-center items-center gap-2 p-4"
-                                        prop.children [
-                                            Html.span [ prop.className "loading loading-spinner loading-md" ]
-                                            Html.span [
-                                                prop.className "text-sm opacity-70"
-                                                prop.text (if state.PhotoProcessing then "Processing…" else "Uploading…")
-                                            ]
-                                        ]
-                                    ]
-                                else Html.none
+                                photoStatusBanner state dispatch
                             ]
                         ]
                     ]
@@ -1110,18 +1128,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         ]
                                     ]
                                 | None -> Html.none
-                                if state.UploadingPhoto || state.PhotoProcessing then
-                                    Html.div [
-                                        prop.className "flex justify-center items-center gap-2 p-4"
-                                        prop.children [
-                                            Html.span [ prop.className "loading loading-spinner loading-md" ]
-                                            Html.span [
-                                                prop.className "text-sm opacity-70"
-                                                prop.text (if state.PhotoProcessing then "Processing…" else "Uploading…")
-                                            ]
-                                        ]
-                                    ]
-                                else Html.none
+                                photoStatusBanner state dispatch
                             ]
                         ]
                     ]
@@ -1384,55 +1391,46 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                                     prop.value state.EditItemNameValue
                                                     prop.onChange (fun (s: string) -> dispatch (EditItemNameChanged s))
                                                 ]
-                                                if state.UploadingPhoto || state.PhotoProcessing then
+                                                photoStatusBanner state dispatch
+                                                if not (state.UploadingPhoto || state.PhotoProcessing) then
                                                     Html.div [
-                                                        prop.className "flex justify-center items-center gap-2 p-4"
+                                                        prop.className "flex gap-2"
                                                         prop.children [
-                                                            Html.span [ prop.className "loading loading-spinner loading-md" ]
-                                                            Html.span [
-                                                                prop.className "text-sm opacity-70"
-                                                                prop.text (if state.PhotoProcessing then "Processing…" else "Uploading…")
-                                                            ]
-                                                        ]
-                                                    ]
-                                                else Html.div [
-                                                    prop.className "flex gap-2"
-                                                    prop.children [
-                                                        Html.label [
-                                                            prop.className "btn btn-secondary btn-xs flex-1 cursor-pointer"
-                                                            prop.children [
-                                                                Html.text "📷 Take Photo"
-                                                                Html.input [
-                                                                    prop.type' "file"
-                                                                    prop.accept "image/*"
-                                                                    prop.custom("capture", "environment")
-                                                                    prop.className "hidden"
+                                                            Html.label [
+                                                                prop.className "btn btn-secondary btn-xs flex-1 cursor-pointer"
+                                                                prop.children [
+                                                                    Html.text "📷 Take Photo"
+                                                                    Html.input [
+                                                                        prop.type' "file"
+                                                                        prop.accept "image/*"
+                                                                        prop.custom("capture", "environment")
+                                                                        prop.className "hidden"
 #if FABLE_COMPILER
-                                                                    prop.onChange (fun (files: Browser.Types.File list) ->
-                                                                        files |> List.tryHead |> Option.iter (fun f ->
-                                                                            dispatch (UploadItemPhoto (item.ItemId, box f))))
+                                                                        prop.onChange (fun (files: Browser.Types.File list) ->
+                                                                            files |> List.tryHead |> Option.iter (fun f ->
+                                                                                dispatch (UploadItemPhoto (item.ItemId, box f))))
 #endif
+                                                                    ]
                                                                 ]
                                                             ]
-                                                        ]
-                                                        Html.label [
-                                                            prop.className "btn btn-outline btn-xs flex-1 cursor-pointer"
-                                                            prop.children [
-                                                                Html.text "📁 Choose"
-                                                                Html.input [
-                                                                    prop.type' "file"
-                                                                    prop.accept "image/*"
-                                                                    prop.className "hidden"
+                                                            Html.label [
+                                                                prop.className "btn btn-outline btn-xs flex-1 cursor-pointer"
+                                                                prop.children [
+                                                                    Html.text "📁 Choose"
+                                                                    Html.input [
+                                                                        prop.type' "file"
+                                                                        prop.accept "image/*"
+                                                                        prop.className "hidden"
 #if FABLE_COMPILER
-                                                                    prop.onChange (fun (files: Browser.Types.File list) ->
-                                                                        files |> List.tryHead |> Option.iter (fun f ->
-                                                                            dispatch (UploadItemPhoto (item.ItemId, box f))))
+                                                                        prop.onChange (fun (files: Browser.Types.File list) ->
+                                                                            files |> List.tryHead |> Option.iter (fun f ->
+                                                                                dispatch (UploadItemPhoto (item.ItemId, box f))))
 #endif
+                                                                    ]
                                                                 ]
                                                             ]
                                                         ]
                                                     ]
-                                                ]
                                                 Html.div [
                                                     prop.className "flex gap-2"
                                                     prop.children [

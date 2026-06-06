@@ -109,6 +109,31 @@ let formDataAppend (fd: obj) (key: string) (value: obj) : unit = failwith "JS on
 [<Emit("$0.append($1, $2)")>]
 let formDataAppendString (fd: obj) (key: string) (value: string) : unit = failwith "JS only"
 
+[<Emit("""
+new Promise((resolve, reject) => {
+    const MAX = 1920;
+    const QUALITY = 0.82;
+    const img = new Image();
+    img.onload = () => {
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (w <= MAX && h <= MAX && $0.size < 512 * 1024) { URL.revokeObjectURL(img.src); resolve($0); return; }
+        const r = Math.min(MAX / w, MAX / h, 1);
+        w = Math.round(w * r); h = Math.round(h * r);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(img.src);
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('Compression failed')), 'image/jpeg', QUALITY);
+    };
+    img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error('Failed to load image')); };
+    img.src = URL.createObjectURL($0);
+})
+""")>]
+let private compressImageJs (file: obj) : JS.Promise<obj> = failwith "JS only"
+
+let compressImage (file: obj) : Async<obj> =
+    compressImageJs file |> Async.AwaitPromise
+
 let private get<'T> (url: string) : Async<Result<'T, string>> =
     async {
         try

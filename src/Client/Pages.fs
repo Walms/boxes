@@ -904,8 +904,9 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         match box.LocationCode with
                                         | Some code ->
                                             Html.span [
-                                                prop.className "badge badge-outline badge-sm"
+                                                prop.className "badge badge-outline badge-sm cursor-pointer hover:opacity-70 transition-opacity"
                                                 prop.text code
+                                                prop.onClick (fun e -> e.stopPropagation(); dispatch (Navigate (LocationDetail code)))
                                             ]
                                         | None -> Html.none
                                     ]
@@ -1063,6 +1064,12 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             prop.className "label pb-3"
                                             prop.children [
                                                 Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Assign to location" ]
+                                                if not (System.String.IsNullOrEmpty state.AssignLocationCode) then
+                                                    Html.button [
+                                                        prop.className "btn btn-ghost btn-xs"
+                                                        prop.text "View location →"
+                                                        prop.onClick (fun _ -> dispatch (Navigate (LocationDetail state.AssignLocationCode)))
+                                                    ]
                                             ]
                                         ]
                                         Html.div [
@@ -1459,10 +1466,20 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                                 if System.String.IsNullOrEmpty item.BoxId then
                                                     Html.span [ prop.className "badge badge-ghost badge-xs"; prop.text "Unassigned" ]
                                                 else
-                                                    Html.text (item.BoxLabel |> Option.defaultValue item.BoxId)
-                                                    match item.LocationName with
-                                                    | Some name -> Html.text $" — %s{name}"
-                                                    | None -> Html.text ""
+                                                    Html.span [
+                                                        prop.className "hover:underline cursor-pointer"
+                                                        prop.text (item.BoxLabel |> Option.defaultValue item.BoxId)
+                                                        prop.onClick (fun e -> e.stopPropagation(); dispatch (Navigate (BoxDetail item.BoxId)))
+                                                    ]
+                                                    match item.LocationCode, item.LocationName with
+                                                    | Some code, Some name ->
+                                                        Html.text " — "
+                                                        Html.span [
+                                                            prop.className "hover:underline cursor-pointer"
+                                                            prop.text name
+                                                            prop.onClick (fun e -> e.stopPropagation(); dispatch (Navigate (LocationDetail code)))
+                                                        ]
+                                                    | _ -> Html.none
                                             ]
                                         ]
                                 ]

@@ -60,6 +60,32 @@ let private navItem (label: string) (page: Page) (dispatch: Msg -> unit) : React
         prop.onClick (fun _ -> dispatch (Navigate page))
     ]
 
+let private breadcrumb (items: (string * Page option) list) (dispatch: Msg -> unit) : ReactElement =
+    Html.div [
+        prop.className "breadcrumbs text-sm mb-4 sm:mb-6"
+        prop.children [
+            Html.ul [
+                prop.children [
+                    for (label, page) in items do
+                        Html.li [
+                            match page with
+                            | Some p ->
+                                Html.a [
+                                    prop.className "opacity-60 hover:opacity-100"
+                                    prop.onClick (fun _ -> dispatch (Navigate p))
+                                    prop.text label
+                                ]
+                            | None ->
+                                Html.span [
+                                    prop.className "font-semibold"
+                                    prop.text label
+                                ]
+                        ]
+                ]
+            ]
+        ]
+    ]
+
 let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.className "navbar bg-base-200 border-b border-base-300 sticky top-0 z-40"
@@ -540,16 +566,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
         Html.div [
             prop.children [
                 addBoxToLocationDialog state dispatch
-                Html.div [
-                    prop.className "mb-4 sm:mb-6"
-                    prop.children [
-                        Html.button [
-                            prop.className "btn btn-ghost btn-sm gap-1"
-                            prop.text "← Back"
-                            prop.onClick (fun _ -> dispatch (Navigate LocationsList))
-                        ]
-                    ]
-                ]
+                breadcrumb [ "Locations", Some LocationsList; detail.Location.Name, None ] dispatch
                 Html.div [
                     prop.className "card entity-location mb-6 shadow-sm"
                     prop.children [
@@ -924,20 +941,22 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
         if state.Loading then loadingSpinner state
         else Html.div [ prop.text "Box not found" ]
     | Some detail ->
+        let boxLabel = detail.Box.Label |> Option.defaultValue detail.Box.Id
+        let boxCrumbs =
+            if System.String.IsNullOrEmpty state.AssignLocationCode then
+                [ "Boxes", Some BoxesList; boxLabel, None ]
+            else
+                let locName =
+                    state.AvailableLocations
+                    |> Array.tryFind (fun l -> l.Code = state.AssignLocationCode)
+                    |> Option.map (fun l -> l.Name)
+                    |> Option.defaultValue state.AssignLocationCode
+                [ "Locations", Some LocationsList; locName, Some (LocationDetail state.AssignLocationCode); boxLabel, None ]
         Html.div [
             prop.children [
                 moveItemDialog state dispatch
                 addExistingItemDialog state dispatch
-                Html.div [
-                    prop.className "mb-4 sm:mb-6"
-                    prop.children [
-                        Html.button [
-                            prop.className "btn btn-ghost btn-sm gap-1"
-                            prop.text "← Back"
-                            prop.onClick (fun _ -> dispatch (Navigate BoxesList))
-                        ]
-                    ]
-                ]
+                breadcrumb boxCrumbs dispatch
                 Html.div [
                     prop.className "card entity-box mb-6 shadow-sm"
                     prop.children [
@@ -1900,22 +1919,20 @@ let itemDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
         if state.Loading then loadingSpinner state
         else Html.div [ prop.text "Item not found" ]
     | Some item ->
+        let itemCrumbs =
+            if System.String.IsNullOrEmpty item.BoxId then
+                [ "Items", Some ItemsList; item.ItemName, None ]
+            else
+                let boxLabel = item.BoxLabel |> Option.defaultValue item.BoxId
+                match item.LocationCode, item.LocationName with
+                | Some code, Some locName ->
+                    [ "Locations", Some LocationsList; locName, Some (LocationDetail code); boxLabel, Some (BoxDetail item.BoxId); item.ItemName, None ]
+                | _ ->
+                    [ "Boxes", Some BoxesList; boxLabel, Some (BoxDetail item.BoxId); item.ItemName, None ]
         Html.div [
             prop.children [
                 moveItemStandaloneDialog state dispatch
-                Html.div [
-                    prop.className "mb-4 sm:mb-6"
-                    prop.children [
-                        Html.button [
-                            prop.className "btn btn-ghost btn-sm gap-1"
-                            prop.text "← Back"
-                            prop.onClick (fun _ ->
-                                if System.String.IsNullOrEmpty item.BoxId then dispatch (Navigate ItemsList)
-                                else dispatch (Navigate (BoxDetail item.BoxId))
-                            )
-                        ]
-                    ]
-                ]
+                breadcrumb itemCrumbs dispatch
                 Html.div [
                     prop.className "card entity-item shadow-sm mb-6"
                     prop.children [
@@ -2064,28 +2081,6 @@ let itemDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         ]
                                     ]
                                 photoStatusBanner state dispatch
-                                Html.div [
-                                    prop.className "mt-4 flex flex-wrap gap-2 items-center"
-                                    prop.children [
-                                        Html.span [ prop.className "text-sm opacity-60 mr-1"; prop.text "In:" ]
-                                        if System.String.IsNullOrEmpty item.BoxId then
-                                            Html.span [ prop.className "badge badge-ghost"; prop.text "Unassigned" ]
-                                        else
-                                            Html.button [
-                                                prop.className "btn btn-ghost btn-sm font-normal normal-case"
-                                                prop.onClick (fun _ -> dispatch (Navigate (BoxDetail item.BoxId)))
-                                                prop.text ((item.BoxLabel |> Option.defaultValue item.BoxId) + " →")
-                                            ]
-                                            match item.LocationCode, item.LocationName with
-                                            | Some code, Some name ->
-                                                Html.button [
-                                                    prop.className "btn btn-ghost btn-sm font-normal normal-case"
-                                                    prop.onClick (fun _ -> dispatch (Navigate (LocationDetail code)))
-                                                    prop.text (name + " →")
-                                                ]
-                                            | _ -> Html.none
-                                    ]
-                                ]
                             ]
                         ]
                     ]

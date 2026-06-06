@@ -129,6 +129,7 @@ type Msg =
     | PhotoUploadStarted of Result<PhotoJobDto, string>
     | PollPhotoJob of string
     | PhotoJobPolled of Result<PhotoJobDto, string>
+    | DismissPhotoProcessing
     | ShowHistory of string * string * string * string option
     | HistoryLoaded of Result<MoveDto array, string>
     | CloseHistory
@@ -651,7 +652,11 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | UploadBoxPhoto (boxId, photo) ->
         { state with UploadingPhoto = true; PhotoProcessing = false; Error = None },
-        Cmd.OfAsync.either (fun () -> uploadBoxPhoto boxId photo) () PhotoUploadStarted (fun ex -> ErrorOccurred ex.Message)
+        Cmd.OfAsync.either
+            (fun () -> async {
+                let! compressed = compressImage photo
+                return! uploadBoxPhoto boxId compressed
+            }) () PhotoUploadStarted (fun ex -> ErrorOccurred ex.Message)
 
     | NewItemNameChanged name ->
         { state with NewItemName = name }, Cmd.none
@@ -667,7 +672,14 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
             if System.String.IsNullOrEmpty name then state, Cmd.none
             else
                 { state with Loading = true; NewItemName = "" },
-                Cmd.OfAsync.either (fun () -> addItem detail.Box.Id name state.SelectedPhoto) () ItemAdded (fun ex -> ErrorOccurred ex.Message)
+                Cmd.OfAsync.either
+                    (fun () -> async {
+                        let! compressedPhoto =
+                            match state.SelectedPhoto with
+                            | Some p -> async { let! c = compressImage p in return Some c }
+                            | None -> async { return None }
+                        return! addItem detail.Box.Id name compressedPhoto
+                    }) () ItemAdded (fun ex -> ErrorOccurred ex.Message)
 
     | ItemAdded (Ok result) ->
         match state.BoxDetail with
@@ -859,7 +871,11 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | UploadItemPhoto (itemId, photo) ->
         { state with UploadingPhoto = true; PhotoProcessing = false; Error = None },
-        Cmd.OfAsync.either (fun () -> updateItemPhoto itemId photo) () PhotoUploadStarted (fun ex -> ErrorOccurred ex.Message)
+        Cmd.OfAsync.either
+            (fun () -> async {
+                let! compressed = compressImage photo
+                return! updateItemPhoto itemId compressed
+            }) () PhotoUploadStarted (fun ex -> ErrorOccurred ex.Message)
 
     | ShowAddExistingItemDialog ->
         { state with AddingExistingItem = true; SelectedExistingItemId = "" },
@@ -1070,7 +1086,11 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | UploadLocationPhoto (locationCode, photo) ->
         { state with UploadingPhoto = true; PhotoProcessing = false; Error = None },
-        Cmd.OfAsync.either (fun () -> uploadLocationPhoto locationCode photo) () PhotoUploadStarted (fun ex -> ErrorOccurred ex.Message)
+        Cmd.OfAsync.either
+            (fun () -> async {
+                let! compressed = compressImage photo
+                return! uploadLocationPhoto locationCode compressed
+            }) () PhotoUploadStarted (fun ex -> ErrorOccurred ex.Message)
 
     | PhotoUploadStarted (Ok job) ->
         match job.Status with
@@ -1112,6 +1132,9 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | PhotoJobPolled (Error err) ->
         { state with Error = Some err; PhotoProcessing = false; PhotoJobId = None }, Cmd.none
+
+    | DismissPhotoProcessing ->
+        { state with PhotoProcessing = false; PhotoJobId = None }, Cmd.none
 
     | ShowHistory (entityType, entityId, title, createdAt) ->
         { state with

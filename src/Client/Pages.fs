@@ -903,9 +903,9 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         ]
                                         match box.LocationCode with
                                         | Some code ->
-                                            Html.span [
-                                                prop.className "badge badge-outline badge-sm cursor-pointer hover:opacity-70 transition-opacity"
-                                                prop.text code
+                                            Html.button [
+                                                prop.className "btn btn-ghost btn-xs font-normal normal-case"
+                                                prop.text (code + " →")
                                                 prop.onClick (fun e -> e.stopPropagation(); dispatch (Navigate (LocationDetail code)))
                                             ]
                                         | None -> Html.none
@@ -1066,7 +1066,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                 Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Assign to location" ]
                                                 if not (System.String.IsNullOrEmpty state.AssignLocationCode) then
                                                     Html.button [
-                                                        prop.className "btn btn-ghost btn-xs"
+                                                        prop.className "btn btn-ghost btn-sm"
                                                         prop.text "View location →"
                                                         prop.onClick (fun _ -> dispatch (Navigate (LocationDetail state.AssignLocationCode)))
                                                     ]
@@ -1460,24 +1460,23 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                             prop.className "text-base break-words"
                                             prop.text item.ItemName
                                         ]
-                                        Html.p [
-                                            prop.className "text-xs opacity-60 truncate"
+                                        Html.div [
+                                            prop.className "flex flex-wrap gap-1 mt-1"
                                             prop.children [
                                                 if System.String.IsNullOrEmpty item.BoxId then
                                                     Html.span [ prop.className "badge badge-ghost badge-xs"; prop.text "Unassigned" ]
                                                 else
-                                                    Html.span [
-                                                        prop.className "hover:underline cursor-pointer"
-                                                        prop.text (item.BoxLabel |> Option.defaultValue item.BoxId)
+                                                    Html.button [
+                                                        prop.className "btn btn-ghost btn-xs font-normal normal-case"
                                                         prop.onClick (fun e -> e.stopPropagation(); dispatch (Navigate (BoxDetail item.BoxId)))
+                                                        prop.text ((item.BoxLabel |> Option.defaultValue item.BoxId) + " →")
                                                     ]
                                                     match item.LocationCode, item.LocationName with
                                                     | Some code, Some name ->
-                                                        Html.text " — "
-                                                        Html.span [
-                                                            prop.className "hover:underline cursor-pointer"
-                                                            prop.text name
+                                                        Html.button [
+                                                            prop.className "btn btn-ghost btn-xs font-normal normal-case"
                                                             prop.onClick (fun e -> e.stopPropagation(); dispatch (Navigate (LocationDetail code)))
+                                                            prop.text (name + " →")
                                                         ]
                                                     | _ -> Html.none
                                             ]

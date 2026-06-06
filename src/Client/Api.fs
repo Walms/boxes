@@ -134,6 +134,19 @@ let private compressImageJs (file: obj) : JS.Promise<obj> = failwith "JS only"
 let compressImage (file: obj) : Async<obj> =
     compressImageJs file |> Async.AwaitPromise
 
+let private parseError (status: int) (text: string) : string =
+    try
+        let err : ErrorDto = ofJson<ErrorDto> text
+        if not (isNull (box err)) && not (isNull (box err.error)) && err.error <> "" then
+            err.error
+        else
+            $"Server error (HTTP %d{status})"
+    with _ ->
+        if text <> null && text.Trim() <> "" && text.Length < 300 then
+            $"Server error: %s{text.Trim()}"
+        else
+            $"Server error (HTTP %d{status})"
+
 let private get<'T> (url: string) : Async<Result<'T, string>> =
     async {
         try
@@ -142,8 +155,7 @@ let private get<'T> (url: string) : Async<Result<'T, string>> =
             if responseOk resp then
                 return Ok(ofJson<'T> text)
             else
-                let err : ErrorDto = ofJson<ErrorDto> text
-                return Error err.error
+                return Error(parseError (responseStatus resp) text)
         with ex ->
             return Error $"Network error: %s{ex.Message}"
     }
@@ -167,8 +179,7 @@ let private send<'T> (method: string) (url: string) (body: obj option) : Async<R
             if responseOk resp then
                 return Ok(ofJson<'T> text)
             else
-                let err : ErrorDto = ofJson<ErrorDto> text
-                return Error err.error
+                return Error(parseError (responseStatus resp) text)
         with ex ->
             return Error $"Network error: %s{ex.Message}"
     }
@@ -186,8 +197,7 @@ let private upload<'T> (url: string) (fd: obj) : Async<Result<'T, string>> =
             if responseOk resp then
                 return Ok(ofJson<'T> text)
             else
-                let err : ErrorDto = ofJson<ErrorDto> text
-                return Error err.error
+                return Error(parseError (responseStatus resp) text)
         with ex ->
             return Error $"Network error: %s{ex.Message}"
     }
@@ -201,8 +211,7 @@ let private deleteReq (url: string) : Async<Result<unit, string>> =
             if responseOk resp then
                 return Ok()
             else
-                let err : ErrorDto = ofJson<ErrorDto> text
-                return Error err.error
+                return Error(parseError (responseStatus resp) text)
         with ex ->
             return Error $"Network error: %s{ex.Message}"
     }

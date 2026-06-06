@@ -75,7 +75,7 @@ All page headers updated to responsive flex layouts:
 
 ## Implementation Details
 
-All changes made to `src/Client/Pages.fs`:
+All changes made under `src/Client/Pages/` (originally the single `Pages.fs`, since split by area):
 - Navbar component
 - Container rendering (renderPage)
 - All page components (Locations, Boxes, Items, Search)

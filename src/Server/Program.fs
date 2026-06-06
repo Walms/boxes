@@ -17,6 +17,7 @@ open BoxTracker.Router
 open BoxTracker.Storage
 open BoxTracker.PhotoJobStore
 open BoxTracker.PhotoProcessing
+open BoxTracker.ImageProcessing
 open BoxTracker.Dto
 
 let dataDir : string =
@@ -32,7 +33,7 @@ let configureApp (app: IApplicationBuilder) : unit =
     let photosDir : string = Path.Combine(dataDir, "photos")
     if not (Directory.Exists photosDir) then Directory.CreateDirectory photosDir |> ignore
     app.UseResponseCompression() |> ignore
-    // Photo filenames are content-addressed ({guid}-{variant}.webp) and never
+    // Photo filenames are content-addressed ({guid}-{variant}.jpg) and never
     // mutated in place, so they can be cached aggressively. Tell the browser to
     // keep them for a year and skip revalidation, so navigating between pages
     // reuses cached thumbnails instead of re-fetching every image.
@@ -80,12 +81,16 @@ let configureServices (services: IServiceCollection) : unit =
 
 [<EntryPoint>]
 let main (args: string array) : int =
-    Host.CreateDefaultBuilder(args)
-        .ConfigureWebHostDefaults(fun (webHostBuilder: IWebHostBuilder) ->
-            webHostBuilder
-                .Configure(configureApp)
-                .ConfigureServices(configureServices)
-                |> ignore)
-        .Build()
-        .Run()
-    0
+    if args.Length > 0 && args.[0] = "--migrate-photos" then
+        migrateToProgressiveJpeg dataDir
+        0
+    else
+        Host.CreateDefaultBuilder(args)
+            .ConfigureWebHostDefaults(fun (webHostBuilder: IWebHostBuilder) ->
+                webHostBuilder
+                    .Configure(configureApp)
+                    .ConfigureServices(configureServices)
+                    |> ignore)
+            .Build()
+            .Run()
+        0

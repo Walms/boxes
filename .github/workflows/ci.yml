@@ -139,13 +139,17 @@ jobs:
         target: "/opt/boxtracker/frontend/"
         strip_components: 2
 
-    - name: Restart service
+    - name: Migrate photos and restart service
       uses: appleboy/ssh-action@v1.1.0
       with:
         host: ${{ secrets.DEPLOY_HOST }}
         username: ${{ secrets.DEPLOY_USER }}
         key: ${{ secrets.DEPLOY_SSH_KEY }}
-        script: sudo systemctl restart boxtracker
+        script: |
+          command -v jpegtran || sudo apt-get install -y libjpeg-turbo-progs
+          sudo systemctl stop boxtracker
+          /opt/dotnet/dotnet /opt/boxtracker/server/BoxTracker.Server.dll --migrate-photos || true
+          sudo systemctl start boxtracker
 
     - name: Copy backup scripts
       uses: appleboy/scp-action@v0.1.7

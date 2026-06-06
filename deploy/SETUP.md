@@ -19,6 +19,10 @@ curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --runtime dotnet --
 echo 'export PATH=$PATH:/opt/dotnet' | sudo tee /etc/profile.d/dotnet.sh
 source /etc/profile.d/dotnet.sh
 
+# Install jpegtran (used to rewrite photos as progressive JPEG). Without it,
+# photos are still served as valid baseline JPEGs, just not progressive.
+sudo apt update && sudo apt install -y libjpeg-turbo-progs
+
 # Install Caddy
 sudo apt update
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl

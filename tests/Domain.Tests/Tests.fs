@@ -213,3 +213,130 @@ let ``Location.archive sets IsArchived to true`` () : unit =
     let archived : BoxTracker.Types.Location = BoxTracker.Location.archive empty
     Assert.True(archived.IsArchived)
     Assert.Equal(BoxTracker.LocationCode.value loc.Code, BoxTracker.LocationCode.value archived.Code)
+
+[<Fact>]
+let ``Location.get returns the underlying location unchanged`` () : unit =
+    let code : BoxTracker.LocationCode.LocationCode =
+        BoxTracker.LocationCode.create "TEST" |> Result.defaultWith (fun _ -> failwith "bad code")
+    let loc : BoxTracker.Types.Location = {
+        Code = code
+        Name = BoxTracker.LocationName.create "Test" |> Result.defaultWith (fun _ -> failwith "bad name")
+        IsArchived = false
+        Photo = None
+        CreatedAt = System.DateTimeOffset.UtcNow
+    }
+    let empty : BoxTracker.Location.EmptyLocation =
+        BoxTracker.Location.tryMakeEmpty loc 0 |> Result.defaultWith (fun _ -> failwith "should be ok")
+    let recovered : BoxTracker.Types.Location = BoxTracker.Location.get empty
+    Assert.False(recovered.IsArchived)
+    Assert.Equal(BoxTracker.LocationCode.value loc.Code, BoxTracker.LocationCode.value recovered.Code)
+
+[<Fact>]
+let ``Location.tryMakeEmpty error message mentions the code and count`` () : unit =
+    let code : BoxTracker.LocationCode.LocationCode =
+        BoxTracker.LocationCode.create "GARAGE" |> Result.defaultWith (fun _ -> failwith "bad code")
+    let loc : BoxTracker.Types.Location = {
+        Code = code
+        Name = BoxTracker.LocationName.create "Garage" |> Result.defaultWith (fun _ -> failwith "bad name")
+        IsArchived = false
+        Photo = None
+        CreatedAt = System.DateTimeOffset.UtcNow
+    }
+    match BoxTracker.Location.tryMakeEmpty loc 5 with
+    | Error msg ->
+        Assert.Contains("GARAGE", msg)
+        Assert.Contains("5", msg)
+    | Ok _ -> Assert.Fail("Expected Error")
+
+// --- BoxId ---
+
+[<Fact>]
+let ``BoxId.parse succeeds for a valid id`` () : unit =
+    let id : BoxTracker.BoxId.BoxId = BoxTracker.BoxId.parse "BOX-007"
+    Assert.Equal("BOX-007", BoxTracker.BoxId.value id)
+    Assert.Equal(7, BoxTracker.BoxId.extractSequence id)
+
+[<Fact>]
+let ``BoxId.parse throws for an invalid id`` () : unit =
+    Assert.Throws<System.Exception>(fun () -> BoxTracker.BoxId.parse "NOPE" |> ignore) |> ignore
+
+[<Fact>]
+let ``BoxId.tryParse rejects null`` () : unit =
+    Assert.True(BoxTracker.BoxId.tryParse null |> Result.isError)
+
+[<Fact>]
+let ``BoxId.tryParse rejects BOX prefix with non-numeric suffix`` () : unit =
+    Assert.True(BoxTracker.BoxId.tryParse "BOX-abc" |> Result.isError)
+
+[<Fact>]
+let ``BoxId.create handles large sequence numbers without truncation`` () : unit =
+    let id : BoxTracker.BoxId.BoxId = BoxTracker.BoxId.create 12345
+    Assert.Equal("BOX-12345", BoxTracker.BoxId.value id)
+    Assert.Equal(12345, BoxTracker.BoxId.extractSequence id)
+
+// --- BoxLabel ---
+
+[<Fact>]
+let ``BoxLabel.value roundtrips a created label`` () : unit =
+    match BoxTracker.BoxLabel.create "Kitchen Stuff" with
+    | Ok (Some label) -> Assert.Equal("Kitchen Stuff", BoxTracker.BoxLabel.value label)
+    | _ -> Assert.Fail("Expected Ok (Some _)")
+
+[<Fact>]
+let ``BoxLabel.create returns None for null input`` () : unit =
+    match BoxTracker.BoxLabel.create null with
+    | Ok None -> ()
+    | _ -> Assert.Fail("Expected Ok None")
+
+[<Fact>]
+let ``BoxLabel.ofOption maps Some/None through value`` () : unit =
+    let label : BoxTracker.BoxLabel.BoxLabel =
+        BoxTracker.BoxLabel.create "Books"
+        |> Result.defaultWith (fun _ -> failwith "bad")
+        |> Option.get
+    Assert.Equal(Some "Books", BoxTracker.BoxLabel.ofOption (Some label))
+    Assert.Equal(None, BoxTracker.BoxLabel.ofOption None)
+
+// --- ItemName / LocationName accessor roundtrips ---
+
+[<Fact>]
+let ``ItemName.value roundtrips a created name`` () : unit =
+    match BoxTracker.ItemName.create "  Wrench  " with
+    | Ok name -> Assert.Equal("Wrench", BoxTracker.ItemName.value name)
+    | Error _ -> Assert.Fail("Expected Ok")
+
+[<Fact>]
+let ``LocationName.create rejects null`` () : unit =
+    Assert.True(BoxTracker.LocationName.create null |> Result.isError)
+
+[<Fact>]
+let ``ItemName.create rejects null`` () : unit =
+    Assert.True(BoxTracker.ItemName.create null |> Result.isError)
+
+// --- PhotoPath ---
+
+[<Fact>]
+let ``PhotoPath.createWebP omits the extension`` () : unit =
+    let guid : System.Guid = System.Guid.NewGuid()
+    let path : BoxTracker.PhotoPath.PhotoPath = BoxTracker.PhotoPath.createWebP "BOX-001" guid
+    let s : string = BoxTracker.PhotoPath.value path
+    Assert.Equal($"photos/BOX-001/{guid}", s)
+    Assert.False(s.EndsWith(".webp"))
+
+[<Fact>]
+let ``PhotoPath.valueWithVariant appends variant and webp suffix`` () : unit =
+    let guid : System.Guid = System.Guid.NewGuid()
+    let path : BoxTracker.PhotoPath.PhotoPath = BoxTracker.PhotoPath.createWebP "BOX-001" guid
+    let full : string = BoxTracker.PhotoPath.valueWithVariant path "full"
+    let thumb : string = BoxTracker.PhotoPath.valueWithVariant path "thumb"
+    Assert.EndsWith("-full.webp", full)
+    Assert.EndsWith("-thumb.webp", thumb)
+    Assert.StartsWith("photos/BOX-001/", full)
+
+[<Fact>]
+let ``PhotoPath.tryParse rejects null`` () : unit =
+    Assert.True(BoxTracker.PhotoPath.tryParse null |> Result.isError)
+
+[<Fact>]
+let ``PhotoPath.tryParse rejects paths without photos prefix`` () : unit =
+    Assert.True(BoxTracker.PhotoPath.tryParse "uploads/foo.jpg" |> Result.isError)

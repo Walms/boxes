@@ -3,8 +3,6 @@ module BoxTracker.Client.Pages
 #if FABLE_COMPILER
 open Browser.Types
 open Browser.Dom
-open Fable.Core.JsInterop
-let private jsQRFn : obj = import "default" "jsqr"
 #endif
 open Feliz
 open BoxTracker.Client.State
@@ -1768,15 +1766,16 @@ let private historyModal (state: State) (dispatch: Msg -> unit) : ReactElement =
         ]
 
 [<Fable.Core.Emit("""
-(function(videoEl, jsQR, onFound, onError) {
+(function(videoEl, onFound, onError) {
     var stream = null;
     var rafId = 0;
     var found = false;
+    var jsQR = null;
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
     function scan() {
         if (found) return;
-        if (videoEl.readyState >= 2 && videoEl.videoWidth > 0) {
+        if (jsQR && videoEl.readyState >= 2 && videoEl.videoWidth > 0) {
             canvas.width = videoEl.videoWidth;
             canvas.height = videoEl.videoHeight;
             ctx.drawImage(videoEl, 0, 0);
@@ -1791,6 +1790,10 @@ let private historyModal (state: State) (dispatch: Msg -> unit) : ReactElement =
         rafId = requestAnimationFrame(scan);
     }
     (async function() {
+        // Load jsQR on demand so it is code-split into its own chunk and only
+        // downloaded when the scanner is actually opened.
+        try { jsQR = (await import('jsqr')).default; }
+        catch(e) { onError('Failed to load scanner'); return; }
         var tried = [
             { video: { facingMode: { exact: 'environment' } } },
             { video: { facingMode: 'environment' } },
@@ -1812,9 +1815,9 @@ let private historyModal (state: State) (dispatch: Msg -> unit) : ReactElement =
         cancelAnimationFrame(rafId);
         if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
     };
-})($0, $1, $2, $3)
+})($0, $1, $2)
 """)>]
-let private initScanner (videoEl: obj) (jsQR: obj) (onFound: string -> unit) (onError: string -> unit) : (unit -> unit) = failwith "JS only"
+let private initScanner (videoEl: obj) (onFound: string -> unit) (onError: string -> unit) : (unit -> unit) = failwith "JS only"
 
 [<Fable.Core.Emit("document.getElementById($0)")>]
 let private getElementById (id: string) : obj = failwith "JS only"
@@ -1830,7 +1833,7 @@ let private QrScannerComponent (dispatch: Msg -> unit) : ReactElement =
                 setErrorMsg (Some "Video element not found")
                 fun () -> ()
             else
-                initScanner videoEl jsQRFn
+                initScanner videoEl
                     (fun text -> dispatch (QrScanned text))
                     (fun err -> setErrorMsg (Some err))
         { new System.IDisposable with member _.Dispose() = cleanup() }

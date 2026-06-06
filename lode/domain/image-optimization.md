@@ -65,7 +65,7 @@ data/photos/
 - `src/Shared/Domain/PhotoPath.fs` — `createWebP` function for base path generation
 
 **Frontend:**
-- `src/Client/Pages.fs` — `photoUrlFull` and `photoUrlThumb` helper functions
+- `src/Client/Pages/Common.fs` — `photoUrlFull` and `photoUrlThumb` helper functions
 - All photo display locations updated to use appropriate variant based on context
 
 ## Performance Benefits

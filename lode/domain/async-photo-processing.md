@@ -84,7 +84,7 @@ sequenceDiagram
   (`schedulePollCmd`); on `completed` reload the current page; on `failed` show
   the error. Navigating away clears tracking (`resetPageState`) but the server
   keeps processing.
-- `src/Client/Pages.fs` — the spinner shows "Uploading…" then "Processing…".
+- `src/Client/Pages/Common.fs` (`photoStatusBanner`) — the spinner shows "Uploading…" then "Processing…".
 
 ## Lessons / gotchas
 

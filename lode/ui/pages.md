@@ -1,6 +1,6 @@
 # Client Pages
 
-Hash-based SPA routing (`#/path`). Pages defined in `State.fs` as `Page` DU, views in `Pages.fs`.
+Hash-based SPA routing (`#/path`). Pages defined in `State.fs` as `Page` DU. Views live under `src/Client/Pages/`, split by area: `Common.fs` (shared helpers — `navbar`, `breadcrumb`, `photoUrl*`, `imageViewer`, `loadingSpinner`, `photoStatusBanner`, `historyModal`, the QR `scannerModal`/`QrScannerComponent`), `Locations.fs`, `Boxes.fs`, `Items.fs` (each holds that area's pages plus its own modal dialogs), and `Router.fs` (`renderPage` dispatch on the `Page` DU). All five are nested modules under the `BoxTracker.Client.Pages` namespace; compile order is Common → Locations → Boxes → Items → Router.
 
 ## Navigation
 

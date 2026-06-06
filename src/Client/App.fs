@@ -10,7 +10,7 @@ let private createRoot (el: Element) : obj = import "createRoot" "react-dom/clie
 open Feliz
 open Feliz.UseElmish
 open BoxTracker.Client.State
-open BoxTracker.Client.Pages
+open BoxTracker.Client.Pages.Router
 
 [<ReactComponent>]
 let App () : ReactElement =

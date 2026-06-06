@@ -148,7 +148,24 @@ jobs:
         script: |
           command -v jpegtran || sudo apt-get install -y libjpeg-turbo-progs
           sudo systemctl stop boxtracker
-          /opt/dotnet/dotnet /opt/boxtracker/server/BoxTracker.Server.dll --migrate-photos || true
+          # Safety snapshot of every photo BEFORE the (potentially destructive)
+          # migration. This is a local undo point that does not depend on the B2
+          # mirror — the hourly rclone sync uses --b2-hard-delete, so a bad
+          # migration could otherwise propagate the damage to the only backup
+          # within 30 minutes. Keeps the 5 most recent snapshots.
+          if [ -d /opt/boxtracker/data/photos ]; then
+            mkdir -p /opt/boxtracker/backups
+            ts=$(date +%Y%m%d-%H%M%S)
+            tar -czf "/opt/boxtracker/backups/photos-pre-migration-$ts.tar.gz" \
+              -C /opt/boxtracker/data photos
+            ls -1t /opt/boxtracker/backups/photos-pre-migration-*.tar.gz \
+              | tail -n +6 | xargs -r rm -f
+          fi
+          # Must pass BOXTRACKER_DATA explicitly: this runs the DLL directly over
+          # SSH, so it does not inherit the env var the systemd unit sets. Without
+          # it the migration targets ./data (the deploy user's home) instead of
+          # the real photo store and silently converts nothing.
+          BOXTRACKER_DATA=/opt/boxtracker/data /opt/dotnet/dotnet /opt/boxtracker/server/BoxTracker.Server.dll --migrate-photos || true
           sudo systemctl start boxtracker
 
     - name: Copy backup scripts

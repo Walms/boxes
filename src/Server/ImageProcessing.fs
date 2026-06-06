@@ -85,8 +85,17 @@ let migratePhotos (dataDir: string) : unit =
                     let quality = if webpFile.Contains("-thumb.") then 75 else 85
                     image.SaveAsJpeg(jpgFile, jpegEncoder quality)
                     makeProgressive jpgFile
-                    File.Delete(webpFile)
-                    migrated <- migrated + 1
+                    // Verify the converted file decodes to a real image before
+                    // deleting the original. SaveAsJpeg/jpegtran can leave a
+                    // truncated or zero-byte file behind on a crash or full disk;
+                    // Identify throws (or reports no dimensions) on a bad file, so
+                    // we keep the .webp and count it as failed instead of losing it.
+                    let info = Image.Identify(jpgFile)
+                    if info.Width > 0 && info.Height > 0 then
+                        File.Delete(webpFile)
+                        migrated <- migrated + 1
+                    else
+                        failwith "converted JPEG failed verification (no dimensions)"
                 with ex ->
                     eprintfn "Failed to migrate %s: %s" (Path.GetFileName webpFile) ex.Message
                     if File.Exists(jpgFile) then File.Delete(jpgFile)

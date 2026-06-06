@@ -103,6 +103,42 @@ For a database restore:
 
 For photos, `rclone sync` can be reversed (sync FROM B2 TO local directory if needed).
 
+## Pre-Migration Photo Snapshots
+
+Photo format migrations (e.g. WebP → progressive JPEG) run in the deploy step and
+can delete or rewrite files in place. Because `backup-photos.sh` mirrors local
+state to B2 with `--b2-hard-delete`, a bad migration would propagate to the only
+B2 backup within 30 minutes. To guard against this, the deploy step takes a local
+snapshot **before** running the migration:
+
+```
+/opt/boxtracker/backups/photos-pre-migration-<timestamp>.tar.gz
+```
+
+The 5 most recent snapshots are retained. The migration itself also verifies each
+converted JPEG decodes before deleting the original `.webp`, so a partial/corrupt
+write keeps the source file instead of losing it.
+
+### Restoring from a snapshot
+
+Use `scripts/restore-photos-snapshot.sh` (deployed to
+`/opt/boxtracker/scripts/`):
+
+```bash
+# List available snapshots
+sudo -u deploy /opt/boxtracker/scripts/restore-photos-snapshot.sh --list
+
+# Restore the most recent snapshot
+sudo -u deploy /opt/boxtracker/scripts/restore-photos-snapshot.sh
+
+# Restore a specific snapshot
+sudo -u deploy /opt/boxtracker/scripts/restore-photos-snapshot.sh \
+  /opt/boxtracker/backups/photos-pre-migration-20260606-082500.tar.gz
+```
+
+The script stops the service, moves the current photos aside (to
+`photos.before-restore-<timestamp>`), extracts the snapshot, and restarts.
+
 ## Tools
 
 - **rclone**: Handles both B2 buckets with unified config; supports incremental sync (`--checksum`), parallel transfers, and hard-delete semantics

@@ -146,7 +146,11 @@ jobs:
         username: ${{ secrets.DEPLOY_USER }}
         key: ${{ secrets.DEPLOY_SSH_KEY }}
         script: |
-          command -v jpegtran || sudo apt-get install -y libjpeg-turbo-progs
+          # jpegtran (libjpeg-turbo-progs) is installed once during server
+          # provisioning (see deploy/SETUP.md). Best-effort self-heal here, but
+          # never block the deploy on it: -n avoids a password prompt hang, and a
+          # missing jpegtran only means images are baseline (still valid) JPEG.
+          command -v jpegtran >/dev/null 2>&1 || sudo -n apt-get install -y libjpeg-turbo-progs || echo "WARNING: jpegtran missing; images will be baseline JPEG. Install libjpeg-turbo-progs on the server."
           sudo systemctl stop boxtracker
           # Safety snapshot of every photo BEFORE the (potentially destructive)
           # migration. This is a local undo point that does not depend on the B2

@@ -29,7 +29,7 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
                                 Html.label [
                                     prop.className "label pb-3"
                                     prop.children [
-                                        Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Select target box" ]
+                                        Html.span [ prop.className "label-text text-base font-medium"; prop.text "Select target box" ]
                                     ]
                                 ]
                                 if state.DialogLoading then
@@ -197,7 +197,7 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                     prop.children [
                                         Html.button [
                                             prop.tabIndex 0
-                                            prop.className "btn btn-ghost btn-xs btn-circle opacity-50 hover:opacity-100"
+                                            prop.className "btn btn-ghost btn-sm btn-circle opacity-50 hover:opacity-100"
                                             prop.onClick (fun e -> e.stopPropagation())
                                             prop.children [ Html.text "⋮" ]
                                         ]
@@ -279,7 +279,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Item name" ]
+                                                Html.span [ prop.className "label-text text-base font-medium"; prop.text "Item name" ]
                                             ]
                                         ]
                                         Html.input [
@@ -296,11 +296,11 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Assign to box (optional)" ]
+                                                Html.span [ prop.className "label-text text-base font-medium"; prop.text "Assign to box (optional)" ]
                                             ]
                                         ]
                                         Html.select [
-                                            prop.className "select select-bordered focus:select-primary text-base ml-2"
+                                            prop.className "select select-bordered focus:select-primary text-base w-full"
                                             prop.value state.NewStandaloneItemBoxId
                                             prop.onChange (fun (s: string) -> dispatch (NewStandaloneItemBoxChanged s))
                                             prop.children [

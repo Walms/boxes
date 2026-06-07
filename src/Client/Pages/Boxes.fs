@@ -31,7 +31,7 @@ let private moveItemDialog (state: State) (dispatch: Msg -> unit) : ReactElement
                                 Html.label [
                                     prop.className "label pb-3"
                                     prop.children [
-                                        Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Select target box" ]
+                                        Html.span [ prop.className "label-text text-base font-medium"; prop.text "Select target box" ]
                                     ]
                                 ]
                                 if state.DialogLoading then
@@ -180,7 +180,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Label (optional)" ]
+                                                Html.span [ prop.className "label-text text-base font-medium"; prop.text "Label (optional)" ]
                                             ]
                                         ]
                                         Html.input [
@@ -279,7 +279,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "card-body p-4 sm:p-5"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "text-base break-words"
+                                            prop.className "text-lg break-words"
                                             prop.text (box.Label |> Option.defaultValue box.Id)
                                         ]
                                         match box.LocationCode with
@@ -446,7 +446,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Assign to location" ]
+                                                Html.span [ prop.className "label-text text-base font-medium"; prop.text "Assign to location" ]
                                                 if not (System.String.IsNullOrEmpty state.AssignLocationCode) then
                                                     Html.button [
                                                         prop.className "btn btn-ghost btn-sm"
@@ -641,7 +641,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                         prop.children [
                                                             Html.button [
                                                                 prop.tabIndex 0
-                                                                prop.className "btn btn-ghost btn-xs btn-circle opacity-50 hover:opacity-100"
+                                                                prop.className "btn btn-ghost btn-sm btn-circle opacity-50 hover:opacity-100"
                                                                 prop.onClick (fun e -> e.stopPropagation())
                                                                 prop.children [ Html.text "⋮" ]
                                                             ]

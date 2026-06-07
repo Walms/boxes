@@ -91,6 +91,12 @@
     font-size: 16px;
     letter-spacing: 0.01em;
 
+    /* Mobile polish: kill the grey tap-flash on touch, stop iOS from
+       auto-inflating text in landscape, and smooth momentum scrolling. */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+
     /* Design system spacing scale (semantic) */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
@@ -211,6 +217,31 @@
   .navbar {
     border-bottom: 2px solid var(--nin-ink) !important;
     box-shadow: 0 2px 0 0 var(--color-primary);
+  }
+
+  /* Respect the iOS notch / status bar and rounded-corner safe areas so the
+     sticky navbar and page content are never clipped under the system UI. */
+  @supports (padding: env(safe-area-inset-top)) {
+    .navbar {
+      padding-top: max(0.5rem, env(safe-area-inset-top));
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+    }
+    .app-main {
+      padding-left: max(0px, env(safe-area-inset-left));
+      padding-right: max(0px, env(safe-area-inset-right));
+      padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+  }
+
+  /* Touch feedback: hover states don't fire on touch devices, so give every
+     clickable card a gentle press-in on tap for tactile responsiveness. */
+  .card.cursor-pointer {
+    transition: transform 120ms ease, box-shadow 150ms ease,
+      background-color 150ms ease;
+  }
+  .card.cursor-pointer:active {
+    transform: scale(0.985);
   }
 
   /* Inputs / selects / textareas: thin outline, faded-gold focus ring */

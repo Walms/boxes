@@ -7,6 +7,7 @@ open BoxTracker.Handlers.ItemHandlers
 open BoxTracker.Handlers.MoveHandlers
 open BoxTracker.Handlers.LabelHandlers
 open BoxTracker.Handlers.PhotoJobHandlers
+open BoxTracker.Handlers.NoteHandlers
 
 let webApp : HttpHandler =
     choose [
@@ -51,4 +52,9 @@ let webApp : HttpHandler =
         GET >=> routef "/api/boxes/%s/label" boxLabel
         GET >=> routef "/api/locations/%s/label" locationLabel
         GET >=> route "/api/boxes/labels" >=> batchBoxLabels
+
+        GET >=> route "/api/notes" >=> listNotes
+        POST >=> route "/api/notes" >=> createNote
+        PUT >=> routef "/api/notes/%s" updateNote
+        DELETE >=> routef "/api/notes/%s" deleteNote
     ]

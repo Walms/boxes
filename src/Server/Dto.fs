@@ -74,6 +74,25 @@ type MoveResponse = {
     MovedAt: DateTimeOffset
 }
 
+type NoteResponse = {
+    Id: string
+    EntityType: string
+    EntityId: string
+    Content: string
+    CreatedAt: DateTimeOffset
+    UpdatedAt: DateTimeOffset
+}
+
+type CreateNoteRequest = {
+    EntityType: string
+    EntityId: string
+    Content: string
+}
+
+type UpdateNoteRequest = {
+    Content: string
+}
+
 type LocationDetailResponse = {
     Location: LocationResponse
     Boxes: BoxResponse list
@@ -174,6 +193,15 @@ let photoJobToDto (job: PhotoJob) : PhotoJobResponse = {
     Status = job.Status
     Error = job.Error
     PhotoPath = if job.Status = StatusCompleted then Some job.PhotoPath else None
+}
+
+let noteToDto (n: Note) : NoteResponse = {
+    Id = n.Id.ToString()
+    EntityType = n.EntityType
+    EntityId = n.EntityId
+    Content = n.Content
+    CreatedAt = n.CreatedAt
+    UpdatedAt = n.UpdatedAt
 }
 
 let moveToDto (m: Move) : MoveResponse = {

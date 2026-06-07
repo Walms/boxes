@@ -142,6 +142,17 @@ type Storage (connectionString: string) =
             m.CommandText <- "ALTER TABLE location ADD COLUMN photo_path TEXT"
             m.ExecuteNonQuery() |> ignore
         with _ -> ()
+        // Run migration for note table (safe to run multiple times)
+        try
+            let m : SqliteCommand = conn.CreateCommand()
+            m.CommandText <- "CREATE TABLE IF NOT EXISTS note (id TEXT PRIMARY KEY, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, content TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+            m.ExecuteNonQuery() |> ignore
+        with _ -> ()
+        try
+            let m : SqliteCommand = conn.CreateCommand()
+            m.CommandText <- "CREATE INDEX IF NOT EXISTS idx_note_entity ON note (entity_type, entity_id, created_at DESC)"
+            m.ExecuteNonQuery() |> ignore
+        with _ -> ()
 
     member this.Connect() : unit =
         match connection with
@@ -786,6 +797,67 @@ type Storage (connectionString: string) =
         c.Parameters.AddWithValue("@entityId", entityId) |> ignore
         use reader : SqliteDataReader = c.ExecuteReader()
         readList readMove reader
+
+    member private this.ReadNote (reader: SqliteDataReader) : Note =
+        { Id = Guid.Parse(reader.GetString(0))
+          EntityType = reader.GetString(1)
+          EntityId = reader.GetString(2)
+          Content = reader.GetString(3)
+          CreatedAt = reader.GetString(4) |> DateTimeOffset.Parse
+          UpdatedAt = reader.GetString(5) |> DateTimeOffset.Parse }
+
+    member this.ListNotes(entityType: string, entityId: string) : Note list =
+        let conn : SqliteConnection = this.Connection
+        use c : SqliteCommand = conn.CreateCommand()
+        c.CommandText <- """
+            SELECT id, entity_type, entity_id, content, created_at, updated_at
+            FROM note
+            WHERE entity_type = @entityType AND entity_id = @entityId
+            ORDER BY created_at DESC
+        """
+        c.Parameters.AddWithValue("@entityType", entityType) |> ignore
+        c.Parameters.AddWithValue("@entityId", entityId) |> ignore
+        use reader : SqliteDataReader = c.ExecuteReader()
+        readList this.ReadNote reader
+
+    member this.CreateNote(entityType: string, entityId: string, content: string) : Note =
+        let conn : SqliteConnection = this.Connection
+        let id : Guid = Guid.NewGuid()
+        let now : DateTimeOffset = DateTimeOffset.UtcNow
+        use c : SqliteCommand = conn.CreateCommand()
+        c.CommandText <- "INSERT INTO note (id, entity_type, entity_id, content, created_at, updated_at) VALUES (@id, @entityType, @entityId, @content, @createdAt, @updatedAt)"
+        c.Parameters.AddWithValue("@id", id.ToString()) |> ignore
+        c.Parameters.AddWithValue("@entityType", entityType) |> ignore
+        c.Parameters.AddWithValue("@entityId", entityId) |> ignore
+        c.Parameters.AddWithValue("@content", content) |> ignore
+        c.Parameters.AddWithValue("@createdAt", now.ToString("o")) |> ignore
+        c.Parameters.AddWithValue("@updatedAt", now.ToString("o")) |> ignore
+        c.ExecuteNonQuery() |> ignore
+        { Id = id; EntityType = entityType; EntityId = entityId; Content = content; CreatedAt = now; UpdatedAt = now }
+
+    member this.UpdateNote(id: string, content: string) : Note option =
+        let conn : SqliteConnection = this.Connection
+        let now : DateTimeOffset = DateTimeOffset.UtcNow
+        use c : SqliteCommand = conn.CreateCommand()
+        c.CommandText <- "UPDATE note SET content = @content, updated_at = @updatedAt WHERE id = @id"
+        c.Parameters.AddWithValue("@id", id) |> ignore
+        c.Parameters.AddWithValue("@content", content) |> ignore
+        c.Parameters.AddWithValue("@updatedAt", now.ToString("o")) |> ignore
+        let rows : int = c.ExecuteNonQuery()
+        if rows = 0 then None
+        else
+            use q : SqliteCommand = conn.CreateCommand()
+            q.CommandText <- "SELECT id, entity_type, entity_id, content, created_at, updated_at FROM note WHERE id = @id"
+            q.Parameters.AddWithValue("@id", id) |> ignore
+            use reader : SqliteDataReader = q.ExecuteReader()
+            if reader.Read() then Some(this.ReadNote reader) else None
+
+    member this.DeleteNote(id: string) : unit =
+        let conn : SqliteConnection = this.Connection
+        use c : SqliteCommand = conn.CreateCommand()
+        c.CommandText <- "DELETE FROM note WHERE id = @id"
+        c.Parameters.AddWithValue("@id", id) |> ignore
+        c.ExecuteNonQuery() |> ignore
 
     member this.SearchItems(query: string option) : SearchResult list =
         let conn : SqliteConnection = this.Connection

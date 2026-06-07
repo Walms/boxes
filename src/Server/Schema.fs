@@ -59,4 +59,16 @@ let createTables : string =
         location_name,
         tokenize    = 'porter unicode61'
     );
+
+    CREATE TABLE IF NOT EXISTS note (
+        id          TEXT PRIMARY KEY,
+        entity_type TEXT NOT NULL,
+        entity_id   TEXT NOT NULL,
+        content     TEXT NOT NULL,
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_note_entity
+        ON note (entity_type, entity_id, created_at DESC);
     """

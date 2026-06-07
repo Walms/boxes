@@ -40,3 +40,12 @@ type Move = {
     To: Container
     MovedAt: DateTimeOffset
 }
+
+type Note = {
+    Id: Guid
+    EntityType: string
+    EntityId: string
+    Content: string
+    CreatedAt: DateTimeOffset
+    UpdatedAt: DateTimeOffset
+}

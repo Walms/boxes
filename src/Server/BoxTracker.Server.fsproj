@@ -22,6 +22,7 @@
     <Compile Include="Handlers\ItemHandlers.fs" />
     <Compile Include="Handlers\LabelHandlers.fs" />
     <Compile Include="Handlers\MoveHandlers.fs" />
+    <Compile Include="Handlers\NoteHandlers.fs" />
     <Compile Include="Router.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

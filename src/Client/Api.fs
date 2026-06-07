@@ -75,6 +75,15 @@ type ItemDetailDto = {
     Item: ItemDto
 }
 
+type NoteDto = {
+    Id: string
+    EntityType: string
+    EntityId: string
+    Content: string
+    CreatedAt: string
+    UpdatedAt: string
+}
+
 type private ErrorDto = {
     error: string
 }
@@ -307,3 +316,15 @@ let getPhotoJob (jobId: string) : Async<Result<PhotoJobDto, string>> =
 
 let searchItems (query: string) : Async<Result<SearchResultDto array, string>> =
     get<SearchResultDto array> $"/api/items?q=%s{query}"
+
+let getNotes (entityType: string) (entityId: string) : Async<Result<NoteDto array, string>> =
+    get<NoteDto array> $"/api/notes?entityType=%s{entityType}&entityId=%s{entityId}"
+
+let createNote (entityType: string) (entityId: string) (content: string) : Async<Result<NoteDto, string>> =
+    send<NoteDto> "POST" "/api/notes" (Some {| EntityType = entityType; EntityId = entityId; Content = content |})
+
+let updateNote (noteId: string) (content: string) : Async<Result<NoteDto, string>> =
+    send<NoteDto> "PUT" $"/api/notes/%s{noteId}" (Some {| Content = content |})
+
+let deleteNote (noteId: string) : Async<Result<unit, string>> =
+    deleteReq $"/api/notes/%s{noteId}"

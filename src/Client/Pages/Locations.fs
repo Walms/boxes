@@ -395,7 +395,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         prop.className "mt-2"
                                         prop.children [
                                             Html.img [
-                                                prop.className "w-32 h-32 object-cover rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity"
+                                                prop.className "w-full h-48 sm:w-32 sm:h-32 object-cover rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity"
                                                 prop.src thumbUrl
                                                 prop.custom("decoding", "async")
                                                 prop.onClick (fun _ -> dispatch (ShowImageViewer fullUrl))

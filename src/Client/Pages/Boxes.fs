@@ -510,7 +510,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         prop.className "mt-2"
                                         prop.children [
                                             Html.img [
-                                                prop.className "w-32 h-32 object-cover rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity"
+                                                prop.className "w-full h-48 sm:w-32 sm:h-32 object-cover rounded border border-base-300 cursor-pointer hover:opacity-80 transition-opacity"
                                                 prop.src thumbUrl
                                                 prop.custom("decoding", "async")
                                                 prop.onClick (fun _ -> dispatch (ShowImageViewer fullUrl))
@@ -621,14 +621,14 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             ]
                                         for item in detail.Items do
                                             Html.li [
-                                                prop.className "flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-base-200 transition-colors cursor-pointer"
+                                                prop.className "flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg px-3 py-2 hover:bg-base-200 transition-colors cursor-pointer"
                                                 prop.onClick (fun _ -> dispatch (Navigate (ItemDetail item.Id)))
                                                 prop.children [
                                                     match photoUrlThumb item.PhotoPath with
                                                     | Some thumbUrl ->
                                                         let fullUrl = photoUrlFull item.PhotoPath |> Option.defaultValue thumbUrl
                                                         Html.img [
-                                                            prop.className "w-9 h-9 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                                            prop.className "w-full h-40 sm:w-9 sm:h-9 object-cover rounded sm:flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                                                             prop.src thumbUrl
                                                             prop.custom("loading", "lazy")
                                                             prop.custom("decoding", "async")

@@ -450,6 +450,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                             ]
                     ]
                 ]
+                notesSection state dispatch
             ]
         ]
 

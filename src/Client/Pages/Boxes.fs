@@ -686,6 +686,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     ]
                 ]
+                notesSection state dispatch
             ]
         ]
 

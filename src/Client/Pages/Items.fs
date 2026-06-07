@@ -559,6 +559,7 @@ let itemDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     ]
                 ]
+                notesSection state dispatch
             ]
         ]
 

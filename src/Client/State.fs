@@ -138,6 +138,19 @@ type Msg =
     | CloseScanner
     | QrScanned of string
     | ItemDetailLoaded of Result<SearchResultDto array, string>
+    | NotesLoaded of Result<NoteDto array, string>
+    | ShowAddNoteForm
+    | NewNoteContentChanged of string
+    | SubmitCreateNote
+    | NoteCreated of Result<NoteDto, string>
+    | StartEditNote of string * string
+    | EditNoteContentChanged of string
+    | SubmitEditNote
+    | NoteUpdated of Result<NoteDto, string>
+    | CancelEditNote
+    | DeleteNote of string
+    | NoteDeleted of Result<unit, string>
+    | CancelAddNote
 
 type State = {
     CurrentPage: Page
@@ -205,6 +218,14 @@ type State = {
     SearchLoading: bool
     ScannerOpen: bool
     ItemDetail: SearchResultDto option
+    Notes: NoteDto array
+    NoteEntityType: string
+    NoteEntityId: string
+    ShowAddNoteForm: bool
+    NewNoteContent: string
+    EditingNoteId: string option
+    EditNoteContent: string
+    DeletingNoteId: string option
 }
 
 [<Fable.Core.Emit("window.location.hash")>]
@@ -259,7 +280,10 @@ let private loadPage (page: Page) : Cmd<Msg> =
     | LocationsList ->
         Cmd.OfAsync.either getLocations () LocationsLoaded (fun ex -> ErrorOccurred ex.Message)
     | LocationDetail code ->
-        Cmd.OfAsync.either getLocationDetail code LocationDetailLoaded (fun ex -> ErrorOccurred ex.Message)
+        Cmd.batch [
+            Cmd.OfAsync.either getLocationDetail code LocationDetailLoaded (fun ex -> ErrorOccurred ex.Message)
+            Cmd.OfAsync.either (fun () -> getNotes "location" code) () NotesLoaded (fun ex -> ErrorOccurred ex.Message)
+        ]
     | BoxesList ->
         Cmd.batch [
             Cmd.OfAsync.either getLocations () LocationsLoaded (fun ex -> ErrorOccurred ex.Message)
@@ -269,6 +293,7 @@ let private loadPage (page: Page) : Cmd<Msg> =
         Cmd.batch [
             Cmd.OfAsync.either getBoxDetail id BoxDetailLoaded (fun ex -> ErrorOccurred ex.Message)
             Cmd.OfAsync.either getLocations () AvailableLocationsLoaded (fun ex -> ErrorOccurred ex.Message)
+            Cmd.OfAsync.either (fun () -> getNotes "box" id) () NotesLoaded (fun ex -> ErrorOccurred ex.Message)
         ]
     | ItemsList ->
         Cmd.batch [
@@ -276,10 +301,11 @@ let private loadPage (page: Page) : Cmd<Msg> =
             Cmd.OfAsync.either getLocations () LocationsLoaded (fun ex -> ErrorOccurred ex.Message)
             Cmd.OfAsync.either (fun () -> getBoxes None) () BoxesLoaded (fun ex -> ErrorOccurred ex.Message)
         ]
-    | ItemDetail _ ->
+    | ItemDetail id ->
         Cmd.batch [
             Cmd.OfAsync.either listItems () ItemDetailLoaded (fun ex -> ErrorOccurred ex.Message)
             Cmd.OfAsync.either getLocations () AvailableLocationsLoaded (fun ex -> ErrorOccurred ex.Message)
+            Cmd.OfAsync.either (fun () -> getNotes "item" id) () NotesLoaded (fun ex -> ErrorOccurred ex.Message)
         ]
 
 let private hashChangeSub (dispatch: Msg -> unit) : unit =
@@ -346,6 +372,14 @@ let private resetPageState (state: State) : State =
         SearchLoading = false
         ScannerOpen = false
         ItemDetail = None
+        Notes = [||]
+        NoteEntityType = ""
+        NoteEntityId = ""
+        ShowAddNoteForm = false
+        NewNoteContent = ""
+        EditingNoteId = None
+        EditNoteContent = ""
+        DeletingNoteId = None
     }
 
 let private navigateCmd (page: Page) : Cmd<Msg> =
@@ -425,6 +459,14 @@ let init () : State * Cmd<Msg> =
         SearchLoading = false
         ScannerOpen = false
         ItemDetail = None
+        Notes = [||]
+        NoteEntityType = ""
+        NoteEntityId = ""
+        ShowAddNoteForm = false
+        NewNoteContent = ""
+        EditingNoteId = None
+        EditNoteContent = ""
+        DeletingNoteId = None
     }
     let cmds : Cmd<Msg> = Cmd.batch [
         Cmd.ofEffect hashChangeSub
@@ -1206,3 +1248,77 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | ItemDetailLoaded (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
+
+    | NotesLoaded (Ok notes) ->
+        let entityType, entityId =
+            match state.CurrentPage with
+            | LocationDetail code -> "location", code
+            | BoxDetail id -> "box", id
+            | ItemDetail id -> "item", id
+            | _ -> "", ""
+        { state with Notes = notes; NoteEntityType = entityType; NoteEntityId = entityId }, Cmd.none
+
+    | NotesLoaded (Error _) ->
+        state, Cmd.none
+
+    | ShowAddNoteForm ->
+        { state with ShowAddNoteForm = true; NewNoteContent = "" }, Cmd.none
+
+    | CancelAddNote ->
+        { state with ShowAddNoteForm = false; NewNoteContent = "" }, Cmd.none
+
+    | NewNoteContentChanged content ->
+        { state with NewNoteContent = content }, Cmd.none
+
+    | SubmitCreateNote ->
+        let content : string = state.NewNoteContent.Trim()
+        if System.String.IsNullOrEmpty content then state, Cmd.none
+        else
+            { state with Loading = true },
+            Cmd.OfAsync.either (fun () -> createNote state.NoteEntityType state.NoteEntityId content) () NoteCreated (fun ex -> ErrorOccurred ex.Message)
+
+    | NoteCreated (Ok note) ->
+        { state with Loading = false; Notes = Array.append [| note |] state.Notes; ShowAddNoteForm = false; NewNoteContent = "" }, Cmd.none
+
+    | NoteCreated (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | StartEditNote (noteId, content) ->
+        { state with EditingNoteId = Some noteId; EditNoteContent = content }, Cmd.none
+
+    | CancelEditNote ->
+        { state with EditingNoteId = None; EditNoteContent = "" }, Cmd.none
+
+    | EditNoteContentChanged content ->
+        { state with EditNoteContent = content }, Cmd.none
+
+    | SubmitEditNote ->
+        match state.EditingNoteId with
+        | None -> state, Cmd.none
+        | Some noteId ->
+            let content : string = state.EditNoteContent.Trim()
+            if System.String.IsNullOrEmpty content then state, Cmd.none
+            else
+                { state with Loading = true },
+                Cmd.OfAsync.either (fun () -> updateNote noteId content) () NoteUpdated (fun ex -> ErrorOccurred ex.Message)
+
+    | NoteUpdated (Ok updatedNote) ->
+        let notes : NoteDto array = state.Notes |> Array.map (fun n -> if n.Id = updatedNote.Id then updatedNote else n)
+        { state with Loading = false; Notes = notes; EditingNoteId = None; EditNoteContent = "" }, Cmd.none
+
+    | NoteUpdated (Error err) ->
+        { state with Error = Some err; Loading = false }, Cmd.none
+
+    | DeleteNote noteId ->
+        { state with Loading = true; DeletingNoteId = Some noteId },
+        Cmd.OfAsync.either (fun () -> deleteNote noteId) () NoteDeleted (fun ex -> ErrorOccurred ex.Message)
+
+    | NoteDeleted (Ok _) ->
+        let remaining : NoteDto array =
+            match state.DeletingNoteId with
+            | Some nid -> state.Notes |> Array.filter (fun n -> n.Id <> nid)
+            | None -> state.Notes
+        { state with Loading = false; Notes = remaining; DeletingNoteId = None }, Cmd.none
+
+    | NoteDeleted (Error err) ->
+        { state with Error = Some err; Loading = false; DeletingNoteId = None }, Cmd.none

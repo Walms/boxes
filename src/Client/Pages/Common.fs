@@ -419,6 +419,138 @@ let QrScannerComponent (dispatch: Msg -> unit) : ReactElement =
 let QrScannerComponent (_dispatch: Msg -> unit) : ReactElement = Html.none
 #endif
 
+let notesSection (state: State) (dispatch: Msg -> unit) : ReactElement =
+    Html.div [
+        prop.className "mt-6"
+        prop.children [
+            Html.div [
+                prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4"
+                prop.children [
+                    Html.h2 [
+                        prop.className "text-lg sm:text-xl font-bold"
+                        prop.text $"Notes (%i{state.Notes.Length})"
+                    ]
+                    if not state.ShowAddNoteForm then
+                        Html.button [
+                            prop.className "btn btn-outline btn-sm w-full sm:w-auto"
+                            prop.text "+ Add Note"
+                            prop.onClick (fun _ -> dispatch ShowAddNoteForm)
+                        ]
+                ]
+            ]
+            if state.ShowAddNoteForm then
+                Html.div [
+                    prop.className "card bg-base-200 border border-base-300 mb-4 shadow-sm"
+                    prop.children [
+                        Html.div [
+                            prop.className "card-body p-4"
+                            prop.children [
+                                Html.textarea [
+                                    prop.className "textarea textarea-bordered w-full text-base min-h-24 focus:textarea-primary"
+                                    prop.placeholder "Write a note..."
+                                    prop.value state.NewNoteContent
+                                    prop.onChange (fun (s: string) -> dispatch (NewNoteContentChanged s))
+                                    prop.autoFocus true
+                                ]
+                                Html.div [
+                                    prop.className "flex gap-2 justify-end mt-2"
+                                    prop.children [
+                                        Html.button [
+                                            prop.className "btn btn-ghost btn-sm"
+                                            prop.text "Cancel"
+                                            prop.onClick (fun _ -> dispatch CancelAddNote)
+                                        ]
+                                        Html.button [
+                                            prop.className "btn btn-success btn-sm"
+                                            prop.text "Save"
+                                            prop.disabled (System.String.IsNullOrWhiteSpace state.NewNoteContent)
+                                            prop.onClick (fun _ -> dispatch SubmitCreateNote)
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            if Array.isEmpty state.Notes && not state.ShowAddNoteForm then
+                Html.div [
+                    prop.className "text-center py-6 opacity-60"
+                    prop.children [
+                        Html.p [ prop.text "No notes yet" ]
+                    ]
+                ]
+            for note in state.Notes do
+                Html.div [
+                    prop.key note.Id
+                    prop.className "card bg-base-200 border border-base-300 mb-3 shadow-sm"
+                    prop.children [
+                        Html.div [
+                            prop.className "card-body p-4"
+                            prop.children [
+                                if state.EditingNoteId = Some note.Id then
+                                    Html.textarea [
+                                        prop.className "textarea textarea-bordered w-full text-base min-h-24 focus:textarea-primary mb-2"
+                                        prop.value state.EditNoteContent
+                                        prop.onChange (fun (s: string) -> dispatch (EditNoteContentChanged s))
+                                        prop.autoFocus true
+                                    ]
+                                    Html.div [
+                                        prop.className "flex gap-2 justify-end"
+                                        prop.children [
+                                            Html.button [
+                                                prop.className "btn btn-ghost btn-sm"
+                                                prop.text "Cancel"
+                                                prop.onClick (fun _ -> dispatch CancelEditNote)
+                                            ]
+                                            Html.button [
+                                                prop.className "btn btn-success btn-sm"
+                                                prop.text "Save"
+                                                prop.disabled (System.String.IsNullOrWhiteSpace state.EditNoteContent)
+                                                prop.onClick (fun _ -> dispatch SubmitEditNote)
+                                            ]
+                                        ]
+                                    ]
+                                else
+                                    Html.div [
+                                        prop.className "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2"
+                                        prop.children [
+                                            Html.p [
+                                                prop.className "text-base whitespace-pre-wrap flex-1"
+                                                prop.text note.Content
+                                            ]
+                                            Html.div [
+                                                prop.className "flex gap-1 flex-shrink-0"
+                                                prop.children [
+                                                    Html.button [
+                                                        prop.className "btn btn-ghost btn-xs"
+                                                        prop.text "Edit"
+                                                        prop.onClick (fun _ -> dispatch (StartEditNote (note.Id, note.Content)))
+                                                    ]
+                                                    Html.button [
+                                                        prop.className "btn btn-ghost btn-xs text-error"
+                                                        prop.text "Delete"
+                                                        prop.onClick (fun _ -> dispatch (DeleteNote note.Id))
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                    Html.div [
+                                        prop.className "text-xs opacity-50 mt-2"
+                                        prop.children [
+                                            if note.UpdatedAt <> note.CreatedAt then
+                                                Html.text $"Added %s{formatDate note.CreatedAt} · Edited %s{formatDate note.UpdatedAt}"
+                                            else
+                                                Html.text $"Added %s{formatDate note.CreatedAt}"
+                                        ]
+                                    ]
+                            ]
+                        ]
+                    ]
+                ]
+        ]
+    ]
+
 let scannerModal (state: State) (dispatch: Msg -> unit) : ReactElement =
     if not state.ScannerOpen then Html.none
     else

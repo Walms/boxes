@@ -64,6 +64,19 @@ All page headers updated to responsive flex layouts:
 - **Improved opacity**: Better use of `opacity-60` and `opacity-70` for secondary text
 - **Line spacing**: Added vertical spacing with `mt-2`, `mb-4`, `gap-3`
 
+### Native Mobile Polish (CSS, `app.css`)
+
+- **Safe-area insets**: `index.html` viewport carries `viewport-fit=cover`; under `@supports (padding: env(safe-area-inset-top))` the sticky `.navbar` pads its top/left/right and the page wrapper `.app-main` (added to the content container in `Router.fs`) pads left/right/bottom — content is never clipped under the iOS notch, status bar, or home indicator.
+- **Tap polish**: `html` sets `-webkit-tap-highlight-color: transparent` (no grey flash on tap) and `text-size-adjust: 100%` (iOS doesn't inflate text in landscape).
+- **Touch feedback**: hover states don't fire on touch, so `.card.cursor-pointer:active` applies a gentle `scale(0.985)` press-in. Clickable cards get tactile response on tap, mirroring the button lift/settle.
+
+### Touch Targets & Form Fields
+
+- Kebab (⋮) action-menu buttons are `btn-sm btn-circle` (not `btn-xs`) for a larger hit area in item lists (Items list, Box detail item rows).
+- Form labels use `label-text text-base font-medium` (not `text-xl`) — consistent, not oversized on small screens.
+- The Items "Assign to box" `select` is `w-full` (was a fixed-margin, non-full-width select that broke the mobile full-width input rule).
+- List-card titles (Locations, Boxes grids) are `text-lg` for clearer hierarchy.
+
 ## Benefits
 
 1. **Touch-Friendly**: Larger buttons and increased tap targets on mobile (min 44x44px)

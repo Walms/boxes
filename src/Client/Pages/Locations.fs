@@ -39,7 +39,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Code" ]
+                                                Html.span [ prop.className "label-text text-base font-medium"; prop.text "Code" ]
                                             ]
                                         ]
                                         Html.input [
@@ -56,7 +56,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                         Html.label [
                                             prop.className "label pb-3"
                                             prop.children [
-                                                Html.span [ prop.className "label-text text-xl font-medium"; prop.text "Name" ]
+                                                Html.span [ prop.className "label-text text-base font-medium"; prop.text "Name" ]
                                             ]
                                         ]
                                         Html.input [
@@ -132,7 +132,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "card-body p-4 sm:p-5"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "text-base break-words flex items-center gap-2 flex-wrap"
+                                            prop.className "text-lg break-words flex items-center gap-2 flex-wrap"
                                             prop.children [
                                                 Html.text loc.Name
                                                 if loc.IsArchived then

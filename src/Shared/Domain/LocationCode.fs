@@ -3,7 +3,9 @@ module BoxTracker.LocationCode
 type LocationCode = private LocationCode of string
 
 let create (raw: string) : Result<LocationCode, string> =
-    let trimmed = raw.Trim()
+    let trimmed : string =
+        if System.Object.ReferenceEquals(raw, null) then ""
+        else raw.Trim()
     if System.String.IsNullOrWhiteSpace trimmed then
         Error "Location code must not be empty"
     elif trimmed.Length > 20 then

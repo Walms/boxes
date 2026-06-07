@@ -38,9 +38,9 @@ let private resizeImage (image: Image) (maxWidth: int) (maxHeight: int) : unit =
         let newSize : Size =
             let aspectRatio : float = float image.Width / float image.Height
             if float maxWidth / float maxHeight > aspectRatio then
-                Size(int (float maxHeight * aspectRatio), maxHeight)
+                Size(max 1 (int (float maxHeight * aspectRatio)), maxHeight)
             else
-                Size(maxWidth, int (float maxWidth / aspectRatio))
+                Size(maxWidth, max 1 (int (float maxWidth / aspectRatio)))
         image.Mutate(fun ctx -> ctx.Resize(newSize) |> ignore)
 
 let processUploadedImage (inputPath: string) (outputFullPath: string) (outputThumbPath: string) : Result<unit, string> =

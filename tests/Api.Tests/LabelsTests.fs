@@ -61,3 +61,38 @@ let ``batchBoxLabelHtml on an empty list still produces a valid document`` () : 
     let html = batchBoxLabelHtml []
     Assert.Contains("<!DOCTYPE html>", html)
     Assert.Contains("</html>", html)
+
+[<Fact>]
+let ``boxLabelHtml neutralizes a script tag in the label`` () : unit =
+    let html = boxLabelHtml "BOX-001" (Some "<script>alert('x')</script>") None None
+    Assert.DoesNotContain("<script>", html)
+    Assert.DoesNotContain("</script>", html)
+    Assert.Contains("&lt;script&gt;", html)
+
+[<Fact>]
+let ``boxLabelHtml escapes double quotes in the label`` () : unit =
+    let html = boxLabelHtml "BOX-001" (Some "say \"hi\"") None None
+    Assert.Contains("&quot;hi&quot;", html)
+
+[<Fact>]
+let ``locationLabelHtml neutralizes a script tag in the name`` () : unit =
+    let html = locationLabelHtml "GARAGE" "<script>alert('x')</script>"
+    Assert.DoesNotContain("<script>", html)
+    Assert.Contains("&lt;script&gt;", html)
+
+[<Fact>]
+let ``batchBoxLabelHtml escapes special characters in every label`` () : unit =
+    let boxes =
+        [ ("BOX-001", Some "<b>one</b>", None, None)
+          ("BOX-002", Some "Tom & Jerry", None, None) ]
+    let html = batchBoxLabelHtml boxes
+    Assert.DoesNotContain("<b>one</b>", html)
+    Assert.Contains("&lt;b&gt;one&lt;/b&gt;", html)
+    Assert.Contains("Tom &amp; Jerry", html)
+
+[<Fact>]
+let ``escapeHtml replaces ampersand first so entities are not doubly escaped`` () : unit =
+    // "&" must be escaped before "<"/">" so "<" becomes "&lt;" not "&amp;lt;".
+    let html = boxLabelHtml "BOX-001" (Some "<") None None
+    Assert.Contains("&lt;", html)
+    Assert.DoesNotContain("&amp;lt;", html)

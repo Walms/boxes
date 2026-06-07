@@ -74,3 +74,34 @@ let ``processUploadedImage returns Error when input is missing`` () : unit =
         let result = processUploadedImage input full thumb
         Assert.True(Result.isError result)
     )
+
+// Extreme aspect ratios used to compute a zero-sized resize target (e.g. a
+// 8000x30 image scaled to a 250x250 thumbnail yields height 250/266 -> 0),
+// producing an invalid resize. The resize math now clamps each dimension to
+// at least 1, so even degenerate aspect ratios must process successfully and
+// stay within the configured bounds.
+[<Theory>]
+[<InlineData(4000, 12)>]
+[<InlineData(12, 4000)>]
+[<InlineData(8000, 30)>]
+[<InlineData(30, 8000)>]
+let ``processUploadedImage handles extreme aspect ratios`` (width: int) (height: int) : unit =
+    withTempDir (fun dir ->
+        let input = Path.Combine(dir, "input.jpg")
+        let full = Path.Combine(dir, "out-full.jpg")
+        let thumb = Path.Combine(dir, "out-thumb.jpg")
+        makeJpeg input width height
+
+        let result = processUploadedImage input full thumb
+        Assert.True(Result.isOk result)
+        Assert.True(File.Exists(full))
+        Assert.True(File.Exists(thumb))
+
+        let thumbInfo = Image.Identify(thumb)
+        Assert.True(thumbInfo.Width >= 1 && thumbInfo.Width <= 250)
+        Assert.True(thumbInfo.Height >= 1 && thumbInfo.Height <= 250)
+
+        let fullInfo = Image.Identify(full)
+        Assert.True(fullInfo.Width >= 1 && fullInfo.Width <= 3500)
+        Assert.True(fullInfo.Height >= 1 && fullInfo.Height <= 3500)
+    )

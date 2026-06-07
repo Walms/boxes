@@ -46,3 +46,5 @@
 - `SyncItemToSearch` must NOT be called from both `AddItem` and `RecordMove` — `RecordMove` already syncs FTS5; double-calling creates duplicate entries
 - SQLite `ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY moved_at DESC)` is the standard pattern for deriving current placement from the move log
 - Old `data/boxtracker.db` is incompatible after schema changes — must be deleted before running
+- All string smart constructors (`ItemName`/`LocationName`/`BoxLabel`/`LocationCode`) must null-guard `raw` via `ReferenceEquals(raw, null)` before `.Trim()` so `create null` returns `Error`/`None` instead of throwing `NullReferenceException`
+- `ImageProcessing.resizeImage` clamps each computed dimension to `max 1` so extreme aspect ratios (e.g. 8000×30) never produce a zero-sized resize target

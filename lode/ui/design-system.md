@@ -2,7 +2,16 @@
 
 ## Overview
 
-A unified design system ensuring consistent spacing, typography, button sizing, and layout across the BoxTracker UI. Built on Tailwind CSS and DaisyUI with a soft, retro "cassette" aesthetic.
+A unified design system ensuring consistent spacing, typography, button sizing, and layout across the BoxTracker UI. Built on Tailwind CSS and DaisyUI with a **modern-retro SNES** aesthetic — a muted 16-bit "application chrome" palette (modelled on SNES non-game software like Mario Paint / BS-X) softened with a readable retro font, gentle rounded corners, soft shadows, and a subtle CRT scanline/vignette overlay. The theme is defined as the DaisyUI theme `nintendo` in `src/Client/app.css` and applied via `data-theme="nintendo"` on `<html>`.
+
+### Retro treatment (in `app.css`)
+
+- **CRT overlay**: fixed `body::before` scanlines + `body::after` tube vignette, layered above content (`z-index` 9998–9999) but `pointer-events: none`. The full-screen image viewer sits above them (`z-index: 10000`).
+- **Borders**: panels (`.card`, `.modal-box`, dropdowns, alerts), buttons, and inputs carry a 2px ink outline (`--nin-ink: #2a2f3e`).
+- **Corners**: gently rounded — `--radius-field`/`--radius-selector` `0.375rem`, `--radius-box` `0.5rem` (softened from the earlier hard `0`).
+- **Shadows**: soft, modern (`--nin-shadow: 0 2px 6px rgba(42,47,62,0.16)`, plus `-sm`/`-lg` variants). Buttons lift gently on hover and settle on active; transitions are smooth `ease` (~120–150ms), not stepped.
+- **Navbar**: bottom ink border capped by a thin brick-red (`--color-primary`) accent strip.
+- **Entity colour-coding**: list rows get a 5px coloured left-border + faint tint — locations indigo `#7a74b5`, boxes sage `#639b82`, items brick `#c05850` (`.entity-location` / `.entity-box` / `.entity-item`).
 
 ## Spacing Scale
 
@@ -25,8 +34,23 @@ All spacing uses Tailwind's default spacing scale, grouped by semantic purpose:
 ## Typography
 
 ### Font Family
-- All text: `VT323`, `IBM Plex Mono`, fallback to monospace
+- All text: `VT323` (a readable retro terminal/pixel font), falling back to `ui-monospace` and other monospace families
+- Loaded lazily from Google Fonts in `src/Client/index.html` (`media="print"` + `onload` swap, with a `<noscript>` fallback)
 - No serif or sans-serif fonts
+- VT323 renders compact, so the type scale (below) runs a touch larger than a default sans scale
+
+### Type scale remap
+
+Every Tailwind text utility (`text-xs` … `text-3xl`) is remapped in the `@theme` block of `app.css` onto a single VT323-tuned scale, so the many size classes scattered through the UI resolve consistently:
+
+| Utility | Size |
+|---------|------|
+| `text-xs` / `text-sm` | 0.85 / 0.95rem |
+| `text-base` | 1.05rem |
+| `text-lg` / `text-xl` | 1.3 / 1.45rem |
+| `text-2xl` / `text-3xl` | 1.85 / 2.2rem |
+
+Headings reuse this scale (`h1`→`text-2xl`, `h2`→`text-lg`, `h3`→`text-base`) with no bespoke sizes and no pixel text-shadow.
 
 ### Size Hierarchy
 
@@ -204,11 +228,15 @@ All empty state text:
 
 ## Color & Theme
 
-- Primary: Dusty rose (`oklch(0.62 0.14 340)`)
-- Secondary: Soft sage (`oklch(0.58 0.09 165)`)
-- Accent: Soft lavender (`oklch(0.66 0.13 285)`)
-- Background: Soft cream (`oklch(0.97 0.008 60)`)
-- All colors via DaisyUI semantic classes; never hardcode hex/oklch values
+The `nintendo` theme uses a muted 16-bit slate palette (defined once in `app.css`):
+
+- Base: slate-grey desktop `#b8c0d2` (`base-100`), light panels `#eceff6` (`base-200`), mid-grey borders `#ced5e2` (`base-300`), soft dark slate ink `#2a2f3e` (`base-content`)
+- Primary: dusty brick red `#c05850`
+- Secondary: muted sage / pipe green `#639b82`
+- Accent: faded gold `#d4b254`
+- Neutral: slate `#434860`
+- Status colours reuse the palette: `error`→brick, `success`→sage, `warning`→gold, `info`→`#6685b0`
+- All colours consumed via DaisyUI semantic classes; never hardcode hex values in components
 - Never use `bg-white`, `text-black` — use `base-100`, `base-content` instead
 
 **Rule**: Use only DaisyUI color semantics. No custom colors. No opacity overrides except for secondary text (`opacity-60`, `opacity-70`).

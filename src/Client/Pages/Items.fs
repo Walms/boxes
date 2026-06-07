@@ -93,7 +93,13 @@ let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultD
                                     prop.custom("decoding", "async")
                                     prop.onClick (fun e -> e.stopPropagation(); dispatch (ShowImageViewer fullUrl))
                                 ]
-                            | None -> Html.none
+                            | None ->
+                                Html.div [
+                                    prop.className "w-10 h-10 bg-base-200 rounded flex items-center justify-center flex-shrink-0"
+                                    prop.children [
+                                        Html.span [ prop.className "text-base opacity-30"; prop.text "📦" ]
+                                    ]
+                                ]
                             Html.div [
                                 prop.className "flex-1 min-w-0"
                                 prop.children [

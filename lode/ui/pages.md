@@ -81,4 +81,27 @@ Images with hover effect get `cursor-pointer` and `opacity-80 transition-opacity
 - Forms are inline collapsible sections (not separate pages)
 - Move dialogs are modal overlays using DaisyUI `modal-open`
 - `Cmd.OfAsync.either` for all API calls with `ErrorOccurred` fallback
-- Edit flows: `StartEdit*` stores current value → `Edit*Changed` updates → `SubmitEdit*` sends API → `*Updated` navigates to refresh
+- Edit flows: `StartEdit*` stores current value → `Edit*Changed` updates → `SubmitEdit*` sends API → `*Updated` patches state in place
+
+## Mutation Results Update State In Place
+
+Successful mutations patch the already-loaded Elmish state from the response
+instead of re-navigating — `navigateCmd` triggers `resetPageState` +
+`loadPage` (2–3 refetches and a full-page spinner), so it is reserved for
+genuine page changes (deleting the entity whose page you are on, location
+code change, QR scan) and for fallback when a dialog's snapshot lacks the
+entity needed to patch locally.
+
+- Creates append to the loaded array, re-sorted to match server order
+  (locations by name, boxes by id, box items by `AddedAt`; `AllItems` is
+  newest-first so new entries are prepended)
+- Updates/moves/deletes map/filter the relevant arrays; delete result
+  messages carry the deleted id (`ItemDeleted`, `StandaloneItemDeleted`,
+  `BoxDeletedFromList` are `string * Result<...>`); move results use
+  `MoveDto.EntityId`/`ToId`
+- Cross-entity display fields (box label, location name) are looked up from
+  already-loaded arrays (`Boxes`, `Locations`, `BoxesForItemMove`, …)
+- Completed photo jobs are patched onto matching entities by
+  `applyCompletedPhoto` (keyed on `PhotoJobDto.EntityType`/`EntityId`); a
+  newly added item appears immediately and its photo arrives when the job
+  completes

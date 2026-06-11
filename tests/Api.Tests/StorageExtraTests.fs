@@ -150,3 +150,41 @@ let ``SearchItems reflects a location code rename`` () : unit =
         Assert.Single(results) |> ignore
         Assert.Equal(Some "NEW", results.[0].LocationCode)
     )
+
+[<Fact>]
+let ``GetItemSearchResult returns box and location names`` () : unit =
+    withStorage (fun storage ->
+        storage.CreateLocation(makeCode "GARAGE", makeName "Garage") |> ignore
+        let box = storage.CreateBox(makeLabel "Tools")
+        storage.RecordMove("box", boxId box, Some "location", Some "GARAGE") |> ignore
+        let item = storage.AddItem(boxId box, makeItemName "Drill", None)
+
+        let result = storage.GetItemSearchResult(item.Id.ToString())
+        Assert.True(result.IsSome)
+        let r = result.Value
+        Assert.Equal("Drill", r.ItemName)
+        Assert.Equal(boxId box, r.BoxId)
+        Assert.Equal(Some "Tools", r.BoxLabel)
+        Assert.Equal(Some "GARAGE", r.LocationCode)
+        Assert.Equal(Some "Garage", r.LocationName)
+    )
+
+[<Fact>]
+let ``GetItemSearchResult handles an unassigned item`` () : unit =
+    withStorage (fun storage ->
+        let item = storage.CreateItem(makeItemName "Loose Cable", None)
+
+        let result = storage.GetItemSearchResult(item.Id.ToString())
+        Assert.True(result.IsSome)
+        let r = result.Value
+        Assert.Equal("Loose Cable", r.ItemName)
+        Assert.Equal("", r.BoxId)
+        Assert.Equal(None, r.BoxLabel)
+        Assert.Equal(None, r.LocationCode)
+    )
+
+[<Fact>]
+let ``GetItemSearchResult returns None for an unknown item`` () : unit =
+    withStorage (fun storage ->
+        Assert.True((storage.GetItemSearchResult(Guid.NewGuid().ToString())).IsNone)
+    )

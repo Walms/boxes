@@ -935,3 +935,40 @@ type Storage (connectionString: string) =
             """
             use reader : SqliteDataReader = c.ExecuteReader()
             readList readSearchResult reader
+
+    member this.GetItemSearchResult(id: string) : SearchResult option =
+        let conn : SqliteConnection = this.Connection
+        use c : SqliteCommand = conn.CreateCommand()
+        c.CommandText <- """
+            SELECT i.id, i.name, i.photo_path,
+                   COALESCE(item_lp.to_id, '') as box_id,
+                   b.label as box_label,
+                   box_lp.to_id as location_code,
+                   l.name as location_name,
+                   i.added_at
+            FROM item i
+            LEFT JOIN (
+                SELECT entity_id, to_type, to_id
+                FROM (
+                    SELECT entity_id, to_type, to_id,
+                           ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY moved_at DESC) as rn
+                    FROM move WHERE entity_type = 'item' AND entity_id = @id
+                )
+                WHERE rn = 1 AND to_type = 'box'
+            ) item_lp ON item_lp.entity_id = i.id
+            LEFT JOIN box b ON b.id = item_lp.to_id
+            LEFT JOIN (
+                SELECT entity_id, to_type, to_id
+                FROM (
+                    SELECT entity_id, to_type, to_id,
+                           ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY moved_at DESC) as rn
+                    FROM move WHERE entity_type = 'box'
+                )
+                WHERE rn = 1 AND to_type = 'location'
+            ) box_lp ON box_lp.entity_id = b.id
+            LEFT JOIN location l ON l.code = box_lp.to_id
+            WHERE i.id = @id
+        """
+        c.Parameters.AddWithValue("@id", id) |> ignore
+        use reader : SqliteDataReader = c.ExecuteReader()
+        if reader.Read() then Some(readSearchResult reader) else None

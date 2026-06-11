@@ -50,11 +50,11 @@ let getItem (id: string) : HttpHandler =
     fun (next: HttpFunc) (ctx: HttpContext) ->
         task {
             let storage : Storage = ctx.GetService<Storage>()
-            match storage.GetItem(id) with
+            match storage.GetItemSearchResult(id) with
             | None ->
                 return! (setStatusCode 404 >=> json {| error = $"Item '%s{id}' not found" |}) next ctx
-            | Some item ->
-                return! json (itemToDto item) next ctx
+            | Some result ->
+                return! json (searchResultToDto result) next ctx
         }
 
 let updateItemStandalone (id: string) : HttpHandler =

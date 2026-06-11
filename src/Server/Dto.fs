@@ -103,10 +103,6 @@ type BoxDetailResponse = {
     Items: ItemResponse list
 }
 
-type ItemDetailResponse = {
-    Item: ItemResponse
-}
-
 type CreateLocationRequest = {
     Code: string
     Name: string

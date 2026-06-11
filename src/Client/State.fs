@@ -61,7 +61,7 @@ type Msg =
     | SubmitAddItem
     | ItemAdded of Result<AddItemResultDto, string>
     | DeleteItem of string
-    | ItemDeleted of Result<unit, string>
+    | ItemDeleted of string * Result<unit, string>
     | ShowMoveItemDialog of string
     | BoxesForMoveLoaded of Result<BoxDto array, string>
     | MoveTargetBoxChanged of string
@@ -83,7 +83,7 @@ type Msg =
     | ItemNameUpdated of Result<ItemDto, string>
     | CancelEditItem
     | DeleteStandaloneItem of string
-    | StandaloneItemDeleted of Result<unit, string>
+    | StandaloneItemDeleted of string * Result<unit, string>
     | ShowMoveItemStandaloneDialog of string
     | MoveItemTargetBoxChanged of string
     | ConfirmMoveItemStandalone
@@ -118,7 +118,7 @@ type Msg =
     | CancelEditBoxInList
     | BoxUpdatedInList of Result<BoxDto, string>
     | DeleteBoxFromList of string
-    | BoxDeletedFromList of Result<unit, string>
+    | BoxDeletedFromList of string * Result<unit, string>
     | StartEditLocationInList of string * string
     | EditLocationNameInListChanged of string
     | SubmitEditLocationInList
@@ -390,6 +390,38 @@ let private schedulePollCmd (jobId: string) : Cmd<Msg> =
     Cmd.ofEffect (fun (dispatch: Msg -> unit) ->
         setTimeout (fun () -> dispatch (PollPhotoJob jobId)) 800 |> ignore)
 
+/// Patch a freshly processed photo onto whichever loaded entities match the
+/// completed job, so the new image appears without reloading the page.
+let private applyCompletedPhoto (job: PhotoJobDto) (state: State) : State =
+    match job.PhotoPath with
+    | None -> state
+    | Some _ ->
+        match job.EntityType with
+        | "item" ->
+            let patchResult (r: SearchResultDto) : SearchResultDto =
+                if r.ItemId = job.EntityId then { r with PhotoPath = job.PhotoPath } else r
+            let patchItem (i: ItemDto) : ItemDto =
+                if i.Id = job.EntityId then { i with PhotoPath = job.PhotoPath } else i
+            { state with
+                BoxDetail = state.BoxDetail |> Option.map (fun d -> { d with Items = d.Items |> Array.map patchItem })
+                AllItems = state.AllItems |> Array.map patchResult
+                SearchResults = state.SearchResults |> Array.map patchResult
+                ItemDetail = state.ItemDetail |> Option.map patchResult }
+        | "box" ->
+            let patchBox (b: BoxDto) : BoxDto =
+                if b.Id = job.EntityId then { b with PhotoPath = job.PhotoPath } else b
+            { state with
+                Boxes = state.Boxes |> Array.map patchBox
+                BoxDetail = state.BoxDetail |> Option.map (fun d -> { d with Box = patchBox d.Box })
+                LocationDetail = state.LocationDetail |> Option.map (fun d -> { d with Boxes = d.Boxes |> Array.map patchBox }) }
+        | "location" ->
+            let patchLocation (l: LocationDto) : LocationDto =
+                if l.Code = job.EntityId then { l with PhotoPath = job.PhotoPath } else l
+            { state with
+                Locations = state.Locations |> Array.map patchLocation
+                LocationDetail = state.LocationDetail |> Option.map (fun d -> { d with Location = patchLocation d.Location }) }
+        | _ -> state
+
 let init () : State * Cmd<Msg> =
     let hash : string = getHash ()
     let page : Page = pageFromHash hash
@@ -522,9 +554,11 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
             { state with Loading = true },
             Cmd.OfAsync.either (fun () -> createLocation code name) () LocationCreated (fun ex -> ErrorOccurred ex.Message)
 
-    | LocationCreated (Ok _) ->
-        { state with ShowCreateLocationForm = false; Loading = false },
-        navigateCmd LocationsList
+    | LocationCreated (Ok location) ->
+        let locations : LocationDto array =
+            Array.append state.Locations [| location |] |> Array.sortBy (fun (l: LocationDto) -> l.Name)
+        { state with ShowCreateLocationForm = false; Loading = false; Locations = locations; NewLocationCode = ""; NewLocationName = "" },
+        Cmd.none
 
     | LocationCreated (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -553,12 +587,13 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
                 { state with Loading = true },
                 Cmd.OfAsync.either (fun () -> updateLocation detail.Location.Code name) () LocationUpdated (fun ex -> ErrorOccurred ex.Message)
 
-    | LocationUpdated (Ok _) ->
-        match state.LocationDetail with
-        | None -> { state with Loading = false }, Cmd.none
-        | Some detail ->
-            { state with EditingLocationName = false; Loading = false },
-            navigateCmd (LocationDetail detail.Location.Code)
+    | LocationUpdated (Ok location) ->
+        { state with
+            EditingLocationName = false
+            Loading = false
+            LocationDetail = state.LocationDetail |> Option.map (fun d -> { d with Location = location })
+            Locations = state.Locations |> Array.map (fun (l: LocationDto) -> if l.Code = location.Code then location else l) },
+        Cmd.none
 
     | LocationUpdated (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -639,9 +674,15 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Loading = true },
         Cmd.OfAsync.either (fun () -> createBox label) () BoxCreated (fun ex -> ErrorOccurred ex.Message)
 
-    | BoxCreated (Ok _) ->
-        { state with ShowCreateBoxForm = false; Loading = false },
-        navigateCmd BoxesList
+    | BoxCreated (Ok newBox) ->
+        // A new box is unassigned, so it only belongs in the list when no
+        // location filter is active.
+        let boxes : BoxDto array =
+            if System.String.IsNullOrEmpty state.BoxFilter then
+                Array.append state.Boxes [| newBox |] |> Array.sortBy (fun (b: BoxDto) -> b.Id)
+            else state.Boxes
+        { state with ShowCreateBoxForm = false; Loading = false; Boxes = boxes; NewBoxLabel = "" },
+        Cmd.none
 
     | BoxCreated (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -676,12 +717,14 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
             { state with Loading = true },
             Cmd.OfAsync.either (fun () -> updateBox detail.Box.Id label locCode) () BoxUpdated (fun ex -> ErrorOccurred ex.Message)
 
-    | BoxUpdated (Ok _) ->
-        match state.BoxDetail with
-        | None -> { state with Loading = false }, Cmd.none
-        | Some detail ->
-            { state with EditingBoxLabel = false; Loading = false },
-            navigateCmd (BoxDetail detail.Box.Id)
+    | BoxUpdated (Ok updatedBox) ->
+        { state with
+            EditingBoxLabel = false
+            Loading = false
+            AssignLocationCode = updatedBox.LocationCode |> Option.defaultValue ""
+            BoxDetail = state.BoxDetail |> Option.map (fun d -> if d.Box.Id = updatedBox.Id then { d with Box = updatedBox } else d)
+            Boxes = state.Boxes |> Array.map (fun (b: BoxDto) -> if b.Id = updatedBox.Id then updatedBox else b) },
+        Cmd.none
 
     | BoxUpdated (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -743,17 +786,17 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
                     }) () ItemAdded (fun ex -> ErrorOccurred ex.Message)
 
     | ItemAdded (Ok result) ->
-        match state.BoxDetail with
-        | None -> { state with Loading = false; SelectedPhoto = None }, Cmd.none
-        | Some detail ->
-            match result.PhotoJobId with
-            | Some jobId ->
-                // Item is created; its photo is still processing on the server.
-                { state with Loading = false; SelectedPhoto = None; PhotoProcessing = true; PhotoJobId = Some jobId },
-                schedulePollCmd jobId
-            | None ->
-                { state with Loading = false; SelectedPhoto = None },
-                navigateCmd (BoxDetail detail.Box.Id)
+        let detail : BoxDetailDto option =
+            state.BoxDetail |> Option.map (fun d -> { d with Items = Array.append d.Items [| result.Item |] })
+        match result.PhotoJobId with
+        | Some jobId ->
+            // Item is shown immediately; its photo is still processing on the
+            // server and gets patched in when the job completes.
+            { state with Loading = false; SelectedPhoto = None; BoxDetail = detail; PhotoProcessing = true; PhotoJobId = Some jobId },
+            schedulePollCmd jobId
+        | None ->
+            { state with Loading = false; SelectedPhoto = None; BoxDetail = detail },
+            Cmd.none
 
     | ItemAdded (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -763,16 +806,15 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         | None -> state, Cmd.none
         | Some detail ->
             { state with Loading = true },
-            Cmd.OfAsync.either (fun () -> deleteItem detail.Box.Id itemId) () ItemDeleted (fun ex -> ErrorOccurred ex.Message)
+            Cmd.OfAsync.either (fun () -> deleteItem detail.Box.Id itemId) () (fun (res: Result<unit, string>) -> ItemDeleted(itemId, res)) (fun ex -> ErrorOccurred ex.Message)
 
-    | ItemDeleted (Ok _) ->
-        match state.BoxDetail with
-        | None -> { state with Loading = false }, Cmd.none
-        | Some detail ->
-            { state with Loading = false },
-            navigateCmd (BoxDetail detail.Box.Id)
+    | ItemDeleted (itemId, Ok _) ->
+        { state with
+            Loading = false
+            BoxDetail = state.BoxDetail |> Option.map (fun d -> { d with Items = d.Items |> Array.filter (fun (i: ItemDto) -> i.Id <> itemId) }) },
+        Cmd.none
 
-    | ItemDeleted (Error err) ->
+    | ItemDeleted (_, Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | ShowMoveItemDialog itemId ->
@@ -797,12 +839,13 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
                 Cmd.OfAsync.either (fun () -> moveEntity "item" itemId "box" state.TargetBoxId) () ItemMoved (fun ex -> ErrorOccurred ex.Message)
         | _ -> state, Cmd.none
 
-    | ItemMoved (Ok _) ->
-        match state.BoxDetail with
-        | None -> { state with Loading = false; MovingItemId = None }, Cmd.none
-        | Some detail ->
-            { state with Loading = false; MovingItemId = None; TargetBoxId = "" },
-            navigateCmd (BoxDetail detail.Box.Id)
+    | ItemMoved (Ok move) ->
+        let detail : BoxDetailDto option =
+            state.BoxDetail |> Option.map (fun d ->
+                if move.ToId = Some d.Box.Id then d
+                else { d with Items = d.Items |> Array.filter (fun (i: ItemDto) -> i.Id <> move.EntityId) })
+        { state with Loading = false; MovingItemId = None; TargetBoxId = ""; BoxDetail = detail },
+        Cmd.none
 
     | ItemMoved (Error err) ->
         { state with Error = Some err; Loading = false; MovingItemId = None }, Cmd.none
@@ -857,9 +900,27 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
             { state with Loading = true },
             Cmd.OfAsync.either (fun () -> createItem name state.NewStandaloneItemBoxId) () StandaloneItemCreated (fun ex -> ErrorOccurred ex.Message)
 
-    | StandaloneItemCreated (Ok _) ->
-        { state with ShowCreateItemForm = false; Loading = false; NewStandaloneItemName = ""; NewStandaloneItemBoxId = "" },
-        navigateCmd ItemsList
+    | StandaloneItemCreated (Ok item) ->
+        let boxId : string = item.BoxId |> Option.defaultValue ""
+        let assignedBox : BoxDto option = state.Boxes |> Array.tryFind (fun (b: BoxDto) -> b.Id = boxId)
+        let locationCode : string option = assignedBox |> Option.bind (fun (b: BoxDto) -> b.LocationCode)
+        let locationName : string option =
+            locationCode
+            |> Option.bind (fun code ->
+                state.Locations
+                |> Array.tryFind (fun (l: LocationDto) -> l.Code = code)
+                |> Option.map (fun (l: LocationDto) -> l.Name))
+        let entry : SearchResultDto =
+            { ItemId = item.Id; ItemName = item.Name; PhotoPath = item.PhotoPath
+              BoxId = boxId; BoxLabel = assignedBox |> Option.bind (fun (b: BoxDto) -> b.Label)
+              LocationCode = locationCode; LocationName = locationName; AddedAt = item.AddedAt }
+        { state with
+            ShowCreateItemForm = false
+            Loading = false
+            NewStandaloneItemName = ""
+            NewStandaloneItemBoxId = ""
+            AllItems = Array.append [| entry |] state.AllItems },
+        Cmd.none
 
     | StandaloneItemCreated (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -881,12 +942,17 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
                 Cmd.OfAsync.either (fun () -> updateItemStandalone itemId name) () ItemNameUpdated (fun ex -> ErrorOccurred ex.Message)
 
     | ItemNameUpdated (Ok item) ->
-        let targetPage =
-            match state.CurrentPage with
-            | ItemDetail _ -> ItemDetail item.Id
-            | _ -> ItemsList
-        { state with EditingItemId = None; EditItemNameValue = ""; Loading = false },
-        navigateCmd targetPage
+        let patchResult (r: SearchResultDto) : SearchResultDto =
+            if r.ItemId = item.Id then { r with ItemName = item.Name } else r
+        { state with
+            EditingItemId = None
+            EditItemNameValue = ""
+            Loading = false
+            AllItems = state.AllItems |> Array.map patchResult
+            SearchResults = state.SearchResults |> Array.map patchResult
+            ItemDetail = state.ItemDetail |> Option.map patchResult
+            BoxDetail = state.BoxDetail |> Option.map (fun d -> { d with Items = d.Items |> Array.map (fun (i: ItemDto) -> if i.Id = item.Id then { i with Name = item.Name } else i) }) },
+        Cmd.none
 
     | ItemNameUpdated (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -896,13 +962,21 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | DeleteStandaloneItem itemId ->
         { state with Loading = true },
-        Cmd.OfAsync.either (fun () -> deleteItemStandalone itemId) () StandaloneItemDeleted (fun ex -> ErrorOccurred ex.Message)
+        Cmd.OfAsync.either (fun () -> deleteItemStandalone itemId) () (fun (res: Result<unit, string>) -> StandaloneItemDeleted(itemId, res)) (fun ex -> ErrorOccurred ex.Message)
 
-    | StandaloneItemDeleted (Ok _) ->
-        { state with Loading = false },
-        navigateCmd ItemsList
+    | StandaloneItemDeleted (itemId, Ok _) ->
+        let nextState : State =
+            { state with
+                Loading = false
+                AllItems = state.AllItems |> Array.filter (fun (i: SearchResultDto) -> i.ItemId <> itemId)
+                SearchResults = state.SearchResults |> Array.filter (fun (i: SearchResultDto) -> i.ItemId <> itemId) }
+        match state.CurrentPage with
+        | ItemDetail _ ->
+            // The page we are on no longer exists; go back to the list.
+            nextState, navigateCmd ItemsList
+        | _ -> nextState, Cmd.none
 
-    | StandaloneItemDeleted (Error err) ->
+    | StandaloneItemDeleted (_, Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | ShowMoveItemStandaloneDialog itemId ->
@@ -924,13 +998,31 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
                 { state with Loading = true },
                 Cmd.OfAsync.either (fun () -> moveEntity "item" itemId "box" state.MoveItemTargetBox) () StandaloneItemMoved (fun ex -> ErrorOccurred ex.Message)
 
-    | StandaloneItemMoved (Ok _) ->
-        let targetPage =
-            match state.CurrentPage with
-            | ItemDetail _ -> state.CurrentPage
-            | _ -> ItemsList
-        { state with Loading = false; MovingItemStandaloneId = None; MoveItemTargetBox = "" },
-        navigateCmd targetPage
+    | StandaloneItemMoved (Ok move) ->
+        let baseState : State =
+            { state with Loading = false; MovingItemStandaloneId = None; MoveItemTargetBox = "" }
+        let targetBox : BoxDto option =
+            move.ToId |> Option.bind (fun boxId -> state.BoxesForItemMove |> Array.tryFind (fun (b: BoxDto) -> b.Id = boxId))
+        match targetBox with
+        | Some box ->
+            let locationName : string option =
+                box.LocationCode
+                |> Option.bind (fun code ->
+                    Array.append state.Locations state.AvailableLocations
+                    |> Array.tryFind (fun (l: LocationDto) -> l.Code = code)
+                    |> Option.map (fun (l: LocationDto) -> l.Name))
+            let patchResult (r: SearchResultDto) : SearchResultDto =
+                if r.ItemId = move.EntityId then
+                    { r with BoxId = box.Id; BoxLabel = box.Label; LocationCode = box.LocationCode; LocationName = locationName }
+                else r
+            { baseState with
+                AllItems = baseState.AllItems |> Array.map patchResult
+                SearchResults = baseState.SearchResults |> Array.map patchResult
+                ItemDetail = baseState.ItemDetail |> Option.map patchResult },
+            Cmd.none
+        | None ->
+            // Target box not in the dialog's snapshot; fall back to a reload.
+            baseState, navigateCmd state.CurrentPage
 
     | StandaloneItemMoved (Error err) ->
         { state with Error = Some err; Loading = false; MovingItemStandaloneId = None }, Cmd.none
@@ -970,12 +1062,22 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
                 { state with Loading = true },
                 Cmd.OfAsync.either (fun () -> moveEntity "item" state.SelectedExistingItemId "box" detail.Box.Id) () ExistingItemAdded (fun ex -> ErrorOccurred ex.Message)
 
-    | ExistingItemAdded (Ok _) ->
+    | ExistingItemAdded (Ok move) ->
         match state.BoxDetail with
         | None -> { state with Loading = false; AddingExistingItem = false }, Cmd.none
         | Some detail ->
-            { state with Loading = false; AddingExistingItem = false; SelectedExistingItemId = ""; UnassignedItems = [||] },
-            navigateCmd (BoxDetail detail.Box.Id)
+            let baseState : State =
+                { state with Loading = false; AddingExistingItem = false; SelectedExistingItemId = ""; UnassignedItems = [||] }
+            match state.UnassignedItems |> Array.tryFind (fun (i: SearchResultDto) -> i.ItemId = move.EntityId) with
+            | Some entry ->
+                let item : ItemDto =
+                    { Id = entry.ItemId; BoxId = Some detail.Box.Id; Name = entry.ItemName; PhotoPath = entry.PhotoPath; AddedAt = entry.AddedAt }
+                let items : ItemDto array =
+                    Array.append detail.Items [| item |] |> Array.sortBy (fun (i: ItemDto) -> i.AddedAt)
+                { baseState with BoxDetail = Some { detail with Items = items } }, Cmd.none
+            | None ->
+                // Moved item not in the dialog's snapshot; fall back to a reload.
+                baseState, navigateCmd (BoxDetail detail.Box.Id)
 
     | ExistingItemAdded (Error err) ->
         { state with Error = Some err; Loading = false; AddingExistingItem = false }, Cmd.none
@@ -987,12 +1089,11 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Loading = true },
         Cmd.OfAsync.either (fun () -> unassignEntity "item" itemId) () ItemUnassigned (fun ex -> ErrorOccurred ex.Message)
 
-    | ItemUnassigned (Ok _) ->
-        match state.BoxDetail with
-        | None -> { state with Loading = false }, Cmd.none
-        | Some detail ->
-            { state with Loading = false },
-            navigateCmd (BoxDetail detail.Box.Id)
+    | ItemUnassigned (Ok move) ->
+        { state with
+            Loading = false
+            BoxDetail = state.BoxDetail |> Option.map (fun d -> { d with Items = d.Items |> Array.filter (fun (i: ItemDto) -> i.Id <> move.EntityId) }) },
+        Cmd.none
 
     | ItemUnassigned (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -1001,13 +1102,17 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Loading = true },
         Cmd.OfAsync.either (fun () -> unassignEntity "item" itemId) () StandaloneItemUnassigned (fun ex -> ErrorOccurred ex.Message)
 
-    | StandaloneItemUnassigned (Ok _) ->
-        let targetPage =
-            match state.CurrentPage with
-            | ItemDetail _ -> state.CurrentPage
-            | _ -> ItemsList
-        { state with Loading = false },
-        navigateCmd targetPage
+    | StandaloneItemUnassigned (Ok move) ->
+        let patchResult (r: SearchResultDto) : SearchResultDto =
+            if r.ItemId = move.EntityId then
+                { r with BoxId = ""; BoxLabel = None; LocationCode = None; LocationName = None }
+            else r
+        { state with
+            Loading = false
+            AllItems = state.AllItems |> Array.map patchResult
+            SearchResults = state.SearchResults |> Array.map patchResult
+            ItemDetail = state.ItemDetail |> Option.map patchResult },
+        Cmd.none
 
     | StandaloneItemUnassigned (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -1035,12 +1140,21 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
                 { state with Loading = true },
                 Cmd.OfAsync.either (fun () -> moveEntity "box" state.SelectedBoxForLocationMove "location" detail.Location.Code) () BoxMovedToLocation (fun ex -> ErrorOccurred ex.Message)
 
-    | BoxMovedToLocation (Ok _) ->
+    | BoxMovedToLocation (Ok move) ->
         match state.LocationDetail with
         | None -> { state with Loading = false; AddingBoxToLocation = false }, Cmd.none
         | Some detail ->
-            { state with Loading = false; AddingBoxToLocation = false; SelectedBoxForLocationMove = ""; BoxesForLocationMove = [||] },
-            navigateCmd (LocationDetail detail.Location.Code)
+            let baseState : State =
+                { state with Loading = false; AddingBoxToLocation = false; SelectedBoxForLocationMove = ""; BoxesForLocationMove = [||] }
+            match state.BoxesForLocationMove |> Array.tryFind (fun (b: BoxDto) -> b.Id = move.EntityId) with
+            | Some movedBox ->
+                let boxes : BoxDto array =
+                    Array.append detail.Boxes [| { movedBox with LocationCode = Some detail.Location.Code } |]
+                    |> Array.sortBy (fun (b: BoxDto) -> b.Id)
+                { baseState with LocationDetail = Some { detail with Boxes = boxes } }, Cmd.none
+            | None ->
+                // Moved box not in the dialog's snapshot; fall back to a reload.
+                baseState, navigateCmd (LocationDetail detail.Location.Code)
 
     | BoxMovedToLocation (Error err) ->
         { state with Error = Some err; Loading = false; AddingBoxToLocation = false }, Cmd.none
@@ -1052,12 +1166,11 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         { state with Loading = true },
         Cmd.OfAsync.either (fun () -> unassignEntity "box" boxId) () BoxUnassignedFromLocation (fun ex -> ErrorOccurred ex.Message)
 
-    | BoxUnassignedFromLocation (Ok _) ->
-        match state.LocationDetail with
-        | None -> { state with Loading = false }, Cmd.none
-        | Some detail ->
-            { state with Loading = false },
-            navigateCmd (LocationDetail detail.Location.Code)
+    | BoxUnassignedFromLocation (Ok move) ->
+        { state with
+            Loading = false
+            LocationDetail = state.LocationDetail |> Option.map (fun d -> { d with Boxes = d.Boxes |> Array.filter (fun (b: BoxDto) -> b.Id <> move.EntityId) }) },
+        Cmd.none
 
     | BoxUnassignedFromLocation (Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
@@ -1111,13 +1224,13 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | DeleteBoxFromList boxId ->
         { state with Loading = true },
-        Cmd.OfAsync.either (fun () -> deleteBox boxId) () BoxDeletedFromList (fun ex -> ErrorOccurred ex.Message)
+        Cmd.OfAsync.either (fun () -> deleteBox boxId) () (fun (res: Result<unit, string>) -> BoxDeletedFromList(boxId, res)) (fun ex -> ErrorOccurred ex.Message)
 
-    | BoxDeletedFromList (Ok _) ->
-        { state with Loading = false },
-        Cmd.OfAsync.either (fun () -> getBoxes (if System.String.IsNullOrEmpty state.BoxFilter then None else Some state.BoxFilter)) () BoxesLoaded (fun ex -> ErrorOccurred ex.Message)
+    | BoxDeletedFromList (boxId, Ok _) ->
+        { state with Loading = false; Boxes = state.Boxes |> Array.filter (fun (b: BoxDto) -> b.Id <> boxId) },
+        Cmd.none
 
-    | BoxDeletedFromList (Error err) ->
+    | BoxDeletedFromList (_, Error err) ->
         { state with Error = Some err; Loading = false }, Cmd.none
 
     | StartEditLocationInList (code, currentName) ->
@@ -1168,8 +1281,8 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
     | PhotoUploadStarted (Ok job) ->
         match job.Status with
         | "completed" ->
-            { state with UploadingPhoto = false; PhotoProcessing = false; PhotoJobId = None },
-            navigateCmd state.CurrentPage
+            applyCompletedPhoto job { state with UploadingPhoto = false; PhotoProcessing = false; PhotoJobId = None },
+            Cmd.none
         | "failed" ->
             { state with UploadingPhoto = false; PhotoProcessing = false; PhotoJobId = None; Error = Some(job.Error |> Option.defaultValue "Image processing failed") },
             Cmd.none
@@ -1194,8 +1307,8 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         | Some current when current = job.Id ->
             match job.Status with
             | "completed" ->
-                { state with PhotoProcessing = false; PhotoJobId = None },
-                navigateCmd state.CurrentPage
+                applyCompletedPhoto job { state with PhotoProcessing = false; PhotoJobId = None },
+                Cmd.none
             | "failed" ->
                 { state with PhotoProcessing = false; PhotoJobId = None; Error = Some(job.Error |> Option.defaultValue "Image processing failed") },
                 Cmd.none

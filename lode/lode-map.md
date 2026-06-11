@@ -23,7 +23,7 @@
 - [ui/mobile-responsive-design.md](ui/mobile-responsive-design.md) — responsive design improvements, mobile-first layout, touch-friendly UX
 
 ## Plans
-- (none yet)
+- [plans/performance-todos.md](plans/performance-todos.md) — remaining server-side performance work (item detail over-fetch, write-path transactions, image pipeline)
 
 ## Tmp
 - session scraps (git-ignored)

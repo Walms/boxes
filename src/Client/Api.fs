@@ -71,10 +71,6 @@ type BoxDetailDto = {
     Items: ItemDto array
 }
 
-type ItemDetailDto = {
-    Item: ItemDto
-}
-
 type NoteDto = {
     Id: string
     EntityType: string
@@ -263,8 +259,8 @@ let deleteBox (id: string) : Async<Result<unit, string>> =
 let createItem (name: string) (boxId: string) : Async<Result<ItemDto, string>> =
     send<ItemDto> "POST" "/api/items" (Some {| Name = name; BoxId = boxId |})
 
-let getItem (id: string) : Async<Result<ItemDto, string>> =
-    get<ItemDto> $"/api/items/%s{id}"
+let getItem (id: string) : Async<Result<SearchResultDto, string>> =
+    get<SearchResultDto> $"/api/items/%s{id}"
 
 let deleteItemStandalone (itemId: string) : Async<Result<unit, string>> =
     deleteReq $"/api/items/%s{itemId}"

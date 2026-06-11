@@ -137,7 +137,7 @@ type Msg =
     | OpenScanner
     | CloseScanner
     | QrScanned of string
-    | ItemDetailLoaded of Result<SearchResultDto array, string>
+    | ItemDetailLoaded of Result<SearchResultDto, string>
     | NotesLoaded of Result<NoteDto array, string>
     | ShowAddNoteForm
     | NewNoteContentChanged of string
@@ -303,7 +303,7 @@ let private loadPage (page: Page) : Cmd<Msg> =
         ]
     | ItemDetail id ->
         Cmd.batch [
-            Cmd.OfAsync.either listItems () ItemDetailLoaded (fun ex -> ErrorOccurred ex.Message)
+            Cmd.OfAsync.either getItem id ItemDetailLoaded (fun ex -> ErrorOccurred ex.Message)
             Cmd.OfAsync.either getLocations () AvailableLocationsLoaded (fun ex -> ErrorOccurred ex.Message)
             Cmd.OfAsync.either (fun () -> getNotes "item" id) () NotesLoaded (fun ex -> ErrorOccurred ex.Message)
         ]
@@ -1352,11 +1352,10 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
             else LocationDetail text
         { state with ScannerOpen = false }, navigateCmd page
 
-    | ItemDetailLoaded (Ok items) ->
+    | ItemDetailLoaded (Ok item) ->
         match state.CurrentPage with
-        | ItemDetail itemId ->
-            let item = items |> Array.tryFind (fun i -> i.ItemId = itemId)
-            { state with ItemDetail = item; Loading = false }, Cmd.none
+        | ItemDetail itemId when itemId = item.ItemId ->
+            { state with ItemDetail = Some item; Loading = false }, Cmd.none
         | _ -> { state with Loading = false }, Cmd.none
 
     | ItemDetailLoaded (Error err) ->

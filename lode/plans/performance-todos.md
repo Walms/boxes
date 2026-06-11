@@ -1,19 +1,11 @@
 # Performance TODOs
 
 Remaining items from the June 2026 performance review. Already done: Caddy
-bcrypt cost lowered 14 → 10 (Caddy 2.11.3 also caches verifications), and the
+bcrypt cost lowered 14 → 10 (Caddy 2.11.3 also caches verifications), the
 client no longer refetches whole pages after mutations (in-place state updates
-in `src/Client/State.fs`).
-
-## TODO 1 — Item detail page fetches every item
-
-`loadPage` for `ItemDetail` in `src/Client/State.fs` calls `listItems ()`
-(full `/api/items` payload, up to 100 rows with placement joins) and then
-`Array.tryFind`s the one item client-side (`ItemDetailLoaded`).
-
-Fix: call `GET /api/items/{id}` (already exists — `Api.getItem`), and extend
-its response if the detail page needs box/location names that only the search
-DTO carries today.
+in `src/Client/State.fs`), and the item detail page now fetches a single item
+via `GET /api/items/{id}` (which returns the search-result shape with
+box/location names) instead of listing all items.
 
 ## TODO 2 — Multi-statement write paths run without a transaction
 

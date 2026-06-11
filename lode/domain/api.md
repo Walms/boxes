@@ -20,7 +20,7 @@ Domain types use private DU constructors (not JSON-serializable). Handlers map d
 
 Request DTOs: `CreateLocationRequest`, `UpdateLocationRequest`, `CreateBoxRequest`, `UpdateBoxRequest`, `CreateItemRequest`, `UpdateItemRequest`, `MoveRequest`
 
-Composite responses: `LocationDetailResponse` (location + boxes), `BoxDetailResponse` (box + items), `ItemDetailResponse` (item)
+Composite responses: `LocationDetailResponse` (location + boxes), `BoxDetailResponse` (box + items)
 
 ## Validation
 
@@ -50,7 +50,7 @@ Smart constructors validate all input at the API boundary. Use fully qualified p
 | PUT | `/api/boxes/{id}/items/{itemId}` | `updateItem` | validates name |
 | DELETE | `/api/boxes/{id}/items/{itemId}` | `deleteItem` | deletes item + its moves, removes photo file |
 | POST | `/api/items` | `createItem` | standalone item (optional `boxId` in JSON body) |
-| GET | `/api/items/{id}` | `getItem` | item detail with current placement |
+| GET | `/api/items/{id}` | `getItem` | returns `SearchResultResponse` (item + box label + location code/name) |
 | PUT | `/api/items/{id}` | `updateItemStandalone` | validates name |
 | POST | `/api/items/{id}/photo` | `updateItemPhoto` | multipart: file `photo`; replaces existing photo |
 | DELETE | `/api/items/{id}` | `deleteItemStandalone` | deletes item + its moves |

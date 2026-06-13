@@ -3,6 +3,10 @@ module BoxTracker.Client.State
 open Elmish
 open BoxTracker.Client.Api
 
+type BoxSortOrder = BoxNumber | BoxLabel | BoxDateAdded
+type LocationSortOrder = LocationName | LocationCode | LocationDateAdded
+type ItemSortOrder = ItemName | ItemDateAdded | ItemBox
+
 type Page =
     | LocationsList
     | LocationDetail of string
@@ -151,6 +155,9 @@ type Msg =
     | DeleteNote of string
     | NoteDeleted of Result<unit, string>
     | CancelAddNote
+    | BoxSortOrderChanged of BoxSortOrder
+    | LocationSortOrderChanged of LocationSortOrder
+    | ItemSortOrderChanged of ItemSortOrder
 
 type State = {
     CurrentPage: Page
@@ -226,6 +233,9 @@ type State = {
     EditingNoteId: string option
     EditNoteContent: string
     DeletingNoteId: string option
+    BoxSortOrder: BoxSortOrder
+    LocationSortOrder: LocationSortOrder
+    ItemSortOrder: ItemSortOrder
 }
 
 [<Fable.Core.Emit("window.location.hash")>]
@@ -499,6 +509,9 @@ let init () : State * Cmd<Msg> =
         EditingNoteId = None
         EditNoteContent = ""
         DeletingNoteId = None
+        BoxSortOrder = BoxNumber
+        LocationSortOrder = LocationName
+        ItemSortOrder = ItemDateAdded
     }
     let cmds : Cmd<Msg> = Cmd.batch [
         Cmd.ofEffect hashChangeSub
@@ -1434,3 +1447,12 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
 
     | NoteDeleted (Error err) ->
         { state with Error = Some err; Loading = false; DeletingNoteId = None }, Cmd.none
+
+    | BoxSortOrderChanged order ->
+        { state with BoxSortOrder = order }, Cmd.none
+
+    | LocationSortOrderChanged order ->
+        { state with LocationSortOrder = order }, Cmd.none
+
+    | ItemSortOrderChanged order ->
+        { state with ItemSortOrder = order }, Cmd.none

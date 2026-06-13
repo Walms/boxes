@@ -228,7 +228,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         prop.className "form-control"
                         prop.children [
                             Html.select [
-                                prop.className "select select-bordered text-base w-full sm:w-auto ml-0 sm:ml-2"
+                                prop.className "select select-bordered text-base w-full sm:w-auto"
                                 prop.value state.BoxFilter
                                 prop.onChange (fun (s: string) -> dispatch (BoxFilterChanged s))
                                 prop.children [
@@ -242,13 +242,43 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                             ]
                         ]
                     ]
+                    Html.div [
+                        prop.className "form-control"
+                        prop.children [
+                            Html.select [
+                                prop.className "select select-bordered text-base w-full sm:w-auto"
+                                prop.value (
+                                    match state.BoxSortOrder with
+                                    | BoxNumber -> "number"
+                                    | BoxLabel -> "label"
+                                    | BoxDateAdded -> "date")
+                                prop.onChange (fun (s: string) ->
+                                    let order =
+                                        match s with
+                                        | "label" -> BoxLabel
+                                        | "date" -> BoxDateAdded
+                                        | _ -> BoxNumber
+                                    dispatch (BoxSortOrderChanged order))
+                                prop.children [
+                                    Html.option [ prop.value "number"; prop.text "Sort: Box number" ]
+                                    Html.option [ prop.value "label"; prop.text "Sort: Label (A-Z)" ]
+                                    Html.option [ prop.value "date"; prop.text "Sort: Date added" ]
+                                ]
+                            ]
+                        ]
+                    ]
                 ]
             ]
+            let sortedBoxes =
+                match state.BoxSortOrder with
+                | BoxNumber -> state.Boxes |> Array.sortBy (fun b -> b.Id)
+                | BoxLabel -> state.Boxes |> Array.sortBy (fun b -> (b.Label |> Option.defaultValue b.Id).ToLowerInvariant())
+                | BoxDateAdded -> state.Boxes |> Array.sortBy (fun b -> b.CreatedAt)
             let filteredBoxes =
-                if System.String.IsNullOrEmpty state.BoxSearch then state.Boxes
+                if System.String.IsNullOrEmpty state.BoxSearch then sortedBoxes
                 else
                     let q = state.BoxSearch.ToLowerInvariant()
-                    state.Boxes |> Array.filter (fun b ->
+                    sortedBoxes |> Array.filter (fun b ->
                         (b.Label |> Option.defaultValue b.Id).ToLowerInvariant().Contains(q))
             Html.div [
                 prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"

@@ -87,21 +87,56 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
             Html.div [
-                prop.className "form-control mb-4"
+                prop.className "flex flex-col sm:flex-row gap-2 mb-4"
                 prop.children [
-                    Html.input [
-                        prop.className "input input-bordered w-full focus:input-primary text-base"
-                        prop.placeholder "Filter locations..."
-                        prop.value state.LocationSearch
-                        prop.onChange (fun (s: string) -> dispatch (LocationSearchChanged s))
+                    Html.div [
+                        prop.className "form-control flex-1"
+                        prop.children [
+                            Html.input [
+                                prop.className "input input-bordered w-full focus:input-primary text-base"
+                                prop.placeholder "Filter locations..."
+                                prop.value state.LocationSearch
+                                prop.onChange (fun (s: string) -> dispatch (LocationSearchChanged s))
+                            ]
+                        ]
+                    ]
+                    Html.div [
+                        prop.className "form-control"
+                        prop.children [
+                            Html.select [
+                                prop.className "select select-bordered text-base w-full sm:w-auto"
+                                prop.value (
+                                    match state.LocationSortOrder with
+                                    | LocationName -> "name"
+                                    | LocationCode -> "code"
+                                    | LocationDateAdded -> "date")
+                                prop.onChange (fun (s: string) ->
+                                    let order =
+                                        match s with
+                                        | "code" -> LocationCode
+                                        | "date" -> LocationDateAdded
+                                        | _ -> LocationName
+                                    dispatch (LocationSortOrderChanged order))
+                                prop.children [
+                                    Html.option [ prop.value "name"; prop.text "Sort: Name (A-Z)" ]
+                                    Html.option [ prop.value "code"; prop.text "Sort: Code (A-Z)" ]
+                                    Html.option [ prop.value "date"; prop.text "Sort: Date added" ]
+                                ]
+                            ]
+                        ]
                     ]
                 ]
             ]
+            let sortedLocations =
+                match state.LocationSortOrder with
+                | LocationName -> state.Locations |> Array.sortBy (fun l -> l.Name.ToLowerInvariant())
+                | LocationCode -> state.Locations |> Array.sortBy (fun l -> l.Code.ToLowerInvariant())
+                | LocationDateAdded -> state.Locations |> Array.sortBy (fun l -> l.CreatedAt)
             let filteredLocations =
-                if System.String.IsNullOrEmpty state.LocationSearch then state.Locations
+                if System.String.IsNullOrEmpty state.LocationSearch then sortedLocations
                 else
                     let q = state.LocationSearch.ToLowerInvariant()
-                    state.Locations |> Array.filter (fun l ->
+                    sortedLocations |> Array.filter (fun l ->
                         l.Name.ToLowerInvariant().Contains(q) || l.Code.ToLowerInvariant().Contains(q))
             Html.div [
                 prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"

@@ -346,27 +346,62 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
             Html.div [
-                prop.className "form-control mb-4"
+                prop.className "flex flex-col sm:flex-row gap-2 mb-4"
                 prop.children [
                     Html.div [
-                        prop.className "relative"
+                        prop.className "form-control flex-1"
                         prop.children [
-                            Html.input [
-                                prop.className "input input-bordered w-full focus:input-primary text-base"
-                                prop.placeholder "Search items..."
-                                prop.value state.SearchQuery
-                                prop.onChange (fun (s: string) -> dispatch (SearchQueryChanged s))
-                            ]
-                            if state.SearchLoading then
-                                Html.span [
-                                    prop.className "loading loading-spinner loading-sm absolute right-3 top-1/2 -translate-y-1/2 opacity-70"
+                            Html.div [
+                                prop.className "relative"
+                                prop.children [
+                                    Html.input [
+                                        prop.className "input input-bordered w-full focus:input-primary text-base"
+                                        prop.placeholder "Search items..."
+                                        prop.value state.SearchQuery
+                                        prop.onChange (fun (s: string) -> dispatch (SearchQueryChanged s))
+                                    ]
+                                    if state.SearchLoading then
+                                        Html.span [
+                                            prop.className "loading loading-spinner loading-sm absolute right-3 top-1/2 -translate-y-1/2 opacity-70"
+                                        ]
                                 ]
+                            ]
                         ]
                     ]
+                    if System.String.IsNullOrEmpty state.SearchQuery then
+                        Html.div [
+                            prop.className "form-control"
+                            prop.children [
+                                Html.select [
+                                    prop.className "select select-bordered text-base w-full sm:w-auto"
+                                    prop.value (
+                                        match state.ItemSortOrder with
+                                        | ItemName -> "name"
+                                        | ItemDateAdded -> "date"
+                                        | ItemBox -> "box")
+                                    prop.onChange (fun (s: string) ->
+                                        let order =
+                                            match s with
+                                            | "name" -> ItemName
+                                            | "box" -> ItemBox
+                                            | _ -> ItemDateAdded
+                                        dispatch (ItemSortOrderChanged order))
+                                    prop.children [
+                                        Html.option [ prop.value "name"; prop.text "Sort: Name (A-Z)" ]
+                                        Html.option [ prop.value "date"; prop.text "Sort: Date added" ]
+                                        Html.option [ prop.value "box"; prop.text "Sort: Box" ]
+                                    ]
+                                ]
+                            ]
+                        ]
                 ]
             ]
             let itemsToShow =
-                if System.String.IsNullOrEmpty state.SearchQuery then state.AllItems
+                if System.String.IsNullOrEmpty state.SearchQuery then
+                    match state.ItemSortOrder with
+                    | ItemName -> state.AllItems |> Array.sortBy (fun i -> i.ItemName.ToLowerInvariant())
+                    | ItemDateAdded -> state.AllItems |> Array.sortByDescending (fun i -> i.AddedAt)
+                    | ItemBox -> state.AllItems |> Array.sortBy (fun i -> (i.BoxLabel |> Option.defaultValue i.BoxId).ToLowerInvariant())
                 else state.SearchResults
             let busy = state.Loading || state.SearchLoading
             Html.div [

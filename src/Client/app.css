@@ -131,7 +131,8 @@
   }
 
   /* ---- CRT interlacing / scanline overlay -------------------------------- */
-  /* Subtle horizontal scanlines for that interlaced-tube look (kept). */
+  /* Whisper-faint horizontal scanlines: a hairline every 4px at very low
+     opacity so the interlaced-tube character reads as texture, not stripes. */
   body::before {
     content: "";
     position: fixed;
@@ -141,9 +142,9 @@
     background: repeating-linear-gradient(
       to bottom,
       transparent 0px,
-      transparent 2px,
-      rgba(42, 47, 62, 0.05) 2px,
-      rgba(42, 47, 62, 0.05) 3px
+      transparent 3px,
+      rgba(42, 47, 62, 0.025) 3px,
+      rgba(42, 47, 62, 0.025) 4px
     );
   }
 
@@ -156,9 +157,54 @@
     pointer-events: none;
     background: radial-gradient(
       ellipse at center,
-      transparent 65%,
-      rgba(42, 47, 62, 0.07) 100%
+      transparent 68%,
+      rgba(42, 47, 62, 0.05) 100%
     );
+  }
+
+  /* Brand-coloured text selection instead of the browser default blue. */
+  ::selection {
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+  }
+
+  /* Keyboard focus: a clear accent ring for users navigating by keyboard,
+     without showing it on mouse / touch interactions (:focus-visible). */
+  :where(a, button, .btn, [tabindex], input, select, textarea):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Smooth in-page scrolling for anchor / programmatic navigation. */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Accessibility: honour the user's system preferences. Reduced-motion
+     calms the button lift and transitions; high-contrast drops the CRT
+     scanline + vignette overlays entirely so nothing dims the content. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    .btn,
+    .card.cursor-pointer,
+    .transition-colors,
+    .transition-opacity {
+      transition: none !important;
+    }
+    .btn:hover,
+    .btn:active,
+    .card.cursor-pointer:active {
+      transform: none !important;
+    }
+  }
+
+  @media (prefers-contrast: more) {
+    body::before,
+    body::after {
+      display: none;
+    }
   }
 }
 

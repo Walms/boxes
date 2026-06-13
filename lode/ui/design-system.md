@@ -6,7 +6,9 @@ A unified design system ensuring consistent spacing, typography, button sizing, 
 
 ### Retro treatment (in `app.css`)
 
-- **CRT overlay**: fixed `body::before` scanlines + `body::after` tube vignette, layered above content (`z-index` 9998–9999) but `pointer-events: none`. The full-screen image viewer sits above them (`z-index: 10000`).
+- **CRT overlay**: fixed `body::before` scanlines + `body::after` tube vignette, layered above content (`z-index` 9998–9999) but `pointer-events: none`. The full-screen image viewer sits above them (`z-index: 10000`). Scanlines are deliberately whisper-faint — a hairline every 4px at `rgba(42,47,62,0.025)` so they read as texture, not stripes; the vignette fades in from 68% at `0.05`.
+- **Accessibility / preference media queries**: `prefers-reduced-motion: reduce` disables `scroll-behavior: smooth` and removes button-lift transforms + colour/opacity transitions; `prefers-contrast: more` hides both CRT overlays so nothing dims content.
+- **Focus & selection**: keyboard focus shows a 2px faded-gold (`--color-accent`) outline via `:focus-visible` on links/buttons/inputs (mouse/touch unaffected); `::selection` uses brick-red primary instead of browser-default blue.
 - **Borders**: panels (`.card`, `.modal-box`, dropdowns, alerts), buttons, and inputs carry a 2px ink outline (`--nin-ink: #2a2f3e`).
 - **Corners**: gently rounded — `--radius-field`/`--radius-selector` `0.375rem`, `--radius-box` `0.5rem` (softened from the earlier hard `0`).
 - **Shadows**: soft, modern (`--nin-shadow: 0 2px 6px rgba(42,47,62,0.16)`, plus `-sm`/`-lg` variants). Buttons lift gently on hover and settle on active; transitions are smooth `ease` (~120–150ms), not stepped.

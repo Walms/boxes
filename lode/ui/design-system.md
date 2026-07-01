@@ -2,18 +2,19 @@
 
 ## Overview
 
-A unified design system ensuring consistent spacing, typography, button sizing, and layout across the BoxTracker UI. Built on Tailwind CSS and DaisyUI with a **modern-retro SNES** aesthetic — a muted 16-bit "application chrome" palette (modelled on SNES non-game software like Mario Paint / BS-X) softened with a readable retro font, gentle rounded corners, soft shadows, and a subtle CRT scanline/vignette overlay. The theme is defined as the DaisyUI theme `nintendo` in `src/Client/app.css` and applied via `data-theme="nintendo"` on `<html>`.
+A unified design system ensuring consistent spacing, typography, button sizing, and layout across the BoxTracker UI. Built on Tailwind CSS and DaisyUI with a **minimal, professional** aesthetic — a clean neutral palette (soft-grey page, white panels, hairline borders), a legible UI sans-serif, modest rounded corners, and soft elevation shadows. The design is **function-first**: buttons read unmistakably as buttons, information density is kept high, and colour is used sparingly to signal meaning rather than for decoration. The theme is defined as the DaisyUI theme `professional` in `src/Client/app.css` and applied via `data-theme="professional"` on `<html>`.
 
-### Retro treatment (in `app.css`)
+> The previous **modern-retro SNES** look (`nintendo` theme — VT323 font, CRT scanline/vignette overlay, 2px ink borders, muted 16-bit palette) is preserved on the `nintendo-look` branch and can be restored from there.
 
-- **CRT overlay**: fixed `body::before` scanlines + `body::after` tube vignette, layered above content (`z-index` 9998–9999) but `pointer-events: none`. The full-screen image viewer sits above them (`z-index: 10000`). Scanlines are deliberately whisper-faint — a hairline every 4px at `rgba(42,47,62,0.025)` so they read as texture, not stripes; the vignette fades in from 68% at `0.05`.
-- **Accessibility / preference media queries**: `prefers-reduced-motion: reduce` disables `scroll-behavior: smooth` and removes button-lift transforms + colour/opacity transitions; `prefers-contrast: more` hides both CRT overlays so nothing dims content.
-- **Focus & selection**: keyboard focus shows a 2px faded-gold (`--color-accent`) outline via `:focus-visible` on links/buttons/inputs (mouse/touch unaffected); `::selection` uses brick-red primary instead of browser-default blue.
-- **Borders**: panels (`.card`, `.modal-box`, dropdowns, alerts), buttons, and inputs carry a 2px ink outline (`--nin-ink: #2a2f3e`).
-- **Corners**: gently rounded — `--radius-field`/`--radius-selector` `0.375rem`, `--radius-box` `0.5rem` (softened from the earlier hard `0`).
-- **Shadows**: soft, modern (`--nin-shadow: 0 2px 6px rgba(42,47,62,0.16)`, plus `-sm`/`-lg` variants). Buttons lift gently on hover and settle on active; transitions are smooth `ease` (~120–150ms), not stepped.
-- **Navbar**: bottom ink border capped by a thin brick-red (`--color-primary`) accent strip.
-- **Entity colour-coding**: list rows get a 5px coloured left-border + faint tint — locations indigo `#7a74b5`, boxes sage `#639b82`, items brick `#c05850` (`.entity-location` / `.entity-box` / `.entity-item`).
+### Visual treatment (in `app.css`)
+
+- **Elevation, not chrome**: white panels (`--color-base-200`) sit on a soft-grey page (`--color-base-100: #f6f7f9`) and lift with a 1px hairline border (`--app-border: #e4e7ec`) plus a soft shadow (`--app-shadow`, with `-sm`/`-lg` variants). No CRT overlay, no heavy outlines.
+- **Buttons (function-first)**: solid variants carry a subtle shadow so they read as raised, tappable controls (deeper on `:hover`); every button gets a small press-in on `:active`. Ghost/link buttons stay flat until interacted with. Transitions are smooth `ease` (~80–150ms).
+- **Accessibility / preference media queries**: `prefers-reduced-motion: reduce` disables `scroll-behavior: smooth` and removes the button press transforms + colour/opacity transitions.
+- **Focus & selection**: keyboard focus shows a 2px primary (`--color-primary`) outline via `:focus-visible` on links/buttons/inputs (mouse/touch unaffected); inputs also get a 3px primary focus ring. `::selection` uses the primary blue.
+- **Corners**: modest — `--radius-field`/`--radius-selector` `0.375rem`, `--radius-box` `0.5rem`.
+- **Navbar**: white bar separated from content by a hairline border and a soft shadow.
+- **Entity colour-coding**: list rows get a 3px coloured left-border + whisper-faint tint in three distinct hues — locations indigo `#6366f1`, boxes emerald `#059669`, items amber `#d97706` (`.entity-location` / `.entity-box` / `.entity-item`).
 
 ## Spacing Scale
 
@@ -36,23 +37,22 @@ All spacing uses Tailwind's default spacing scale, grouped by semantic purpose:
 ## Typography
 
 ### Font Family
-- All text: `VT323` (a readable retro terminal/pixel font), falling back to `ui-monospace` and other monospace families
-- Loaded lazily from Google Fonts in `src/Client/index.html` (`media="print"` + `onload` swap, with a `<noscript>` fallback)
-- No serif or sans-serif fonts
-- VT323 renders compact, so the type scale (below) runs a touch larger than a default sans scale
+- All text: `Inter` (a clean, highly legible UI sans-serif), falling back to `system-ui`/`-apple-system` and other native sans families
+- Loaded lazily from Google Fonts in `src/Client/index.html` (`media="print"` + `onload` swap, with a `<noscript>` fallback), weights 400/500/600/700
+- No serif or monospace fonts
 
 ### Type scale remap
 
-Every Tailwind text utility (`text-xs` … `text-3xl`) is remapped in the `@theme` block of `app.css` onto a single VT323-tuned scale, so the many size classes scattered through the UI resolve consistently:
+Every Tailwind text utility (`text-xs` … `text-3xl`) is remapped in the `@theme` block of `app.css` onto a single scale — the standard Tailwind ramp, tuned for information density so a lot fits on screen while staying readable:
 
 | Utility | Size |
 |---------|------|
-| `text-xs` / `text-sm` | 0.85 / 0.95rem |
-| `text-base` | 1.05rem |
-| `text-lg` / `text-xl` | 1.3 / 1.45rem |
-| `text-2xl` / `text-3xl` | 1.85 / 2.2rem |
+| `text-xs` / `text-sm` | 0.75 / 0.875rem |
+| `text-base` | 1rem |
+| `text-lg` / `text-xl` | 1.125 / 1.25rem |
+| `text-2xl` / `text-3xl` | 1.5 / 1.875rem |
 
-Headings reuse this scale (`h1`→`text-2xl`, `h2`→`text-lg`, `h3`→`text-base`) with no bespoke sizes and no pixel text-shadow.
+Headings reuse this scale (`h1`→`text-2xl`, `h2`→`text-lg`, `h3`→`text-base`) with no bespoke sizes, semibold with a hair of negative letter-spacing.
 
 ### Size Hierarchy
 
@@ -133,7 +133,7 @@ All `.card` elements have:
 ### Input Fields
 - Class: `input input-bordered`
 - Padding: Inherited from DaisyUI
-- Focus state: `focus:input-primary` (amber glow)
+- Focus state: `focus:input-primary` (blue focus ring)
 - Text size: Always `text-base` for mobile touch comfort
 - Full width: On mobile; `flex-1` in flex contexts
 
@@ -230,16 +230,16 @@ All empty state text:
 
 ## Color & Theme
 
-The `nintendo` theme uses a muted 16-bit slate palette (defined once in `app.css`):
+The `professional` theme uses a clean neutral palette with a single strong accent (defined once in `app.css`):
 
-- Base: slate-grey desktop `#b8c0d2` (`base-100`), light panels `#eceff6` (`base-200`), mid-grey borders `#ced5e2` (`base-300`), soft dark slate ink `#2a2f3e` (`base-content`)
-- Primary: dusty brick red `#c05850`
-- Secondary: muted sage / pipe green `#639b82`
-- Accent: faded gold `#d4b254`
-- Neutral: slate `#434860`
-- Status colours reuse the palette: `error`→brick, `success`→sage, `warning`→gold, `info`→`#6685b0`
+- Base: soft-grey page `#f6f7f9` (`base-100`), white panels `#ffffff` (`base-200`), hairline borders `#e4e7ec` (`base-300`), slate ink `#1a2233` (`base-content`)
+- Primary: professional blue `#2563eb` — reserved for the main action on a screen
+- Secondary: slate `#475569`
+- Accent: teal `#0d9488`
+- Neutral: dark slate `#1f2937`
+- Status colours: `error`→`#dc2626`, `success`→`#16a34a`, `warning`→`#d97706`, `info`→`#0284c7`
 - All colours consumed via DaisyUI semantic classes; never hardcode hex values in components
-- Never use `bg-white`, `text-black` — use `base-100`, `base-content` instead
+- Never use `bg-white`, `text-black` — use `base-200`, `base-content` instead
 
 **Rule**: Use only DaisyUI color semantics. No custom colors. No opacity overrides except for secondary text (`opacity-60`, `opacity-70`).
 

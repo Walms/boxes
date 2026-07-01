@@ -74,7 +74,7 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
 let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultDto) : ReactElement =
     let isEditing = state.EditingItemId = Some item.ItemId
     Html.div [
-        prop.className "card entity-item transition-colors cursor-pointer hover:shadow-md"
+        prop.className "card entity-item transition-colors cursor-pointer"
         prop.onClick (fun _ -> if not isEditing then dispatch (Navigate (ItemDetail item.ItemId)))
         prop.children [
             Html.div [
@@ -267,7 +267,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                 prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6"
                 prop.children [
                     Html.h1 [
-                        prop.className "text-2xl sm:text-3xl font-bold"
+                        prop.className "text-xl sm:text-2xl font-bold"
                         prop.text $"Items (%i{state.AllItems.Length})"
                     ]
                     Html.button [
@@ -279,7 +279,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
             if state.ShowCreateItemForm then
                 Html.div [
-                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
+                    prop.className "card bg-base-200 border border-base-300 mb-6"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4 sm:p-6"
@@ -454,7 +454,7 @@ let itemDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                 moveItemStandaloneDialog state dispatch
                 breadcrumb itemCrumbs dispatch
                 Html.div [
-                    prop.className "card entity-item shadow-sm mb-6"
+                    prop.className "card entity-item mb-6"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4 sm:p-6"
@@ -490,7 +490,7 @@ let itemDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                             ]
                                         else
                                             Html.h1 [
-                                                prop.className "text-2xl sm:text-3xl font-bold"
+                                                prop.className "text-xl sm:text-2xl font-bold"
                                                 prop.text item.ItemName
                                             ]
                                             Html.div [

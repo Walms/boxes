@@ -6,22 +6,23 @@
   default: true;
   color-scheme: light;
 
-  /* Clean, neutral application palette. The page sits on a soft off-white grey;
-     panels, cards and the navbar are white and lift off the page with a
-     hairline border plus a soft shadow. Ink is slate rather than pure black so
-     large blocks of text stay comfortable. */
-  --color-base-100: #f6f7f9;          /* page background — soft grey */
+  /* Clean, technical palette in the spirit of an engineering catalogue: a
+     near-white paper page, panels that sit flush on hairline rules rather than
+     floating on soft shadows, and near-black ink for crisp, high-contrast
+     data. Colour is used sparingly — structure comes from lines, type and
+     spacing, not fills. */
+  --color-base-100: #f4f5f6;          /* page background — cool paper grey */
   --color-base-200: #ffffff;          /* panels / cards / navbar — white */
-  --color-base-300: #e4e7ec;          /* hairline borders / dividers */
-  --color-base-content: #1a2233;      /* slate ink */
+  --color-base-300: #d9dde3;          /* hairline rules / dividers */
+  --color-base-content: #14181f;      /* near-black ink */
 
   /* Professional blue primary — the single strong accent, reserved for the
      main action on a screen so calls-to-action are unambiguous. */
-  --color-primary: #2563eb;
+  --color-primary: #1d4ed8;
   --color-primary-content: #ffffff;
 
   /* Slate secondary for lower-emphasis solid actions. */
-  --color-secondary: #475569;
+  --color-secondary: #334155;
   --color-secondary-content: #ffffff;
 
   /* Restrained teal accent. */
@@ -29,65 +30,74 @@
   --color-accent-content: #ffffff;
 
   /* Dark slate neutral. */
-  --color-neutral: #1f2937;
+  --color-neutral: #1a1f29;
   --color-neutral-content: #f8fafc;
 
   /* Status colours — conventional, high-legibility semantics. */
   --color-error: #dc2626;
   --color-error-content: #ffffff;
-  --color-success: #16a34a;
+  --color-success: #15803d;
   --color-success-content: #ffffff;
-  --color-warning: #d97706;
+  --color-warning: #b45309;
   --color-warning-content: #ffffff;
-  --color-info: #0284c7;
+  --color-info: #0369a1;
   --color-info-content: #ffffff;
 
-  /* Modest, consistent rounding — soft but not playful. */
-  --radius-selector: 0.375rem;
-  --radius-field: 0.375rem;
-  --radius-box: 0.5rem;
+  /* Near-sharp corners — boxy and technical, softened by a hair so touch
+     targets don't read as harsh. */
+  --radius-selector: 0.125rem;
+  --radius-field: 0.125rem;
+  --radius-box: 0.1875rem;
 }
 
 /* ---------------------------------------------------------------------------
-   Type scale.
+   Type scale + density.
 
-   Inter is the single typeface — a clean, highly legible UI sans-serif. The
-   scale below is the standard Tailwind ramp, tuned for information density:
-   compact enough to fit a lot on screen, with line-heights that keep it
-   readable. Every Tailwind text utility (text-xs … text-3xl) is remapped onto
-   these steps so the size classes scattered through the UI resolve to one
-   consistent scale.
+   Inter carries body and UI text; a monospace face carries the "data" —
+   codes, counts, identifiers and micro-labels — which is where the technical
+   catalogue character comes from. The scale is the standard Tailwind ramp,
+   tuned compact so a lot fits on screen while staying readable.
+
+   `--spacing` is dialled down from the 0.25rem default so every spacing
+   utility (p-*, gap-*, m-*, space-*) tightens proportionally across the whole
+   UI — an information-dense layout without touching every element by hand.
 --------------------------------------------------------------------------- */
 @theme {
+  --spacing: 0.22rem;
+
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Menlo",
+    "Consolas", monospace;
+
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.4;
-  --text-sm: 0.875rem;
+  --text-sm: 0.8125rem;
   --text-sm--line-height: 1.45;
-  --text-base: 1rem;
+  --text-base: 0.9375rem;
   --text-base--line-height: 1.5;
-  --text-lg: 1.125rem;
+  --text-lg: 1.0625rem;
   --text-lg--line-height: 1.4;
-  --text-xl: 1.25rem;
-  --text-xl--line-height: 1.35;
-  --text-2xl: 1.5rem;
-  --text-2xl--line-height: 1.3;
-  --text-3xl: 1.875rem;
-  --text-3xl--line-height: 1.25;
+  --text-xl: 1.1875rem;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 1.375rem;
+  --text-2xl--line-height: 1.25;
+  --text-3xl: 1.625rem;
+  --text-3xl--line-height: 1.2;
 }
 
 @layer base {
   :root {
-    /* Soft, modern elevation shadows for panels and raised controls. */
-    --app-border: #e4e7ec;
-    --app-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
-    --app-shadow: 0 1px 3px rgba(16, 24, 40, 0.09),
-      0 1px 2px rgba(16, 24, 40, 0.05);
-    --app-shadow-lg: 0 6px 16px rgba(16, 24, 40, 0.12);
+    /* Elevation is reserved for things that genuinely float above the page
+       (modals, dropdowns, the image viewer). Panels on the page use hairline
+       rules instead, so the surface stays flat and technical. */
+    --app-border: #d9dde3;
+    --app-shadow-sm: 0 1px 0 rgba(20, 24, 31, 0.04);
+    --app-shadow: 0 4px 12px rgba(20, 24, 31, 0.10);
+    --app-shadow-lg: 0 10px 28px rgba(20, 24, 31, 0.16);
   }
 
-  /* One typeface everywhere: Inter, a clean UI sans-serif, with a robust
-     system fallback so text renders sensibly before the webfont loads. Root
-     size stays 16px so the rem-based scale and spacing tokens are stable. */
+  /* Inter for prose and UI text, with a robust system fallback so text renders
+     sensibly before the webfont loads. Root size stays 16px so the rem-based
+     scale and spacing tokens are stable. */
   html {
     font-family: "Inter", ui-sans-serif, system-ui, -apple-system,
       "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji",
@@ -116,12 +126,14 @@
     /* Crisper text rendering for the sans-serif face. */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Lining, tabular figures everywhere so counts and codes line up. */
+    font-variant-numeric: tabular-nums;
   }
 
   /* Headings reuse the same scale — no bespoke sizes. Semibold with a hair of
      negative tracking reads as tidy and modern. */
   h1, h2, h3 {
-    line-height: 1.25;
+    line-height: 1.2;
     letter-spacing: -0.011em;
     font-weight: 600;
     color: var(--color-base-content);
@@ -168,22 +180,41 @@
 }
 
 @layer components {
+  /* ---- Eyebrow / micro-label ---------------------------------------------
+     Small uppercase, letter-spaced monospace label — the signature catalogue
+     device for section headers and field labels. Applied via the `eyebrow`
+     class on headings and labels in the markup. */
+  .eyebrow {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    font-size: var(--text-xs);
+    color: color-mix(in srgb, var(--color-base-content) 62%, transparent);
+  }
+
+  /* Codes, identifiers and counts read as data: monospace with tabular
+     figures. Badges are the primary place these show up. */
+  .badge {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    border-radius: var(--radius-selector);
+  }
+
   /* ---- Buttons: function-first, unmistakably clickable -------------------- */
-  /* Solid variants (primary / success / error / …) keep a subtle shadow so
-     they read as raised, tappable controls; a small press-in on :active gives
-     tactile feedback on both mouse and touch. */
+  /* Flat, boxy controls that read as raised only through their border and a
+     whisper of shadow; a small press-in on :active gives tactile feedback on
+     both mouse and touch. */
   .btn {
     font-weight: 600;
+    letter-spacing: 0.005em;
     box-shadow: var(--app-shadow-sm);
     transition: background-color 120ms ease, border-color 120ms ease,
       box-shadow 120ms ease, transform 80ms ease;
   }
-  .btn:hover {
-    box-shadow: var(--app-shadow);
-  }
   .btn:active {
     transform: translateY(0.5px);
-    box-shadow: var(--app-shadow-sm);
   }
 
   /* Ghost / link buttons stay flat until interacted with — no raised shadow —
@@ -196,25 +227,37 @@
     box-shadow: none;
   }
 
-  /* Panels: white cards on the grey page, hairline border + soft shadow. */
-  .card, .modal-box, .dropdown-content, .alert, .menu.dropdown-content {
+  /* Panels: white surfaces separated from the page by a hairline rule, flat —
+     no drop shadow — so the layout reads like a printed catalogue sheet. */
+  .card {
     border: 1px solid var(--app-border);
-    box-shadow: var(--app-shadow);
+    box-shadow: none;
   }
 
-  /* Navbar: white bar separated from content by a hairline and a soft shadow. */
+  /* Overlays genuinely float, so they keep a real shadow to lift off content. */
+  .modal-box, .dropdown-content, .menu.dropdown-content {
+    border: 1px solid var(--app-border);
+    box-shadow: var(--app-shadow-lg);
+  }
+  .alert {
+    border: 1px solid var(--app-border);
+    box-shadow: none;
+  }
+
+  /* Navbar: slim white bar ruled off from the content by a single hairline. */
   .navbar {
+    min-height: 3rem;
     border-bottom: 1px solid var(--app-border);
-    box-shadow: var(--app-shadow-sm);
+    box-shadow: none;
   }
 
   /* Respect the iOS notch / status bar and rounded-corner safe areas so the
      sticky navbar and page content are never clipped under the system UI. */
   @supports (padding: env(safe-area-inset-top)) {
     .navbar {
-      padding-top: max(0.5rem, env(safe-area-inset-top));
-      padding-left: max(1rem, env(safe-area-inset-left));
-      padding-right: max(1rem, env(safe-area-inset-right));
+      padding-top: max(0.375rem, env(safe-area-inset-top));
+      padding-left: max(0.75rem, env(safe-area-inset-left));
+      padding-right: max(0.75rem, env(safe-area-inset-right));
     }
     .app-main {
       padding-left: max(0px, env(safe-area-inset-left));
@@ -224,13 +267,14 @@
   }
 
   /* Touch feedback: hover states don't fire on touch devices, so give every
-     clickable card a gentle press-in on tap and a lift on hover for pointers. */
+     clickable card a gentle press-in on tap and a hairline-to-primary edge on
+     hover for pointers — a crisp cue rather than a soft float. */
   .card.cursor-pointer {
     transition: transform 120ms ease, box-shadow 150ms ease,
-      background-color 150ms ease;
+      border-color 150ms ease, background-color 150ms ease;
   }
   .card.cursor-pointer:hover {
-    box-shadow: var(--app-shadow-lg);
+    box-shadow: var(--app-shadow);
   }
   .card.cursor-pointer:active {
     transform: scale(0.99);
@@ -244,12 +288,18 @@
   .input:focus-within, .select:focus-within, .textarea:focus-within {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.16);
   }
 
   /* Loading spinner in the brand primary. */
   .loading {
     color: var(--color-primary);
+  }
+
+  /* Breadcrumbs read as a technical path: compact monospace. */
+  .breadcrumbs {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
   }
 
   /* Full-screen image viewer above everything else for max fidelity. */
@@ -261,25 +311,25 @@
   /* Thin coloured left-border in three distinct, professional hues so list
      rows are scannable by type at a glance, with a whisper-faint tint. */
   .entity-location {
-    border-left: 3px solid #6366f1 !important;  /* indigo */
-    background-color: #6366f10d !important;
+    border-left: 3px solid #4f46e5 !important;  /* indigo */
+    background-color: #4f46e50d !important;
   }
   .entity-location:hover {
-    background-color: #6366f11a !important;
+    background-color: #4f46e51a !important;
   }
   .entity-box {
-    border-left: 3px solid #059669 !important;  /* emerald */
-    background-color: #0596690d !important;
+    border-left: 3px solid #047857 !important;  /* emerald */
+    background-color: #0478570d !important;
   }
   .entity-box:hover {
-    background-color: #0596691a !important;
+    background-color: #0478571a !important;
   }
   .entity-item {
-    border-left: 3px solid #d97706 !important;  /* amber */
-    background-color: #d977060d !important;
+    border-left: 3px solid #b45309 !important;  /* amber */
+    background-color: #b453090d !important;
   }
   .entity-item:hover {
-    background-color: #d977061a !important;
+    background-color: #b453091a !important;
   }
 
   /* Smooth, modern transitions */

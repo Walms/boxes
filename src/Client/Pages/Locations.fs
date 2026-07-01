@@ -16,7 +16,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                 prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6"
                 prop.children [
                     Html.h1 [
-                        prop.className "text-2xl sm:text-3xl font-bold"
+                        prop.className "text-xl sm:text-2xl font-bold"
                         prop.text "Locations"
                     ]
                     Html.button [
@@ -28,7 +28,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
             if state.ShowCreateLocationForm then
                 Html.div [
-                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
+                    prop.className "card bg-base-200 border border-base-300 mb-6"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4 sm:p-6"
@@ -139,7 +139,7 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     sortedLocations |> Array.filter (fun l ->
                         l.Name.ToLowerInvariant().Contains(q) || l.Code.ToLowerInvariant().Contains(q))
             Html.div [
-                prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+                prop.className "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"
                 prop.children [
                     if state.Loading && Array.isEmpty state.Locations then
                         gridLoadingSpinner
@@ -160,21 +160,21 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     for loc in filteredLocations do
                         Html.div [
-                            prop.className "card entity-location cursor-pointer hover:shadow-md transition-shadow"
+                            prop.className "card entity-location cursor-pointer transition-shadow"
                             prop.onClick (fun _ -> dispatch (Navigate (LocationDetail loc.Code)))
                             prop.children [
                                 Html.div [
-                                    prop.className "card-body p-4 sm:p-5"
+                                    prop.className "card-body p-3"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "text-lg break-words flex items-center gap-2 flex-wrap"
+                                            prop.className "text-base break-words flex items-center gap-2 flex-wrap"
                                             prop.children [
                                                 Html.text loc.Name
                                                 if loc.IsArchived then
                                                     Html.span [ prop.className "badge badge-ghost badge-sm"; prop.text "Archived" ]
                                             ]
                                         ]
-                                        Html.p [ prop.className "text-sm opacity-70"; prop.text loc.Code ]
+                                        Html.p [ prop.className "text-xs opacity-60 font-mono tracking-wide"; prop.text loc.Code ]
                                     ]
                                 ]
                             ]
@@ -268,7 +268,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                 addBoxToLocationDialog state dispatch
                 breadcrumb [ "Locations", Some LocationsList; detail.Location.Name, None ] dispatch
                 Html.div [
-                    prop.className "card entity-location mb-6 shadow-sm"
+                    prop.className "card entity-location mb-6"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4 sm:p-6"
@@ -333,7 +333,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                 prop.className "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
                                                 prop.children [
                                                     Html.h1 [
-                                                        prop.className "text-2xl sm:text-3xl font-bold flex items-start gap-3"
+                                                        prop.className "text-xl sm:text-2xl font-bold flex items-start gap-3"
                                                         prop.children [
                                                             Html.text detail.Location.Name
                                                             Html.span [
@@ -447,7 +447,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4"
                     prop.children [
                         Html.h2 [
-                            prop.className "text-lg sm:text-xl font-bold"
+                            prop.className "eyebrow"
                             prop.text $"Boxes (%i{detail.Boxes.Length})"
                         ]
                         Html.button [
@@ -458,7 +458,7 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
                 Html.div [
-                    prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+                    prop.className "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"
                     prop.children [
                         if Array.isEmpty detail.Boxes then
                             Html.div [
@@ -469,11 +469,11 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                             ]
                         for box in detail.Boxes do
                             Html.div [
-                                prop.className "card entity-box cursor-pointer hover:shadow-md transition-shadow"
+                                prop.className "card entity-box cursor-pointer transition-shadow"
                                 prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))
                                 prop.children [
                                     Html.div [
-                                        prop.className "card-body p-4"
+                                        prop.className "card-body p-3"
                                         prop.children [
                                             Html.span [
                                                 prop.className "card-title"

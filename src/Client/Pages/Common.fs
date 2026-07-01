@@ -89,7 +89,7 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                 prop.className "flex-none"
                 prop.children [
                     Html.a [
-                        prop.className "btn btn-ghost text-lg md:text-xl tracking-tight px-2 md:px-4"
+                        prop.className "btn btn-ghost text-base md:text-lg font-mono font-semibold tracking-tight px-2 md:px-4"
                         prop.text "BoxTracker"
                         prop.onClick (fun _ -> dispatch (Navigate LocationsList))
                     ]
@@ -519,7 +519,7 @@ let notesSection (state: State) (dispatch: Msg -> unit) : ReactElement =
                 prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4"
                 prop.children [
                     Html.h2 [
-                        prop.className "text-lg sm:text-xl font-bold"
+                        prop.className "eyebrow"
                         prop.text $"Notes (%i{state.Notes.Length})"
                     ]
                     if not state.ShowAddNoteForm then
@@ -532,7 +532,7 @@ let notesSection (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
             if state.ShowAddNoteForm then
                 Html.div [
-                    prop.className "card bg-base-200 border border-base-300 mb-4 shadow-sm"
+                    prop.className "card bg-base-200 border border-base-300 mb-4"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4"
@@ -574,7 +574,7 @@ let notesSection (state: State) (dispatch: Msg -> unit) : ReactElement =
             for note in state.Notes do
                 Html.div [
                     prop.key note.Id
-                    prop.className "card bg-base-200 border border-base-300 mb-3 shadow-sm"
+                    prop.className "card bg-base-200 border border-base-300 mb-3"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4"

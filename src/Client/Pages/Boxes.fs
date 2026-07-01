@@ -157,7 +157,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                 prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6"
                 prop.children [
                     Html.h1 [
-                        prop.className "text-2xl sm:text-3xl font-bold"
+                        prop.className "text-xl sm:text-2xl font-bold"
                         prop.text "Boxes"
                     ]
                     Html.button [
@@ -169,7 +169,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
             if state.ShowCreateBoxForm then
                 Html.div [
-                    prop.className "card bg-base-200 border border-base-300 mb-6 shadow-sm"
+                    prop.className "card bg-base-200 border border-base-300 mb-6"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4 sm:p-6"
@@ -281,7 +281,7 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     sortedBoxes |> Array.filter (fun b ->
                         (b.Label |> Option.defaultValue b.Id).ToLowerInvariant().Contains(q))
             Html.div [
-                prop.className "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+                prop.className "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"
                 prop.children [
                     if state.Loading && Array.isEmpty state.Boxes then
                         gridLoadingSpinner
@@ -302,14 +302,14 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     for box in filteredBoxes do
                         Html.div [
-                            prop.className "card entity-box cursor-pointer hover:shadow-md transition-shadow"
+                            prop.className "card entity-box cursor-pointer transition-shadow"
                             prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))
                             prop.children [
                                 Html.div [
-                                    prop.className "card-body p-4 sm:p-5"
+                                    prop.className "card-body p-3"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "text-lg break-words"
+                                            prop.className "text-base break-words"
                                             prop.text (box.Label |> Option.defaultValue box.Id)
                                         ]
                                         match box.LocationCode with
@@ -352,7 +352,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                 addExistingItemDialog state dispatch
                 breadcrumb boxCrumbs dispatch
                 Html.div [
-                    prop.className "card entity-box mb-6 shadow-sm"
+                    prop.className "card entity-box mb-6"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4 sm:p-6"
@@ -386,7 +386,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                 prop.className "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
                                                 prop.children [
                                                     Html.h1 [
-                                                        prop.className "text-2xl sm:text-3xl font-bold"
+                                                        prop.className "text-xl sm:text-2xl font-bold"
                                                         prop.text (detail.Box.Label |> Option.defaultValue detail.Box.Id)
                                                     ]
                                                     Html.div [
@@ -554,7 +554,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
                 Html.div [
-                    prop.className "card entity-item mb-6 shadow-sm"
+                    prop.className "card entity-item mb-6"
                     prop.children [
                         Html.div [
                             prop.className "card-body p-4 sm:p-6"
@@ -563,7 +563,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     prop.className "flex items-center justify-between mb-4"
                                     prop.children [
                                         Html.h2 [
-                                            prop.className "text-lg sm:text-xl font-bold"
+                                            prop.className "eyebrow"
                                             prop.text $"Items (%i{detail.Items.Length})"
                                         ]
                                         Html.div [

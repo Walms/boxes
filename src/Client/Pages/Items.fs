@@ -71,14 +71,18 @@ let private moveItemStandaloneDialog (state: State) (dispatch: Msg -> unit) : Re
             ]
         ]
 
-let private itemCard (state: State) (dispatch: Msg -> unit) (item: SearchResultDto) : ReactElement =
+let private itemCard (state: State) (dispatch: Msg -> unit) (index: int) (item: SearchResultDto) : ReactElement =
     let isEditing = state.EditingItemId = Some item.ItemId
     Html.div [
-        prop.className "card entity-item transition-colors cursor-pointer"
+        prop.className "catalog-row entity-item cursor-pointer"
         prop.onClick (fun _ -> if not isEditing then dispatch (Navigate (ItemDetail item.ItemId)))
         prop.children [
+            Html.span [
+                prop.className "row-index hidden sm:block"
+                prop.text (sprintf "%03d" (index + 1))
+            ]
             Html.div [
-                prop.className "card-body p-3"
+                prop.className "flex-1 min-w-0"
                 prop.children [
                     Html.div [
                         prop.className "flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3"
@@ -264,11 +268,10 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
         prop.children [
             moveItemStandaloneDialog state dispatch
             Html.div [
-                prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6"
+                prop.className "page-header flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-4"
                 prop.children [
                     Html.h1 [
-                        prop.className "text-xl sm:text-2xl font-bold"
-                        prop.text $"Items (%i{state.AllItems.Length})"
+                        prop.text $"Items [%03i{state.AllItems.Length}]"
                     ]
                     Html.button [
                         prop.className "btn btn-success btn-sm sm:btn-md w-full sm:w-auto"
@@ -405,7 +408,7 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                 else state.SearchResults
             let busy = state.Loading || state.SearchLoading
             Html.div [
-                prop.className "space-y-1"
+                prop.className "catalog-list"
                 prop.children [
                     if busy && Array.isEmpty itemsToShow then
                         Html.div [
@@ -425,8 +428,8 @@ let itemsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     Html.p [ prop.text "No items found matching your search" ]
                             ]
                         ]
-                    for item in itemsToShow do
-                        itemCard state dispatch item
+                    for i in 0 .. itemsToShow.Length - 1 do
+                        itemCard state dispatch i itemsToShow.[i]
                 ]
             ]
         ]

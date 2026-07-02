@@ -49,6 +49,11 @@ let imageViewer (state: State) (dispatch: Msg -> unit) : ReactElement =
             ]
         ]
 
+/// Catalogue row ordinal — 001, 002, … — the faint fixed-width index that
+/// opens every list row.
+let rowIndex (i: int) : ReactElement =
+    Html.span [ prop.className "row-index"; prop.text (sprintf "%03d" (i + 1)) ]
+
 let navItem (label: string) (page: Page) (dispatch: Msg -> unit) : ReactElement =
     Html.a [
         prop.text label
@@ -89,8 +94,8 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                 prop.className "flex-none"
                 prop.children [
                     Html.a [
-                        prop.className "btn btn-ghost text-base md:text-lg font-mono font-semibold tracking-tight px-2 md:px-4"
-                        prop.text "BoxTracker"
+                        prop.className "btn btn-ghost text-sm md:text-base font-mono font-bold tracking-widest px-2 md:px-4"
+                        prop.text "BoxTracker™"
                         prop.onClick (fun _ -> dispatch (Navigate BoxesList))
                     ]
                 ]

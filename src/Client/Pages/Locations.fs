@@ -13,11 +13,10 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.children [
             Html.div [
-                prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6"
+                prop.className "page-header flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-4"
                 prop.children [
                     Html.h1 [
-                        prop.className "text-xl sm:text-2xl font-bold"
-                        prop.text "Locations"
+                        prop.text $"Locations [%03i{state.Locations.Length}]"
                     ]
                     Html.button [
                         prop.className "btn btn-success btn-sm sm:btn-md w-full sm:w-auto"
@@ -139,13 +138,13 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     sortedLocations |> Array.filter (fun l ->
                         l.Name.ToLowerInvariant().Contains(q) || l.Code.ToLowerInvariant().Contains(q))
             Html.div [
-                prop.className "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"
+                prop.className "catalog-list"
                 prop.children [
                     if state.Loading && Array.isEmpty state.Locations then
                         gridLoadingSpinner
                     elif Array.isEmpty state.Locations then
                         Html.div [
-                            prop.className "col-span-full text-center py-12 opacity-60"
+                            prop.className "text-center py-12 opacity-60"
                             prop.children [
                                 Html.p [ prop.className "text-lg"; prop.text "No locations yet" ]
                                 Html.p [ prop.className "text-sm mt-2"; prop.text "Click \"+ New Location\" to create one" ]
@@ -153,30 +152,28 @@ let locationsPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     elif Array.isEmpty filteredLocations then
                         Html.div [
-                            prop.className "col-span-full text-center py-12 opacity-60"
+                            prop.className "text-center py-12 opacity-60"
                             prop.children [
                                 Html.p [ prop.text "No locations match your search" ]
                             ]
                         ]
-                    for loc in filteredLocations do
+                    for i in 0 .. filteredLocations.Length - 1 do
+                        let loc = filteredLocations.[i]
                         Html.div [
-                            prop.className "card entity-location cursor-pointer transition-shadow"
+                            prop.className "catalog-row entity-location cursor-pointer"
                             prop.onClick (fun _ -> dispatch (Navigate (LocationDetail loc.Code)))
                             prop.children [
-                                Html.div [
-                                    prop.className "card-body p-3"
-                                    prop.children [
-                                        Html.h2 [
-                                            prop.className "text-base break-words flex items-center gap-2 flex-wrap"
-                                            prop.children [
-                                                Html.text loc.Name
-                                                if loc.IsArchived then
-                                                    Html.span [ prop.className "badge badge-ghost badge-sm"; prop.text "Archived" ]
-                                            ]
-                                        ]
-                                        Html.p [ prop.className "text-xs opacity-60 font-mono tracking-wide"; prop.text loc.Code ]
-                                    ]
+                                rowIndex i
+                                Html.span [
+                                    prop.className "ref-code opacity-60 flex-shrink-0 min-w-16"
+                                    prop.text loc.Code
                                 ]
+                                Html.span [
+                                    prop.className "text-sm flex-1 truncate"
+                                    prop.text loc.Name
+                                ]
+                                if loc.IsArchived then
+                                    Html.span [ prop.className "badge badge-ghost badge-sm flex-shrink-0"; prop.text "Archived" ]
                             ]
                         ]
                 ]
@@ -458,28 +455,29 @@ let locationDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     ]
                 ]
                 Html.div [
-                    prop.className "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"
+                    prop.className "catalog-list"
                     prop.children [
                         if Array.isEmpty detail.Boxes then
                             Html.div [
-                                prop.className "col-span-full text-center py-8 opacity-60"
+                                prop.className "text-center py-8 opacity-60"
                                 prop.children [
                                     Html.p [ prop.text "No boxes in this location" ]
                                 ]
                             ]
-                        for box in detail.Boxes do
+                        for i in 0 .. detail.Boxes.Length - 1 do
+                            let box = detail.Boxes.[i]
                             Html.div [
-                                prop.className "card entity-box cursor-pointer transition-shadow"
+                                prop.className "catalog-row entity-box cursor-pointer"
                                 prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))
                                 prop.children [
-                                    Html.div [
-                                        prop.className "card-body p-3"
-                                        prop.children [
-                                            Html.span [
-                                                prop.className "card-title"
-                                                prop.text (box.Label |> Option.defaultValue box.Id)
-                                            ]
-                                        ]
+                                    rowIndex i
+                                    Html.span [
+                                        prop.className "ref-code opacity-60 flex-shrink-0 hidden sm:inline"
+                                        prop.text box.Id
+                                    ]
+                                    Html.span [
+                                        prop.className "text-sm flex-1 truncate"
+                                        prop.text (box.Label |> Option.defaultValue box.Id)
                                     ]
                                 ]
                             ]

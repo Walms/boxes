@@ -154,11 +154,10 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
     Html.div [
         prop.children [
             Html.div [
-                prop.className "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6"
+                prop.className "page-header flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-4"
                 prop.children [
                     Html.h1 [
-                        prop.className "text-xl sm:text-2xl font-bold"
-                        prop.text "Boxes"
+                        prop.text $"Boxes [%03i{state.Boxes.Length}]"
                     ]
                     Html.button [
                         prop.className "btn btn-success btn-sm sm:btn-md w-full sm:w-auto"
@@ -281,13 +280,13 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                     sortedBoxes |> Array.filter (fun b ->
                         (b.Label |> Option.defaultValue b.Id).ToLowerInvariant().Contains(q))
             Html.div [
-                prop.className "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"
+                prop.className "catalog-list"
                 prop.children [
                     if state.Loading && Array.isEmpty state.Boxes then
                         gridLoadingSpinner
                     elif Array.isEmpty state.Boxes then
                         Html.div [
-                            prop.className "col-span-full text-center py-12 opacity-60"
+                            prop.className "text-center py-12 opacity-60"
                             prop.children [
                                 Html.p [ prop.className "text-lg"; prop.text "No boxes yet" ]
                                 Html.p [ prop.className "text-sm mt-2"; prop.text "Click \"+ New Box\" to create one" ]
@@ -295,33 +294,35 @@ let boxesPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                         ]
                     elif Array.isEmpty filteredBoxes then
                         Html.div [
-                            prop.className "col-span-full text-center py-12 opacity-60"
+                            prop.className "text-center py-12 opacity-60"
                             prop.children [
                                 Html.p [ prop.text "No boxes match your search" ]
                             ]
                         ]
-                    for box in filteredBoxes do
+                    for i in 0 .. filteredBoxes.Length - 1 do
+                        let box = filteredBoxes.[i]
                         Html.div [
-                            prop.className "card entity-box cursor-pointer transition-shadow"
+                            prop.className "catalog-row entity-box cursor-pointer"
                             prop.onClick (fun _ -> dispatch (Navigate (BoxDetail box.Id)))
                             prop.children [
-                                Html.div [
-                                    prop.className "card-body p-3"
-                                    prop.children [
-                                        Html.h2 [
-                                            prop.className "text-base break-words"
-                                            prop.text (box.Label |> Option.defaultValue box.Id)
-                                        ]
-                                        match box.LocationCode with
-                                        | Some code ->
-                                            Html.button [
-                                                prop.className "btn btn-ghost btn-xs font-normal normal-case"
-                                                prop.text (code + " →")
-                                                prop.onClick (fun e -> e.stopPropagation(); dispatch (Navigate (LocationDetail code)))
-                                            ]
-                                        | None -> Html.none
-                                    ]
+                                rowIndex i
+                                Html.span [
+                                    prop.className "ref-code opacity-60 flex-shrink-0 hidden sm:inline"
+                                    prop.text box.Id
                                 ]
+                                Html.span [
+                                    prop.className "text-sm flex-1 truncate"
+                                    prop.text (box.Label |> Option.defaultValue box.Id)
+                                ]
+                                match box.LocationCode with
+                                | Some code ->
+                                    Html.button [
+                                        prop.className "btn btn-ghost btn-xs ref-code text-primary flex-shrink-0"
+                                        prop.text (code + " →")
+                                        prop.onClick (fun e -> e.stopPropagation(); dispatch (Navigate (LocationDetail code)))
+                                    ]
+                                | None ->
+                                    Html.span [ prop.className "ref-code opacity-30 flex-shrink-0 px-2"; prop.text "—" ]
                             ]
                         ]
                 ]
@@ -640,7 +641,7 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                     ]
                                 ]
                                 Html.ul [
-                                    prop.className "space-y-1"
+                                    prop.className "catalog-list"
                                     prop.children [
                                         if Array.isEmpty detail.Items then
                                             Html.li [
@@ -649,11 +650,16 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                     Html.p [ prop.text "No items in this box yet" ]
                                                 ]
                                             ]
-                                        for item in detail.Items do
+                                        for i in 0 .. detail.Items.Length - 1 do
+                                            let item = detail.Items.[i]
                                             Html.li [
-                                                prop.className "flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg px-3 py-2 hover:bg-base-200 transition-colors cursor-pointer"
+                                                prop.className "catalog-row flex-col items-stretch sm:flex-row sm:items-center cursor-pointer"
                                                 prop.onClick (fun _ -> dispatch (Navigate (ItemDetail item.Id)))
                                                 prop.children [
+                                                    Html.span [
+                                                        prop.className "row-index hidden sm:block"
+                                                        prop.text (sprintf "%03d" (i + 1))
+                                                    ]
                                                     match photoUrlThumb item.PhotoPath with
                                                     | Some thumbUrl ->
                                                         let fullUrl = photoUrlFull item.PhotoPath |> Option.defaultValue thumbUrl

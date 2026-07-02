@@ -43,20 +43,21 @@ let private resizeImage (image: Image) (maxWidth: int) (maxHeight: int) : unit =
                 Size(maxWidth, max 1 (int (float maxWidth / aspectRatio)))
         image.Mutate(fun ctx -> ctx.Resize(newSize) |> ignore)
 
+// Mutates the single decoded image in place: resize for the full variant,
+// then downscale the same pixels again for the thumbnail. Avoids cloning the
+// original twice, and skips progressive encoding for the thumbnail where it
+// buys nothing at 250px (saves a jpegtran process spawn per upload).
 let processUploadedImage (inputPath: string) (outputFullPath: string) (outputThumbPath: string) : Result<unit, string> =
     try
         use image : Image = Image.Load(inputPath)
         image.Mutate(fun ctx -> ctx.AutoOrient() |> ignore)
 
-        use fullImage : Image = image.Clone(fun cfg -> ())
-        resizeImage fullImage 3500 3500
-        fullImage.SaveAsJpeg(outputFullPath, jpegEncoder 85)
+        resizeImage image 3500 3500
+        image.SaveAsJpeg(outputFullPath, jpegEncoder 85)
         makeProgressive outputFullPath
 
-        use thumbImage : Image = image.Clone(fun cfg -> ())
-        resizeImage thumbImage 250 250
-        thumbImage.SaveAsJpeg(outputThumbPath, jpegEncoder 75)
-        makeProgressive outputThumbPath
+        resizeImage image 250 250
+        image.SaveAsJpeg(outputThumbPath, jpegEncoder 75)
 
         Ok ()
     with

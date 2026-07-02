@@ -258,13 +258,13 @@ let private openWindow (url: string) (target: string) : unit = failwith "JS only
 
 let private pageFromHash (hash: string) : Page =
     match hash.TrimStart('#') with
-    | "" | "/" | "/locations" -> LocationsList
-    | s when s.StartsWith("/locations/") -> LocationDetail(s.[11..])
-    | "/boxes" -> BoxesList
+    | "" | "/" | "/boxes" -> BoxesList
     | s when s.StartsWith("/boxes/") -> BoxDetail(s.[7..])
+    | "/locations" -> LocationsList
+    | s when s.StartsWith("/locations/") -> LocationDetail(s.[11..])
     | "/items" -> ItemsList
     | s when s.StartsWith("/items/") -> ItemDetail(s.[7..])
-    | _ -> LocationsList
+    | _ -> BoxesList
 
 let private hashFromPage (page: Page) : string =
     match page with

@@ -10,6 +10,12 @@ SQLite database at `data/boxtracker.db` (configurable via `BOXTRACKER_DATA` env 
 - Per-instance `Connect()` only opens the connection and sets `busy_timeout=5000` (a per-connection setting). It does *not* re-run the schema.
 - WAL lets request connections and the background photo worker (`PhotoJobStore`, separate connection) read/write the DB concurrently; `busy_timeout` makes a writer wait briefly for the single write lock instead of failing.
 
+## Write-path transactions
+
+All commands in instance members are created via `this.CreateCommand()`, which attaches the ambient `SqliteTransaction` when one is active (Microsoft.Data.Sqlite requires commands to carry the connection's active transaction). `this.InTransaction(work)` opens a transaction, runs `work`, and commits once; nested calls join the ambient transaction (e.g. `DeleteBox` → `RecordMove`), and an exception rolls back via disposal.
+
+Multi-statement write paths wrapped in `InTransaction` so each commits (and fsyncs) once instead of per statement: `RecordMove`, `AddItem`, `UpdateItemName`, `DeleteItem`, `UpdateBox`, `DeleteBox`, `UpdateLocationName`, `UpdateLocationCode`.
+
 ## Tables
 
 | Table | Columns |

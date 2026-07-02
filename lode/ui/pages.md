@@ -4,7 +4,7 @@ Hash-based SPA routing (`#/path`). Pages defined in `State.fs` as `Page` DU. Vie
 
 ## Navigation
 
-Navbar links: **Locations** | **Boxes** | **Items** | **Search**
+Navbar links: **Boxes** | **Locations** | **Items** | **Search**. The navbar brand ("BoxTracker") navigates to `BoxesList`.
 
 - Desktop (`md+`): horizontal menu in navbar
 - Mobile (`< md`): hamburger dropdown (`☰`) using DaisyUI `dropdown` component
@@ -13,9 +13,9 @@ Navbar links: **Locations** | **Boxes** | **Items** | **Search**
 
 | Page | Hash | Description |
 |------|------|-------------|
-| `LocationsList` | `#/locations` | Grid of location cards with create form. Default landing page. |
+| `LocationsList` | `#/locations` | Grid of location cards with create form. |
 | `LocationDetail` | `#/locations/{code}` | Location info, edit name, archive, boxes grid with add/remove box. |
-| `BoxesList` | `#/boxes` | Grid of box cards with create form. Filter by location dropdown. |
+| `BoxesList` | `#/boxes` | Grid of box cards with create form. Filter by location dropdown. Default landing page (empty or unknown hashes route here). |
 | `BoxDetail` | `#/boxes/{id}` | Box info, edit label, assign to location, item list with add/move/delete, add existing item. Photo upload for items. |
 | `ItemsList` | `#/items` | All items with create standalone form (name + optional box). Inline edit name, move to box, delete. |
 | `ItemsSearch` | `#/items/search` | Debounced FTS5 search with photo thumbnails and location info. Read-only. |

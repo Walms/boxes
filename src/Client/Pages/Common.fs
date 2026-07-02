@@ -91,7 +91,7 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                     Html.a [
                         prop.className "btn btn-ghost text-base md:text-lg font-mono font-semibold tracking-tight px-2 md:px-4"
                         prop.text "BoxTracker"
-                        prop.onClick (fun _ -> dispatch (Navigate LocationsList))
+                        prop.onClick (fun _ -> dispatch (Navigate BoxesList))
                     ]
                 ]
             ]
@@ -101,8 +101,8 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                     Html.ul [
                         prop.className "menu menu-horizontal px-1"
                         prop.children [
-                            Html.li [ navItem "Locations" LocationsList dispatch ]
                             Html.li [ navItem "Boxes" BoxesList dispatch ]
+                            Html.li [ navItem "Locations" LocationsList dispatch ]
                             Html.li [ navItem "Items" ItemsList dispatch ]
                         ]
                     ]
@@ -226,8 +226,8 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                                 prop.tabIndex 0
                                 prop.className "dropdown-content menu bg-base-300 rounded-lg z-10 w-52 p-2 shadow-xl"
                                 prop.children [
-                                    Html.li [ navItem "Locations" LocationsList dispatch ]
                                     Html.li [ navItem "Boxes" BoxesList dispatch ]
+                                    Html.li [ navItem "Locations" LocationsList dispatch ]
                                     Html.li [ navItem "Items" ItemsList dispatch ]
                                     Html.li [
                                         Html.a [

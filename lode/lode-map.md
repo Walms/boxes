@@ -23,7 +23,7 @@
 - [ui/mobile-responsive-design.md](ui/mobile-responsive-design.md) — responsive design improvements, mobile-first layout, touch-friendly UX
 
 ## Plans
-- [plans/performance-todos.md](plans/performance-todos.md) — remaining server-side performance work (item detail over-fetch, write-path transactions, image pipeline)
+- (none currently — the June 2026 performance review items are done; write-path transactions are documented in [domain/persistence.md](domain/persistence.md), the single-decode image pipeline in [domain/image-optimization.md](domain/image-optimization.md))
 
 ## Tmp
 - session scraps (git-ignored)

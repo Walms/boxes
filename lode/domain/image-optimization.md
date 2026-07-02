@@ -1,6 +1,6 @@
 # Image Optimization
 
-Photos uploaded by users (boxes and items) are automatically compressed and resized for web use. All photos are converted to WebP format with two variants generated per upload.
+Photos uploaded by users (boxes and items) are automatically compressed and resized for web use. All photos are converted to JPEG with two variants generated per upload (WebP was used previously; `--migrate-photos` converts leftover `.webp` files to `.jpg` on deploy).
 
 ## Implementation Status
 
@@ -14,10 +14,14 @@ Photos uploaded by users (boxes and items) are automatically compressed and resi
    immediately with a `photo_job` and the client polls for status.
 2. The raw upload is staged in `data/photo-jobs/{guid}`; a background worker
    processes it via `ImageProcessing.processUploadedImage`.
-3. Two WebP variants are generated and saved:
-   - `{guid}-full.webp` — max 3500×3500 px, 90% quality
-   - `{guid}-thumb.webp` — max 250×250 px, 75% quality (lower quality is
-     invisible at the ≤128 px display sizes and shrinks the file further)
+3. Two JPEG variants are generated from a single decode — the decoded image
+   is resized in place for the full variant, then downscaled again from those
+   pixels for the thumbnail (the original is never cloned):
+   - `{guid}-full.jpg` — max 3500×3500 px, quality 85, rewritten as
+     progressive JPEG via `jpegtran` when available
+   - `{guid}-thumb.jpg` — max 250×250 px, quality 75 (lower quality is
+     invisible at the ≤128 px display sizes); saved baseline — progressive
+     encoding buys nothing at 250 px, so the extra `jpegtran` spawn is skipped
 4. PhotoPath stores base path: `photos/{boxId}/{guid}` (no extension); the
    entity's `photo_path` is set only once processing completes.
 5. The raw staged file is deleted after processing (success or failure).
@@ -26,8 +30,8 @@ Photos uploaded by users (boxes and items) are automatically compressed and resi
 ```
 data/photos/
   {boxId}/
-    {guid}-full.webp    # Full-size variant (3500×3500 max, 90% quality)
-    {guid}-thumb.webp   # Thumbnail variant (250×250 max, 75% quality)
+    {guid}-full.jpg     # Full-size variant (3500×3500 max, quality 85)
+    {guid}-thumb.jpg    # Thumbnail variant (250×250 max, quality 75)
 ```
 
 **API Serving:**

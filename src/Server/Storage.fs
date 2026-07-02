@@ -26,6 +26,7 @@ type SearchResult = {
 type Storage (connectionString: string) =
 
     let mutable connection : SqliteConnection option = None
+    let mutable activeTransaction : SqliteTransaction option = None
 
     let unwrap (result: Result<'T, string>) : 'T =
         match result with
@@ -180,9 +181,29 @@ type Storage (connectionString: string) =
             connection |> Option.iter (fun (c: SqliteConnection) -> c.Dispose())
             connection <- None
 
+    member private this.CreateCommand() : SqliteCommand =
+        let c : SqliteCommand = this.Connection.CreateCommand()
+        activeTransaction |> Option.iter (fun (t: SqliteTransaction) -> c.Transaction <- t)
+        c
+
+    /// Run work inside a single transaction so multi-statement write paths
+    /// commit (and fsync) once instead of per statement. Nested calls join
+    /// the ambient transaction; disposal without commit rolls back on error.
+    member private this.InTransaction(work: unit -> 'T) : 'T =
+        match activeTransaction with
+        | Some _ -> work ()
+        | None ->
+            use txn : SqliteTransaction = this.Connection.BeginTransaction()
+            activeTransaction <- Some txn
+            try
+                let result : 'T = work ()
+                txn.Commit()
+                result
+            finally
+                activeTransaction <- None
+
     member private this.GetBoxPlacement(boxId: string) : Container =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- """
             SELECT to_type, to_id FROM move
             WHERE entity_type = 'box' AND entity_id = @entityId
@@ -194,8 +215,7 @@ type Storage (connectionString: string) =
         else Unassigned
 
     member private this.GetItemPlacement(itemId: string) : Container =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- """
             SELECT to_type, to_id FROM move
             WHERE entity_type = 'item' AND entity_id = @entityId
@@ -207,11 +227,11 @@ type Storage (connectionString: string) =
         else Unassigned
 
     member private this.SyncItemToSearch(itemId: string, itemName: string) : unit =
-        let conn : SqliteConnection = this.Connection
+        let placement : Container = this.GetItemPlacement(itemId)
         let boxLabel : string option =
-            match this.GetItemPlacement(itemId) with
+            match placement with
             | InBox boxId ->
-                use c : SqliteCommand = conn.CreateCommand()
+                use c : SqliteCommand = this.CreateCommand()
                 c.CommandText <- "SELECT label FROM box WHERE id = @id"
                 c.Parameters.AddWithValue("@id", BoxId.value boxId) |> ignore
                 let r : obj = c.ExecuteScalar()
@@ -219,16 +239,12 @@ type Storage (connectionString: string) =
                 | :? string as l -> Some l
                 | _ -> None
             | _ -> None
-        let boxIdStr : string =
-            match this.GetItemPlacement(itemId) with
-            | InBox bid -> BoxId.value bid
-            | _ -> ""
         let locationName : string option =
-            match this.GetItemPlacement(itemId) with
+            match placement with
             | InBox boxId ->
                 match this.GetBoxPlacement(BoxId.value boxId) with
                 | AtLocation locCode ->
-                    use c : SqliteCommand = conn.CreateCommand()
+                    use c : SqliteCommand = this.CreateCommand()
                     c.CommandText <- "SELECT name FROM location WHERE code = @code"
                     c.Parameters.AddWithValue("@code", LocationCode.value locCode) |> ignore
                     let r : obj = c.ExecuteScalar()
@@ -237,7 +253,7 @@ type Storage (connectionString: string) =
                     | _ -> None
                 | _ -> None
             | _ -> None
-        use ins : SqliteCommand = conn.CreateCommand()
+        use ins : SqliteCommand = this.CreateCommand()
         ins.CommandText <- "INSERT INTO item_search (item_id, item_name, box_label, location_name) VALUES (@itemId, @itemName, @boxLabel, @locationName)"
         ins.Parameters.AddWithValue("@itemId", itemId) |> ignore
         ins.Parameters.AddWithValue("@itemName", itemName) |> ignore
@@ -246,18 +262,16 @@ type Storage (connectionString: string) =
         ins.ExecuteNonQuery() |> ignore
 
     member private this.RemoveFromSearch(itemId: string) : unit =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- "DELETE FROM item_search WHERE item_id = @itemId"
         c.Parameters.AddWithValue("@itemId", itemId) |> ignore
         c.ExecuteNonQuery() |> ignore
 
     member private this.ReindexBoxItems(boxId: string) : unit =
-        let conn : SqliteConnection = this.Connection
-        let itemIds : string list =
-            use c : SqliteCommand = conn.CreateCommand()
+        let items : (string * string) list =
+            use c : SqliteCommand = this.CreateCommand()
             c.CommandText <- """
-                SELECT i.id FROM item i
+                SELECT i.id, i.name FROM item i
                 INNER JOIN (
                     SELECT entity_id, to_type, to_id
                     FROM (
@@ -271,22 +285,16 @@ type Storage (connectionString: string) =
             """
             c.Parameters.AddWithValue("@boxId", boxId) |> ignore
             use reader : SqliteDataReader = c.ExecuteReader()
-            readList (fun (r: SqliteDataReader) -> r.GetString(0)) reader
-        for iid in itemIds do
+            readList (fun (r: SqliteDataReader) -> r.GetString(0), r.GetString(1)) reader
+        for (iid, name) in items do
             this.RemoveFromSearch(iid)
-            let name =
-                use c : SqliteCommand = conn.CreateCommand()
-                c.CommandText <- "SELECT name FROM item WHERE id = @id"
-                c.Parameters.AddWithValue("@id", iid) |> ignore
-                c.ExecuteScalar() :?> string
             this.SyncItemToSearch(iid, name)
 
     member private this.ReindexLocationItems(code: string) : unit =
-        let conn : SqliteConnection = this.Connection
-        let itemIds : string list =
-            use c : SqliteCommand = conn.CreateCommand()
+        let items : (string * string) list =
+            use c : SqliteCommand = this.CreateCommand()
             c.CommandText <- """
-                SELECT i.id FROM item i
+                SELECT i.id, i.name FROM item i
                 INNER JOIN (
                     SELECT entity_id, to_type, to_id
                     FROM (
@@ -309,19 +317,13 @@ type Storage (connectionString: string) =
             """
             c.Parameters.AddWithValue("@code", code) |> ignore
             use reader : SqliteDataReader = c.ExecuteReader()
-            readList (fun (r: SqliteDataReader) -> r.GetString(0)) reader
-        for iid in itemIds do
+            readList (fun (r: SqliteDataReader) -> r.GetString(0), r.GetString(1)) reader
+        for (iid, name) in items do
             this.RemoveFromSearch(iid)
-            let name =
-                use c : SqliteCommand = conn.CreateCommand()
-                c.CommandText <- "SELECT name FROM item WHERE id = @id"
-                c.Parameters.AddWithValue("@id", iid) |> ignore
-                c.ExecuteScalar() :?> string
             this.SyncItemToSearch(iid, name)
 
     member this.ListLocations(includeArchived: bool) : Location list =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         if includeArchived then
             c.CommandText <- "SELECT code, name, is_archived, photo_path, created_at FROM location ORDER BY name"
         else
@@ -330,8 +332,7 @@ type Storage (connectionString: string) =
         readList readLocation reader
 
     member this.GetLocation(code: string) : Location option =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- "SELECT code, name, is_archived, photo_path, created_at FROM location WHERE code = @code"
         c.Parameters.AddWithValue("@code", code) |> ignore
         use reader : SqliteDataReader = c.ExecuteReader()
@@ -339,9 +340,8 @@ type Storage (connectionString: string) =
         else None
 
     member this.CreateLocation(code: LocationCode, name: LocationName) : Location =
-        let conn : SqliteConnection = this.Connection
         let now : DateTimeOffset = DateTimeOffset.UtcNow
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- "INSERT INTO location (code, name, is_archived, created_at) VALUES (@code, @name, 0, @createdAt)"
         c.Parameters.AddWithValue("@code", LocationCode.value code) |> ignore
         c.Parameters.AddWithValue("@name", LocationName.value name) |> ignore
@@ -350,59 +350,50 @@ type Storage (connectionString: string) =
         { Code = code; Name = name; IsArchived = false; Photo = None; CreatedAt = now }
 
     member this.UpdateLocationName(code: string, name: LocationName) : Location option =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
-        c.CommandText <- "UPDATE location SET name = @name WHERE code = @code"
-        c.Parameters.AddWithValue("@name", LocationName.value name) |> ignore
-        c.Parameters.AddWithValue("@code", code) |> ignore
-        let rows : int = c.ExecuteNonQuery()
-        if rows = 0 then None
-        else
-            this.ReindexLocationItems(code)
-            this.GetLocation(code)
+        this.InTransaction(fun () ->
+            use c : SqliteCommand = this.CreateCommand()
+            c.CommandText <- "UPDATE location SET name = @name WHERE code = @code"
+            c.Parameters.AddWithValue("@name", LocationName.value name) |> ignore
+            c.Parameters.AddWithValue("@code", code) |> ignore
+            let rows : int = c.ExecuteNonQuery()
+            if rows = 0 then None
+            else
+                this.ReindexLocationItems(code)
+                this.GetLocation(code))
 
     member this.UpdateLocationCode(oldCode: string, newCode: LocationCode) : Result<Location, string> =
-        let conn : SqliteConnection = this.Connection
         let newCodeStr : string = LocationCode.value newCode
         match this.GetLocation(newCodeStr) with
         | Some _ -> Error $"Location code '%s{newCodeStr}' is already in use"
         | None ->
-            use txn : SqliteTransaction = conn.BeginTransaction()
             try
-                use c1 : SqliteCommand = conn.CreateCommand()
-                c1.Transaction <- txn
-                c1.CommandText <- "UPDATE location SET code = @newCode WHERE code = @oldCode"
-                c1.Parameters.AddWithValue("@newCode", newCodeStr) |> ignore
-                c1.Parameters.AddWithValue("@oldCode", oldCode) |> ignore
-                let rows : int = c1.ExecuteNonQuery()
-                if rows = 0 then
-                    txn.Rollback()
-                    Error $"Location '%s{oldCode}' not found"
-                else
-                    use c2 : SqliteCommand = conn.CreateCommand()
-                    c2.Transaction <- txn
-                    c2.CommandText <- "UPDATE move SET to_id = @newCode WHERE to_type = 'location' AND to_id = @oldCode"
-                    c2.Parameters.AddWithValue("@newCode", newCodeStr) |> ignore
-                    c2.Parameters.AddWithValue("@oldCode", oldCode) |> ignore
-                    c2.ExecuteNonQuery() |> ignore
-                    use c3 : SqliteCommand = conn.CreateCommand()
-                    c3.Transaction <- txn
-                    c3.CommandText <- "UPDATE photo_job SET entity_id = @newCode WHERE entity_type = 'location' AND entity_id = @oldCode"
-                    c3.Parameters.AddWithValue("@newCode", newCodeStr) |> ignore
-                    c3.Parameters.AddWithValue("@oldCode", oldCode) |> ignore
-                    c3.ExecuteNonQuery() |> ignore
-                    txn.Commit()
-                    this.ReindexLocationItems(newCodeStr)
-                    match this.GetLocation(newCodeStr) with
-                    | Some loc -> Ok loc
-                    | None -> Error "Failed to fetch updated location"
+                this.InTransaction(fun () ->
+                    use c1 : SqliteCommand = this.CreateCommand()
+                    c1.CommandText <- "UPDATE location SET code = @newCode WHERE code = @oldCode"
+                    c1.Parameters.AddWithValue("@newCode", newCodeStr) |> ignore
+                    c1.Parameters.AddWithValue("@oldCode", oldCode) |> ignore
+                    let rows : int = c1.ExecuteNonQuery()
+                    if rows = 0 then Error $"Location '%s{oldCode}' not found"
+                    else
+                        use c2 : SqliteCommand = this.CreateCommand()
+                        c2.CommandText <- "UPDATE move SET to_id = @newCode WHERE to_type = 'location' AND to_id = @oldCode"
+                        c2.Parameters.AddWithValue("@newCode", newCodeStr) |> ignore
+                        c2.Parameters.AddWithValue("@oldCode", oldCode) |> ignore
+                        c2.ExecuteNonQuery() |> ignore
+                        use c3 : SqliteCommand = this.CreateCommand()
+                        c3.CommandText <- "UPDATE photo_job SET entity_id = @newCode WHERE entity_type = 'location' AND entity_id = @oldCode"
+                        c3.Parameters.AddWithValue("@newCode", newCodeStr) |> ignore
+                        c3.Parameters.AddWithValue("@oldCode", oldCode) |> ignore
+                        c3.ExecuteNonQuery() |> ignore
+                        this.ReindexLocationItems(newCodeStr)
+                        match this.GetLocation(newCodeStr) with
+                        | Some loc -> Ok loc
+                        | None -> Error "Failed to fetch updated location")
             with ex ->
-                txn.Rollback()
                 Error ex.Message
 
     member this.GetAssignedBoxCount(code: string) : int =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- """
             SELECT COUNT(*) FROM box b
             INNER JOIN (
@@ -423,15 +414,13 @@ type Storage (connectionString: string) =
         | _ -> 0
 
     member this.SetLocationArchived(code: string) : unit =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- "UPDATE location SET is_archived = 1 WHERE code = @code"
         c.Parameters.AddWithValue("@code", code) |> ignore
         c.ExecuteNonQuery() |> ignore
 
     member this.UpdateLocationPhoto(code: string, photoPath: PhotoPath option) : Location option =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         let photoValue : obj =
             match photoPath with
             | Some p -> box (PhotoPath.value p)
@@ -443,8 +432,7 @@ type Storage (connectionString: string) =
         if rows = 0 then None else this.GetLocation(code)
 
     member this.ListBoxes(locationCode: string option, unassigned: bool) : Box list =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         match locationCode, unassigned with
         | Some loc, _ ->
             c.CommandText <- """
@@ -498,8 +486,7 @@ type Storage (connectionString: string) =
         readList (fun (r: SqliteDataReader) -> readBox r 0) reader
 
     member this.GetBox(id: string) : Box option =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- """
             SELECT b.id, b.label, b.photo_path, b.created_at, lp.to_type, lp.to_id
             FROM box b
@@ -520,9 +507,8 @@ type Storage (connectionString: string) =
         else None
 
     member this.CreateBox(label: BoxLabel option) : Box =
-        let conn : SqliteConnection = this.Connection
         let nextSeq : int =
-            use c : SqliteCommand = conn.CreateCommand()
+            use c : SqliteCommand = this.CreateCommand()
             c.CommandText <- "SELECT MAX(id) FROM box"
             let result : obj = c.ExecuteScalar()
             match result with
@@ -535,7 +521,7 @@ type Storage (connectionString: string) =
             | Some l -> box (BoxLabel.value l)
             | None -> DBNull.Value
         let now : DateTimeOffset = DateTimeOffset.UtcNow
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- "INSERT INTO box (id, label, created_at) VALUES (@id, @label, @createdAt)"
         c.Parameters.AddWithValue("@id", id) |> ignore
         c.Parameters.AddWithValue("@label", labelValue) |> ignore
@@ -544,80 +530,79 @@ type Storage (connectionString: string) =
         { Id = boxId; Label = label; Photo = None; Placement = Unassigned; CreatedAt = now }
 
     member this.UpdateBox(id: string, label: BoxLabel option) : Box option =
-        let conn : SqliteConnection = this.Connection
-        let labelValue : obj =
-            match label with
-            | Some l -> box (BoxLabel.value l)
-            | None -> DBNull.Value
-        use c : SqliteCommand = conn.CreateCommand()
-        c.CommandText <- "UPDATE box SET label = @label WHERE id = @id"
-        c.Parameters.AddWithValue("@id", id) |> ignore
-        c.Parameters.AddWithValue("@label", labelValue) |> ignore
-        let rows : int = c.ExecuteNonQuery()
-        if rows = 0 then None
-        else
-            this.ReindexBoxItems(id)
-            this.GetBox(id)
+        this.InTransaction(fun () ->
+            let labelValue : obj =
+                match label with
+                | Some l -> box (BoxLabel.value l)
+                | None -> DBNull.Value
+            use c : SqliteCommand = this.CreateCommand()
+            c.CommandText <- "UPDATE box SET label = @label WHERE id = @id"
+            c.Parameters.AddWithValue("@id", id) |> ignore
+            c.Parameters.AddWithValue("@label", labelValue) |> ignore
+            let rows : int = c.ExecuteNonQuery()
+            if rows = 0 then None
+            else
+                this.ReindexBoxItems(id)
+                this.GetBox(id))
 
     member this.DeleteBox(id: string) : string list =
-        let conn : SqliteConnection = this.Connection
-        let boxPhotoPath : string option =
-            use c : SqliteCommand = conn.CreateCommand()
-            c.CommandText <- "SELECT photo_path FROM box WHERE id = @id AND photo_path IS NOT NULL"
-            c.Parameters.AddWithValue("@id", id) |> ignore
-            let r : obj = c.ExecuteScalar()
-            match r with
-            | :? string as p -> Some p
-            | _ -> None
-        let itemIds : string list =
-            use c : SqliteCommand = conn.CreateCommand()
-            c.CommandText <- """
-                SELECT i.id FROM item i
-                INNER JOIN (
-                    SELECT entity_id, to_type, to_id
-                    FROM (
-                        SELECT entity_id, to_type, to_id,
-                               ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY moved_at DESC) as rn
-                        FROM move WHERE entity_type = 'item'
-                    )
-                    WHERE rn = 1
-                ) lp ON lp.entity_id = i.id
-                WHERE lp.to_type = 'box' AND lp.to_id = @boxId
-            """
-            c.Parameters.AddWithValue("@boxId", id) |> ignore
-            use reader : SqliteDataReader = c.ExecuteReader()
-            readList (fun (r: SqliteDataReader) -> r.GetString(0)) reader
-        let itemPhotoPaths : string list =
-            itemIds
-            |> List.choose (fun iid ->
-                use c : SqliteCommand = conn.CreateCommand()
-                c.CommandText <- "SELECT photo_path FROM item WHERE id = @id AND photo_path IS NOT NULL"
-                c.Parameters.AddWithValue("@id", iid) |> ignore
+        this.InTransaction(fun () ->
+            let boxPhotoPath : string option =
+                use c : SqliteCommand = this.CreateCommand()
+                c.CommandText <- "SELECT photo_path FROM box WHERE id = @id AND photo_path IS NOT NULL"
+                c.Parameters.AddWithValue("@id", id) |> ignore
                 let r : obj = c.ExecuteScalar()
                 match r with
                 | :? string as p -> Some p
-                | _ -> None)
-        let photoPaths : string list =
-            (boxPhotoPath |> Option.toList) @ itemPhotoPaths
-        for iid in itemIds do
-            this.RecordMove("item", iid, None, None) |> ignore
-        use delMoves : SqliteCommand = conn.CreateCommand()
-        delMoves.CommandText <- "DELETE FROM move WHERE entity_type = 'box' AND entity_id = @id"
-        delMoves.Parameters.AddWithValue("@id", id) |> ignore
-        delMoves.ExecuteNonQuery() |> ignore
-        use delSearch : SqliteCommand = conn.CreateCommand()
-        delSearch.CommandText <- "DELETE FROM item_search WHERE item_id IN (SELECT id FROM item WHERE id IN (SELECT entity_id FROM move WHERE entity_type = 'item' AND to_type = 'box' AND to_id = @boxId))"
-        delSearch.Parameters.AddWithValue("@boxId", id) |> ignore
-        delSearch.ExecuteNonQuery() |> ignore
-        use delBox : SqliteCommand = conn.CreateCommand()
-        delBox.CommandText <- "DELETE FROM box WHERE id = @id"
-        delBox.Parameters.AddWithValue("@id", id) |> ignore
-        delBox.ExecuteNonQuery() |> ignore
-        photoPaths
+                | _ -> None
+            let itemIds : string list =
+                use c : SqliteCommand = this.CreateCommand()
+                c.CommandText <- """
+                    SELECT i.id FROM item i
+                    INNER JOIN (
+                        SELECT entity_id, to_type, to_id
+                        FROM (
+                            SELECT entity_id, to_type, to_id,
+                                   ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY moved_at DESC) as rn
+                            FROM move WHERE entity_type = 'item'
+                        )
+                        WHERE rn = 1
+                    ) lp ON lp.entity_id = i.id
+                    WHERE lp.to_type = 'box' AND lp.to_id = @boxId
+                """
+                c.Parameters.AddWithValue("@boxId", id) |> ignore
+                use reader : SqliteDataReader = c.ExecuteReader()
+                readList (fun (r: SqliteDataReader) -> r.GetString(0)) reader
+            let itemPhotoPaths : string list =
+                itemIds
+                |> List.choose (fun iid ->
+                    use c : SqliteCommand = this.CreateCommand()
+                    c.CommandText <- "SELECT photo_path FROM item WHERE id = @id AND photo_path IS NOT NULL"
+                    c.Parameters.AddWithValue("@id", iid) |> ignore
+                    let r : obj = c.ExecuteScalar()
+                    match r with
+                    | :? string as p -> Some p
+                    | _ -> None)
+            let photoPaths : string list =
+                (boxPhotoPath |> Option.toList) @ itemPhotoPaths
+            for iid in itemIds do
+                this.RecordMove("item", iid, None, None) |> ignore
+            use delMoves : SqliteCommand = this.CreateCommand()
+            delMoves.CommandText <- "DELETE FROM move WHERE entity_type = 'box' AND entity_id = @id"
+            delMoves.Parameters.AddWithValue("@id", id) |> ignore
+            delMoves.ExecuteNonQuery() |> ignore
+            use delSearch : SqliteCommand = this.CreateCommand()
+            delSearch.CommandText <- "DELETE FROM item_search WHERE item_id IN (SELECT id FROM item WHERE id IN (SELECT entity_id FROM move WHERE entity_type = 'item' AND to_type = 'box' AND to_id = @boxId))"
+            delSearch.Parameters.AddWithValue("@boxId", id) |> ignore
+            delSearch.ExecuteNonQuery() |> ignore
+            use delBox : SqliteCommand = this.CreateCommand()
+            delBox.CommandText <- "DELETE FROM box WHERE id = @id"
+            delBox.Parameters.AddWithValue("@id", id) |> ignore
+            delBox.ExecuteNonQuery() |> ignore
+            photoPaths)
 
     member this.GetItemsForBox(boxId: string) : Item list =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- """
             SELECT i.id, i.name, i.photo_path, i.added_at, item_lp.to_type, item_lp.to_id
             FROM item i
@@ -638,8 +623,7 @@ type Storage (connectionString: string) =
         readList (fun (r: SqliteDataReader) -> readItem r 0) reader
 
     member this.GetItem(id: string) : Item option =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- """
             SELECT i.id, i.name, i.photo_path, i.added_at, lp.to_type, lp.to_id
             FROM item i
@@ -660,14 +644,13 @@ type Storage (connectionString: string) =
         else None
 
     member this.CreateItem(name: ItemName, photoPath: PhotoPath option) : Item =
-        let conn : SqliteConnection = this.Connection
         let id : Guid = Guid.NewGuid()
         let photoValue : obj =
             match photoPath with
             | Some p -> box (PhotoPath.value p)
             | None -> DBNull.Value
         let now : DateTimeOffset = DateTimeOffset.UtcNow
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- "INSERT INTO item (id, name, photo_path, added_at) VALUES (@id, @name, @photoPath, @addedAt)"
         c.Parameters.AddWithValue("@id", id.ToString()) |> ignore
         c.Parameters.AddWithValue("@name", ItemName.value name) |> ignore
@@ -677,39 +660,38 @@ type Storage (connectionString: string) =
         { Id = id; Name = name; Photo = photoPath; Placement = Unassigned; AddedAt = now }
 
     member this.AddItem(boxId: string, name: ItemName, photoPath: PhotoPath option) : Item =
-        let conn : SqliteConnection = this.Connection
-        let id : Guid = Guid.NewGuid()
-        let photoValue : obj =
-            match photoPath with
-            | Some p -> box (PhotoPath.value p)
-            | None -> DBNull.Value
-        let now : DateTimeOffset = DateTimeOffset.UtcNow
-        use c : SqliteCommand = conn.CreateCommand()
-        c.CommandText <- "INSERT INTO item (id, name, photo_path, added_at) VALUES (@id, @name, @photoPath, @addedAt)"
-        c.Parameters.AddWithValue("@id", id.ToString()) |> ignore
-        c.Parameters.AddWithValue("@name", ItemName.value name) |> ignore
-        c.Parameters.AddWithValue("@photoPath", photoValue) |> ignore
-        c.Parameters.AddWithValue("@addedAt", now.ToString("o")) |> ignore
-        c.ExecuteNonQuery() |> ignore
-        this.RecordMove("item", id.ToString(), Some "box", Some boxId) |> ignore
-        { Id = id; Name = name; Photo = photoPath; Placement = InBox(BoxId.tryParse boxId |> unwrap); AddedAt = now }
+        this.InTransaction(fun () ->
+            let id : Guid = Guid.NewGuid()
+            let photoValue : obj =
+                match photoPath with
+                | Some p -> box (PhotoPath.value p)
+                | None -> DBNull.Value
+            let now : DateTimeOffset = DateTimeOffset.UtcNow
+            use c : SqliteCommand = this.CreateCommand()
+            c.CommandText <- "INSERT INTO item (id, name, photo_path, added_at) VALUES (@id, @name, @photoPath, @addedAt)"
+            c.Parameters.AddWithValue("@id", id.ToString()) |> ignore
+            c.Parameters.AddWithValue("@name", ItemName.value name) |> ignore
+            c.Parameters.AddWithValue("@photoPath", photoValue) |> ignore
+            c.Parameters.AddWithValue("@addedAt", now.ToString("o")) |> ignore
+            c.ExecuteNonQuery() |> ignore
+            this.RecordMove("item", id.ToString(), Some "box", Some boxId) |> ignore
+            { Id = id; Name = name; Photo = photoPath; Placement = InBox(BoxId.tryParse boxId |> unwrap); AddedAt = now })
 
     member this.UpdateItemName(id: string, name: ItemName) : Item option =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
-        c.CommandText <- "UPDATE item SET name = @name WHERE id = @id"
-        c.Parameters.AddWithValue("@id", id) |> ignore
-        c.Parameters.AddWithValue("@name", ItemName.value name) |> ignore
-        let rows : int = c.ExecuteNonQuery()
-        if rows = 0 then None
-        else
-            this.RemoveFromSearch(id)
-            this.SyncItemToSearch(id, ItemName.value name)
-            this.GetItem(id)
+        this.InTransaction(fun () ->
+            use c : SqliteCommand = this.CreateCommand()
+            c.CommandText <- "UPDATE item SET name = @name WHERE id = @id"
+            c.Parameters.AddWithValue("@id", id) |> ignore
+            c.Parameters.AddWithValue("@name", ItemName.value name) |> ignore
+            let rows : int = c.ExecuteNonQuery()
+            if rows = 0 then None
+            else
+                this.RemoveFromSearch(id)
+                this.SyncItemToSearch(id, ItemName.value name)
+                this.GetItem(id))
 
     member this.UpdateItemPhoto(id: string, photoPath: PhotoPath option) : Item option =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         let photoValue : obj =
             match photoPath with
             | Some p -> box (PhotoPath.value p)
@@ -721,8 +703,7 @@ type Storage (connectionString: string) =
         if rows = 0 then None else this.GetItem(id)
 
     member this.UpdateBoxPhoto(id: string, photoPath: PhotoPath option) : Box option =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         let photoValue : obj =
             match photoPath with
             | Some p -> box (PhotoPath.value p)
@@ -734,59 +715,58 @@ type Storage (connectionString: string) =
         if rows = 0 then None else this.GetBox(id)
 
     member this.DeleteItem(id: string) : string option =
-        let conn : SqliteConnection = this.Connection
-        let photoPath : string option =
-            use c : SqliteCommand = conn.CreateCommand()
-            c.CommandText <- "SELECT photo_path FROM item WHERE id = @id"
-            c.Parameters.AddWithValue("@id", id) |> ignore
-            let result : obj = c.ExecuteScalar()
-            match result with
-            | :? string as p -> Some p
-            | _ -> None
-        this.RemoveFromSearch(id)
-        use delMoves : SqliteCommand = conn.CreateCommand()
-        delMoves.CommandText <- "DELETE FROM move WHERE entity_type = 'item' AND entity_id = @id"
-        delMoves.Parameters.AddWithValue("@id", id) |> ignore
-        delMoves.ExecuteNonQuery() |> ignore
-        use delItem : SqliteCommand = conn.CreateCommand()
-        delItem.CommandText <- "DELETE FROM item WHERE id = @id"
-        delItem.Parameters.AddWithValue("@id", id) |> ignore
-        delItem.ExecuteNonQuery() |> ignore
-        photoPath
+        this.InTransaction(fun () ->
+            let photoPath : string option =
+                use c : SqliteCommand = this.CreateCommand()
+                c.CommandText <- "SELECT photo_path FROM item WHERE id = @id"
+                c.Parameters.AddWithValue("@id", id) |> ignore
+                let result : obj = c.ExecuteScalar()
+                match result with
+                | :? string as p -> Some p
+                | _ -> None
+            this.RemoveFromSearch(id)
+            use delMoves : SqliteCommand = this.CreateCommand()
+            delMoves.CommandText <- "DELETE FROM move WHERE entity_type = 'item' AND entity_id = @id"
+            delMoves.Parameters.AddWithValue("@id", id) |> ignore
+            delMoves.ExecuteNonQuery() |> ignore
+            use delItem : SqliteCommand = this.CreateCommand()
+            delItem.CommandText <- "DELETE FROM item WHERE id = @id"
+            delItem.Parameters.AddWithValue("@id", id) |> ignore
+            delItem.ExecuteNonQuery() |> ignore
+            photoPath)
 
     member this.RecordMove(entityType: string, entityId: string, toType: string option, toId: string option) : Move =
-        let conn : SqliteConnection = this.Connection
-        let id : Guid = Guid.NewGuid()
-        let now : DateTimeOffset = DateTimeOffset.UtcNow
-        let toContainer : Container =
-            match toType, toId with
-            | Some "box", Some bid -> InBox(bid |> BoxId.tryParse |> unwrap)
-            | Some "location", Some code -> AtLocation(code |> LocationCode.tryParse |> unwrap)
-            | _ -> Unassigned
-        use c : SqliteCommand = conn.CreateCommand()
-        c.CommandText <- "INSERT INTO move (id, entity_type, entity_id, to_type, to_id, moved_at) VALUES (@id, @entityType, @entityId, @toType, @toId, @movedAt)"
-        c.Parameters.AddWithValue("@id", id.ToString()) |> ignore
-        c.Parameters.AddWithValue("@entityType", entityType) |> ignore
-        c.Parameters.AddWithValue("@entityId", entityId) |> ignore
-        c.Parameters.AddWithValue("@toType", toDb toType) |> ignore
-        c.Parameters.AddWithValue("@toId", toDb toId) |> ignore
-        c.Parameters.AddWithValue("@movedAt", now.ToString("o")) |> ignore
-        c.ExecuteNonQuery() |> ignore
-        if entityType = "box" then
-            this.ReindexBoxItems(entityId)
-        elif entityType = "item" then
-            this.RemoveFromSearch(entityId)
-            let itemName =
-                use q : SqliteCommand = conn.CreateCommand()
-                q.CommandText <- "SELECT name FROM item WHERE id = @id"
-                q.Parameters.AddWithValue("@id", entityId) |> ignore
-                q.ExecuteScalar() :?> string
-            this.SyncItemToSearch(entityId, itemName)
-        { Id = id; EntityType = entityType; EntityId = entityId; To = toContainer; MovedAt = now }
+        this.InTransaction(fun () ->
+            let id : Guid = Guid.NewGuid()
+            let now : DateTimeOffset = DateTimeOffset.UtcNow
+            let toContainer : Container =
+                match toType, toId with
+                | Some "box", Some bid -> InBox(bid |> BoxId.tryParse |> unwrap)
+                | Some "location", Some code -> AtLocation(code |> LocationCode.tryParse |> unwrap)
+                | _ -> Unassigned
+            use c : SqliteCommand = this.CreateCommand()
+            c.CommandText <- "INSERT INTO move (id, entity_type, entity_id, to_type, to_id, moved_at) VALUES (@id, @entityType, @entityId, @toType, @toId, @movedAt)"
+            c.Parameters.AddWithValue("@id", id.ToString()) |> ignore
+            c.Parameters.AddWithValue("@entityType", entityType) |> ignore
+            c.Parameters.AddWithValue("@entityId", entityId) |> ignore
+            c.Parameters.AddWithValue("@toType", toDb toType) |> ignore
+            c.Parameters.AddWithValue("@toId", toDb toId) |> ignore
+            c.Parameters.AddWithValue("@movedAt", now.ToString("o")) |> ignore
+            c.ExecuteNonQuery() |> ignore
+            if entityType = "box" then
+                this.ReindexBoxItems(entityId)
+            elif entityType = "item" then
+                this.RemoveFromSearch(entityId)
+                let itemName =
+                    use q : SqliteCommand = this.CreateCommand()
+                    q.CommandText <- "SELECT name FROM item WHERE id = @id"
+                    q.Parameters.AddWithValue("@id", entityId) |> ignore
+                    q.ExecuteScalar() :?> string
+                this.SyncItemToSearch(entityId, itemName)
+            { Id = id; EntityType = entityType; EntityId = entityId; To = toContainer; MovedAt = now })
 
     member this.GetMoveHistory(entityType: string, entityId: string) : Move list =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- """
             SELECT id, entity_type, entity_id, to_type, to_id, moved_at
             FROM move
@@ -807,8 +787,7 @@ type Storage (connectionString: string) =
           UpdatedAt = reader.GetString(5) |> DateTimeOffset.Parse }
 
     member this.ListNotes(entityType: string, entityId: string) : Note list =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- """
             SELECT id, entity_type, entity_id, content, created_at, updated_at
             FROM note
@@ -821,10 +800,9 @@ type Storage (connectionString: string) =
         readList this.ReadNote reader
 
     member this.CreateNote(entityType: string, entityId: string, content: string) : Note =
-        let conn : SqliteConnection = this.Connection
         let id : Guid = Guid.NewGuid()
         let now : DateTimeOffset = DateTimeOffset.UtcNow
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- "INSERT INTO note (id, entity_type, entity_id, content, created_at, updated_at) VALUES (@id, @entityType, @entityId, @content, @createdAt, @updatedAt)"
         c.Parameters.AddWithValue("@id", id.ToString()) |> ignore
         c.Parameters.AddWithValue("@entityType", entityType) |> ignore
@@ -836,9 +814,8 @@ type Storage (connectionString: string) =
         { Id = id; EntityType = entityType; EntityId = entityId; Content = content; CreatedAt = now; UpdatedAt = now }
 
     member this.UpdateNote(id: string, content: string) : Note option =
-        let conn : SqliteConnection = this.Connection
         let now : DateTimeOffset = DateTimeOffset.UtcNow
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- "UPDATE note SET content = @content, updated_at = @updatedAt WHERE id = @id"
         c.Parameters.AddWithValue("@id", id) |> ignore
         c.Parameters.AddWithValue("@content", content) |> ignore
@@ -846,24 +823,22 @@ type Storage (connectionString: string) =
         let rows : int = c.ExecuteNonQuery()
         if rows = 0 then None
         else
-            use q : SqliteCommand = conn.CreateCommand()
+            use q : SqliteCommand = this.CreateCommand()
             q.CommandText <- "SELECT id, entity_type, entity_id, content, created_at, updated_at FROM note WHERE id = @id"
             q.Parameters.AddWithValue("@id", id) |> ignore
             use reader : SqliteDataReader = q.ExecuteReader()
             if reader.Read() then Some(this.ReadNote reader) else None
 
     member this.DeleteNote(id: string) : unit =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- "DELETE FROM note WHERE id = @id"
         c.Parameters.AddWithValue("@id", id) |> ignore
         c.ExecuteNonQuery() |> ignore
 
     member this.SearchItems(query: string option) : SearchResult list =
-        let conn : SqliteConnection = this.Connection
         match query with
         | Some q when not (String.IsNullOrWhiteSpace q) ->
-            use c : SqliteCommand = conn.CreateCommand()
+            use c : SqliteCommand = this.CreateCommand()
             c.CommandText <- """
                 SELECT i.id, i.name, i.photo_path,
                        COALESCE(item_lp.to_id, '') as box_id,
@@ -901,7 +876,7 @@ type Storage (connectionString: string) =
             use reader : SqliteDataReader = c.ExecuteReader()
             readList readSearchResult reader
         | _ ->
-            use c : SqliteCommand = conn.CreateCommand()
+            use c : SqliteCommand = this.CreateCommand()
             c.CommandText <- """
                 SELECT i.id, i.name, i.photo_path,
                        COALESCE(item_lp.to_id, '') as box_id,
@@ -937,8 +912,7 @@ type Storage (connectionString: string) =
             readList readSearchResult reader
 
     member this.GetItemSearchResult(id: string) : SearchResult option =
-        let conn : SqliteConnection = this.Connection
-        use c : SqliteCommand = conn.CreateCommand()
+        use c : SqliteCommand = this.CreateCommand()
         c.CommandText <- """
             SELECT i.id, i.name, i.photo_path,
                    COALESCE(item_lp.to_id, '') as box_id,

@@ -28,10 +28,64 @@ jobs:
         dotnet test tests/Domain.Tests/BoxTracker.Domain.Tests.fsproj --no-restore --verbosity detailed --logger "console;verbosity=detailed"
         dotnet test tests/Api.Tests/BoxTracker.Api.Tests.fsproj --no-restore --verbosity detailed --logger "console;verbosity=detailed"
 
+  e2e:
+    runs-on: ubuntu-latest
+    name: E2E (Playwright)
+
+    steps:
+    - uses: actions/checkout@v4.2.0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4.2.0
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4.1.0
+      with:
+        node-version: '20'
+
+    - name: Install npm dependencies
+      run: npm ci
+
+    - name: Restore dotnet tools
+      run: dotnet tool restore
+
+    - name: Build frontend
+      run: npm run build            # Fable + Vite production bundle
+      timeout-minutes: 10
+
+    # Cache the browser download, keyed on the installed @playwright/test
+    # version so a dependency bump busts the cache automatically.
+    - name: Resolve Playwright version
+      id: pw
+      run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Playwright browsers
+      id: pw-cache
+      uses: actions/cache@v4.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+    - name: Install Playwright browser
+      run: npx playwright install --with-deps chromium
+
+    - name: Run E2E tests
+      run: E2E_DATA_DIR=$(mktemp -d) npx playwright test
+
+    - name: Upload Playwright report
+      uses: actions/upload-artifact@v4.3.0
+      if: failure()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 7
+
   build:
     runs-on: ubuntu-latest
     name: Build
-    needs: test
+    needs: [test, e2e]
 
     steps:
     - uses: actions/checkout@v4.2.0

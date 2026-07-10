@@ -105,6 +105,7 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                 prop.children [
                     Html.ul [
                         prop.className "menu menu-horizontal px-1"
+                        prop.custom ("data-testid", "desktop-nav")
                         prop.children [
                             Html.li [ navItem "Boxes" BoxesList dispatch ]
                             Html.li [ navItem "Locations" LocationsList dispatch ]
@@ -225,11 +226,13 @@ let navbar (state: State) (dispatch: Msg -> unit) : ReactElement =
                             Html.button [
                                 prop.tabIndex 0
                                 prop.className "btn btn-ghost btn-circle btn-lg md:btn-md"
+                                prop.custom ("data-testid", "mobile-nav-toggle")
                                 prop.text "☰"
                             ]
                             Html.ul [
                                 prop.tabIndex 0
                                 prop.className "dropdown-content menu bg-base-300 rounded-lg z-10 w-52 p-2 shadow-xl"
+                                prop.custom ("data-testid", "mobile-nav")
                                 prop.children [
                                     Html.li [ navItem "Boxes" BoxesList dispatch ]
                                     Html.li [ navItem "Locations" LocationsList dispatch ]

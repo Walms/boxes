@@ -5,7 +5,8 @@
   "scripts": {
     "start": "dotnet fable watch --cwd src/Client --run npx vite",
     "build": "dotnet fable --cwd src/Client && cd src/Client && npx vite build",
-    "build:client": "dotnet fable --cwd src/Client"
+    "build:client": "dotnet fable --cwd src/Client",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "jsqr": "^1.4.0",
@@ -15,6 +16,7 @@
     "use-sync-external-store": "^1.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.1.7",
     "daisyui": "^5.0.35",
     "tailwindcss": "^4.1.7",

@@ -24,13 +24,16 @@ export default defineConfig({
     ],
     webServer: [
         {
+            // --no-launch-profile: launchSettings.json pins applicationUrl to
+            // :5034, which would override ASPNETCORE_URLS below and leave the
+            // server on the wrong port. Skipping the profile lets our env win.
             // In CI the server is compiled in a dedicated step beforehand, so
             // `--no-build` lets it boot in seconds instead of doing a cold
             // restore+build inside the readiness window. Locally, plain
             // `dotnet run` builds on first use.
             command: process.env.CI
-                ? "dotnet run --project src/Server/BoxTracker.Server.fsproj --no-build"
-                : "dotnet run --project src/Server/BoxTracker.Server.fsproj",
+                ? "dotnet run --project src/Server/BoxTracker.Server.fsproj --no-launch-profile --no-build"
+                : "dotnet run --project src/Server/BoxTracker.Server.fsproj --no-launch-profile",
             url: "http://localhost:5000/api/locations",
             env: {
                 // Host.CreateDefaultBuilder reads ASPNETCORE_URLS for the bind

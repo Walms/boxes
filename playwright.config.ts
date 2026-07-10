@@ -24,8 +24,13 @@ export default defineConfig({
     ],
     webServer: [
         {
-            command:
-                "dotnet run --project src/Server/BoxTracker.Server.fsproj",
+            // In CI the server is compiled in a dedicated step beforehand, so
+            // `--no-build` lets it boot in seconds instead of doing a cold
+            // restore+build inside the readiness window. Locally, plain
+            // `dotnet run` builds on first use.
+            command: process.env.CI
+                ? "dotnet run --project src/Server/BoxTracker.Server.fsproj --no-build"
+                : "dotnet run --project src/Server/BoxTracker.Server.fsproj",
             url: "http://localhost:5000/api/locations",
             env: {
                 // Host.CreateDefaultBuilder reads ASPNETCORE_URLS for the bind
@@ -34,6 +39,8 @@ export default defineConfig({
                 BOXTRACKER_DATA: process.env.E2E_DATA_DIR ?? "./tests/E2E/.data",
             },
             reuseExistingServer: !process.env.CI,
+            stdout: "pipe",
+            stderr: "pipe",
             timeout: 120_000,
         },
         {

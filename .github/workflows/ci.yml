@@ -55,6 +55,12 @@ jobs:
       run: npm run build            # Fable + Vite production bundle
       timeout-minutes: 10
 
+    # Compile the server up front so `dotnet run --no-build` (see
+    # playwright.config.ts) boots within Playwright's readiness window instead
+    # of doing a cold restore+build there. Debug matches `dotnet run`'s default.
+    - name: Build server
+      run: dotnet build src/Server/BoxTracker.Server.fsproj -c Debug
+
     # Cache the browser download, keyed on the installed @playwright/test
     # version so a dependency bump busts the cache automatically.
     - name: Resolve Playwright version

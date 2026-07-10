@@ -23,7 +23,7 @@
 - [ui/mobile-responsive-design.md](ui/mobile-responsive-design.md) — responsive design improvements, mobile-first layout, touch-friendly UX
 
 ## Plans
-- (none currently — the June 2026 performance review items are done; write-path transactions are documented in [domain/persistence.md](domain/persistence.md), the single-decode image pipeline in [domain/image-optimization.md](domain/image-optimization.md))
+- [plans/playwright-e2e-ci.md](plans/playwright-e2e-ci.md) — Playwright E2E testing in CI: architecture, setup, prioritized test suggestions, rollout
 
 ## Tmp
 - session scraps (git-ignored)

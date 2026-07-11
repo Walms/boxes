@@ -102,6 +102,9 @@ let private responseStatus (resp: obj) : int = failwith "JS only"
 [<Emit("JSON.parse($0)")>]
 let ofJson<'T> (json: string) : 'T = failwith "JS only"
 
+[<Emit("encodeURIComponent($0)")>]
+let private encodeUriComponent (s: string) : string = failwith "JS only"
+
 [<Emit("JSON.stringify($0)")>]
 let toJson (value: obj) : string = failwith "JS only"
 
@@ -311,7 +314,7 @@ let getPhotoJob (jobId: string) : Async<Result<PhotoJobDto, string>> =
     get<PhotoJobDto> $"/api/photo-jobs/%s{jobId}"
 
 let searchItems (query: string) : Async<Result<SearchResultDto array, string>> =
-    get<SearchResultDto array> $"/api/items?q=%s{query}"
+    get<SearchResultDto array> $"/api/items?q=%s{encodeUriComponent query}"
 
 let getNotes (entityType: string) (entityId: string) : Async<Result<NoteDto array, string>> =
     get<NoteDto array> $"/api/notes?entityType=%s{entityType}&entityId=%s{entityId}"

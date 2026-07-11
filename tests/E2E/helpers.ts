@@ -13,8 +13,10 @@ export function trackConsoleErrors(page: Page): string[] {
     page.on("console", (msg) => {
         if (msg.type() !== "error") return;
         const text = msg.text();
-        if (/fonts\.(googleapis|gstatic)\.com/.test(text)) return;
-        if (/Failed to load resource/.test(text) && /fonts\./.test(text)) return;
+        // Chromium puts the failing URL in the message location, not the text.
+        const url = msg.location().url;
+        if (/fonts\.(googleapis|gstatic)\.com/.test(`${text} ${url}`)) return;
+        if (/Failed to load resource/.test(text) && /fonts\./.test(`${text} ${url}`)) return;
         errors.push(`console.error: ${text}`);
     });
     return errors;

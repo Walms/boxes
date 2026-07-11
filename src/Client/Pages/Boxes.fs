@@ -672,48 +672,6 @@ let boxDetailPage (state: State) (dispatch: Msg -> unit) : ReactElement =
                                                         ]
                                                     | None -> Html.none
                                                     Html.span [ prop.className "text-sm flex-1 truncate"; prop.text item.Name ]
-                                                    Html.div [
-                                                        prop.className "dropdown dropdown-end"
-                                                        prop.children [
-                                                            Html.button [
-                                                                prop.tabIndex 0
-                                                                prop.className "btn btn-ghost btn-sm btn-circle opacity-50 hover:opacity-100"
-                                                                prop.onClick (fun e -> e.stopPropagation())
-                                                                prop.children [ Html.text "⋮" ]
-                                                            ]
-                                                            Html.ul [
-                                                                prop.tabIndex 0
-                                                                prop.className "dropdown-content menu bg-base-100 rounded-box z-20 w-44 p-1 shadow-lg border border-base-300"
-                                                                prop.children [
-                                                                    Html.li [
-                                                                        Html.a [
-                                                                            prop.text "View History"
-                                                                            prop.onClick (fun _ -> dispatch (ShowHistory ("item", item.Id, item.Name, Some item.AddedAt)))
-                                                                        ]
-                                                                    ]
-                                                                    Html.li [
-                                                                        Html.a [
-                                                                            prop.text "Move to box"
-                                                                            prop.onClick (fun _ -> dispatch (ShowMoveItemDialog item.Id))
-                                                                        ]
-                                                                    ]
-                                                                    Html.li [
-                                                                        Html.a [
-                                                                            prop.text "Unassign"
-                                                                            prop.onClick (fun _ -> dispatch (UnassignItem item.Id))
-                                                                        ]
-                                                                    ]
-                                                                    Html.li [
-                                                                        Html.a [
-                                                                            prop.className "text-error"
-                                                                            prop.text "Delete"
-                                                                            prop.onClick (fun _ -> dispatch (DeleteItem item.Id))
-                                                                        ]
-                                                                    ]
-                                                                ]
-                                                            ]
-                                                        ]
-                                                    ]
                                                 ]
                                             ]
                                     ]

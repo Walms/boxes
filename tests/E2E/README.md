@@ -32,7 +32,12 @@ npx playwright show-report                   # open the last HTML report
 
 - `smoke.spec.ts` — Tier 1: bundle boots, hash routing, reload survival.
 - `nav.spec.ts` — navbar navigation (desktop menu + mobile hamburger).
-- `helpers.ts` — shared utilities (console-error tracking, unique tags).
+- `flows.spec.ts` — Tier 2 core domain flows: create location/box, assign,
+  add item, move item, unassign, and the delete-box-preserves-items invariant.
+- `search.spec.ts` — FTS search: finds items with denormalized box/location,
+  multi-word queries, and graceful handling of FTS special characters.
+- `helpers.ts` — shared utilities (console-error tracking, unique tags, and
+  UI entity-creation helpers: `createLocation`, `createBox`, `addItemToOpenBox`).
 
 ## Conventions
 

@@ -45,6 +45,10 @@ Regular FTS5 virtual table `item_search` with columns:
 
 `SyncItemToSearch` derives the current box and location from the move log (calls `GetItemPlacement` → potentially `GetBoxPlacement`) to denormalize into the FTS row.
 
+### Query sanitization
+
+`SearchItems` never passes raw user input to `item_search MATCH`. The module-level `toFtsMatchQuery` wraps each whitespace-separated token in double quotes (embedded quotes doubled) before it reaches `MATCH`. Without this, ordinary search input that isn't valid FTS5 syntax — a bare `"`, `(`, `)`, a trailing `AND`, `*`, `:`, or a hyphenated word like `red-ball` — raises a `SqliteException` (surfacing as HTTP 500 / an error banner). Quoting keeps the previous whole-word matching semantics (`christmas` still matches `Christmas decorations`; a multi-word query ANDs its words) while treating punctuation as literal terms. The client (`Api.searchItems`) also `encodeURIComponent`s the query so `&`, `#`, and `%` don't corrupt the request URL.
+
 ## FTS5 Sync Points
 
 1. **AddItem** → `RecordMove` (item→box) → `SyncItemToSearch` (via RecordMove)

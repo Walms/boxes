@@ -23,6 +23,17 @@ type SearchResult = {
     AddedAt: DateTimeOffset
 }
 
+/// Turn free-text user input into a safe FTS5 MATCH expression. Each
+/// whitespace-separated token is wrapped in double quotes (with embedded
+/// quotes doubled), so punctuation the user types — a bare quote, parentheses,
+/// a trailing "AND", a hyphen, "*", ":" — is matched as a literal term instead
+/// of being parsed as FTS5 query syntax (which throws a SqliteException).
+/// Quoted tokens preserve the previous whole-word matching semantics.
+let toFtsMatchQuery (raw: string) : string =
+    raw.Split([| ' '; '\t'; '\n'; '\r' |], StringSplitOptions.RemoveEmptyEntries)
+    |> Array.map (fun (token: string) -> "\"" + token.Replace("\"", "\"\"") + "\"")
+    |> String.concat " "
+
 type Storage (connectionString: string) =
 
     let mutable connection : SqliteConnection option = None
@@ -872,7 +883,7 @@ type Storage (connectionString: string) =
                 ORDER BY rank
                 LIMIT 100
             """
-            c.Parameters.AddWithValue("@query", q) |> ignore
+            c.Parameters.AddWithValue("@query", toFtsMatchQuery q) |> ignore
             use reader : SqliteDataReader = c.ExecuteReader()
             readList readSearchResult reader
         | _ ->

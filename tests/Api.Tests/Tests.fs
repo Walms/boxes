@@ -406,6 +406,58 @@ let ``Storage.SearchItems removes deleted items`` () : unit =
         Assert.Empty(results)
     )
 
+// A bare quote, parentheses, a trailing "AND", "*", ":" and hyphenated words are
+// not valid FTS5 query syntax. Passing them straight to MATCH throws a
+// SqliteException (surfacing as a 500 / error banner). These queries must
+// degrade to "no matches" instead of raising.
+[<Theory>]
+[<InlineData("\"")>]
+[<InlineData("a\"b")>]
+[<InlineData("foo(")>]
+[<InlineData("bar)")>]
+[<InlineData("a AND")>]
+[<InlineData("*")>]
+[<InlineData("name:")>]
+[<InlineData("red-ball")>]
+let ``Storage.SearchItems does not throw on FTS special characters`` (query: string) : unit =
+    withStorage (fun storage ->
+        let box : Box = storage.CreateBox(None)
+        storage.AddItem(boxId box, makeItemName "Wrench", None) |> ignore
+        // Must not raise; special characters simply match nothing.
+        let results : SearchResult list = storage.SearchItems(Some query)
+        Assert.Empty(results)
+    )
+
+[<Fact>]
+let ``Storage.SearchItems matches an item whose name contains a hyphen`` () : unit =
+    withStorage (fun storage ->
+        let box : Box = storage.CreateBox(None)
+        storage.AddItem(boxId box, makeItemName "T-shirt", None) |> ignore
+        let results : SearchResult list = storage.SearchItems(Some "T-shirt")
+        Assert.Single(results) |> ignore
+        Assert.Equal("T-shirt", results.[0].ItemName)
+    )
+
+[<Fact>]
+let ``Storage.SearchItems matches all words of a multi-word query`` () : unit =
+    withStorage (fun storage ->
+        let box : Box = storage.CreateBox(None)
+        storage.AddItem(boxId box, makeItemName "Winter Coat", None) |> ignore
+        storage.AddItem(boxId box, makeItemName "Winter Boots", None) |> ignore
+        // Both words must participate: only "Winter Coat" matches, not "Winter Boots".
+        let results : SearchResult list = storage.SearchItems(Some "winter coat")
+        Assert.Single(results) |> ignore
+        Assert.Equal("Winter Coat", results.[0].ItemName)
+    )
+
+[<Theory>]
+[<InlineData("christmas", "\"christmas\"")>]
+[<InlineData("winter coat", "\"winter\" \"coat\"")>]
+[<InlineData("  padded   spaces  ", "\"padded\" \"spaces\"")>]
+[<InlineData("a\"b", "\"a\"\"b\"")>]
+let ``toFtsMatchQuery quotes each token`` (input: string) (expected: string) : unit =
+    Assert.Equal(expected, toFtsMatchQuery input)
+
 [<Fact>]
 let ``Storage.GetAssignedBoxCount returns correct count`` () : unit =
     withStorage (fun storage ->

@@ -88,8 +88,13 @@ test("move an item from one box to another", async ({ page }, testInfo) => {
     const boxA = await createBox(page, `BoxA ${tok}`);
     const boxB = await createBox(page, `BoxB ${tok}`);
 
-    // Add the item to box A, then open its detail page.
+    // Add the item to box A, then open its detail page. A bare hash change
+    // right after the app's own navigation can be missed by the router, so
+    // force a full load and wait for box A's detail before adding — otherwise
+    // the item can land in the still-loaded box B.
     await page.goto(`/#/boxes/${boxA}`);
+    await page.reload();
+    await expect(page.getByRole("heading", { name: `BoxA ${tok}` })).toBeVisible();
     await addItemToOpenBox(page, itemName);
     await openItemDetail(page, itemName);
 
@@ -100,6 +105,9 @@ test("move an item from one box to another", async ({ page }, testInfo) => {
     const modal = page.locator(".modal-open");
     await modal.getByText(`BoxB ${tok}`, { exact: true }).click();
     await modal.getByRole("button", { name: "Move", exact: true }).click();
+    // The dialog only closes once the move POST succeeds; wait for it so the
+    // navigations below observe the committed move.
+    await expect(page.locator(".modal-open")).toHaveCount(0);
 
     // Box A no longer lists the item...
     await page.goto(`/#/boxes/${boxA}`);

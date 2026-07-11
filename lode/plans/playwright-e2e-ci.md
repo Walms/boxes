@@ -115,6 +115,22 @@ styling work).
 
 ## Valuable tests, in priority order
 
+Current coverage in `tests/E2E/`: Tier 1 (`smoke.spec.ts`, `nav.spec.ts`), Tier 2
+flows 4–10 (`flows.spec.ts`, `search.spec.ts`, `edit.spec.ts`), Tier 3 item 11
+(`notes-history.spec.ts`). Beyond the original list, `items.spec.ts` covers
+standalone item create/assign/delete, `filters.spec.ts` covers the list text
+filters and the Boxes location filter, `edit.spec.ts` covers location code
+editing and archiving (archived locations vanish from the list — `GET
+/api/locations` excludes them — and from the assign dropdown), and
+`notes-history.spec.ts` covers note CRUD. Items 12–19 remain unimplemented.
+
+Flakiness lesson: a bare hash `page.goto` right after the app's own
+`Router.navigate` is sometimes missed by the router, leaving the previous
+detail page loaded. When a test hash-navigates mid-test and then mutates
+state, `page.reload()` after the goto and wait for the target heading. Dialog
+POSTs are asynchronous — wait for `.modal-open` to disappear before asserting
+their effects elsewhere.
+
 ### Tier 1 — smoke (write first; catches "the bundle is broken")
 
 1. **App boots**: `/` renders the navbar and the Boxes landing page; no console errors.
@@ -188,10 +204,10 @@ test("box lifecycle: create, assign to location, add item", async ({ page }, tes
 
 ## Rollout
 
-1. **PR 1**: `@playwright/test` dep, config, CI job, Tier 1 smoke tests. Keep the job
-   non-required until it proves stable for a week.
-2. **PR 2**: Tier 2 flows + any `data-testid` attributes they need.
-3. **PR 3**: Tier 3; make the job required for merge.
+1. ~~**PR 1**: `@playwright/test` dep, config, CI job, Tier 1 smoke tests.~~ Done.
+2. ~~**PR 2**: Tier 2 flows.~~ Done (no `data-testid` needed beyond the nav ones).
+3. **PR 3**: remaining Tier 3 (photo upload, image viewer, add-existing modal,
+   in-place mutation guard); make the job required for merge.
 4. **Later**: Tier 4 as appetite allows.
 
 Budget: Tier 1–3 should run in ~2–3 minutes after the build step; the `npm run build`

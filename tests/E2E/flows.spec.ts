@@ -5,6 +5,7 @@ import {
     createLocation,
     createBox,
     addItemToOpenBox,
+    openItemDetail,
 } from "./helpers";
 
 // Tier 2 — core domain flows. These exercise the event-sourced move model
@@ -87,24 +88,26 @@ test("move an item from one box to another", async ({ page }, testInfo) => {
     const boxA = await createBox(page, `BoxA ${tok}`);
     const boxB = await createBox(page, `BoxB ${tok}`);
 
-    // Add the item to box A.
+    // Add the item to box A, then open its detail page.
     await page.goto(`/#/boxes/${boxA}`);
     await addItemToOpenBox(page, itemName);
+    await openItemDetail(page, itemName);
 
-    // Open the item's ⋮ menu and move it to box B.
-    const itemRow = page.locator(".catalog-row", { hasText: itemName });
-    await itemRow.getByRole("button", { name: "⋮" }).click();
+    // Move it to box B via the detail page's Actions menu (a top-level
+    // dropdown, unlike the flaky per-row ⋮ menu).
+    await page.getByRole("button", { name: /Actions/ }).click();
     await page.getByText("Move to box", { exact: true }).click();
     const modal = page.locator(".modal-open");
     await modal.getByText(`BoxB ${tok}`, { exact: true }).click();
     await modal.getByRole("button", { name: "Move", exact: true }).click();
 
-    // Box A no longer lists the item.
+    // Box A no longer lists the item...
+    await page.goto(`/#/boxes/${boxA}`);
     await expect(
         page.locator(".catalog-row", { hasText: itemName })
     ).toHaveCount(0);
 
-    // Box B now lists the item.
+    // ...and box B now does.
     await page.goto(`/#/boxes/${boxB}`);
     await expect(
         page.locator(".catalog-row", { hasText: itemName })
@@ -117,17 +120,18 @@ test("unassign an item from its box", async ({ page }, testInfo) => {
     const boxId = await createBox(page, `Box ${tok}`);
     await page.goto(`/#/boxes/${boxId}`);
     await addItemToOpenBox(page, itemName);
+    await openItemDetail(page, itemName);
 
-    const itemRow = page.locator(".catalog-row", { hasText: itemName });
-    await itemRow.getByRole("button", { name: "⋮" }).click();
-    await page.getByText("Unassign", { exact: true }).click();
+    await page.getByRole("button", { name: /Actions/ }).click();
+    await page.getByText("Unassign from box", { exact: true }).click();
 
-    // Item leaves the box list.
+    // The box no longer lists the item.
+    await page.goto(`/#/boxes/${boxId}`);
     await expect(
         page.locator(".catalog-row", { hasText: itemName })
     ).toHaveCount(0);
 
-    // And shows as Unassigned on the Items page.
+    // And it shows as Unassigned on the Items page.
     await page.goto("/#/items");
     const card = page.locator(".catalog-row.entity-item", { hasText: itemName });
     await expect(card).toBeVisible();

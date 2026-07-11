@@ -77,3 +77,13 @@ export async function addItemToOpenBox(page: Page, name: string): Promise<void> 
         page.locator(".catalog-row", { hasText: name })
     ).toBeVisible();
 }
+
+/**
+ * Open an item's detail page by clicking its name in a catalog row (the row's
+ * click handler navigates). Waits until the detail route is active.
+ */
+export async function openItemDetail(page: Page, name: string): Promise<void> {
+    const row = page.locator(".catalog-row", { hasText: name });
+    await row.getByText(name).first().click();
+    await expect(page).toHaveURL(/#\/items\//);
+}
